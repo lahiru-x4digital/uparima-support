@@ -10,14 +10,13 @@ const STATUS_OPTIONS = (Object.keys(STATUSES) as ConversationStatus[]).map((s) =
 interface Props {
   conversation: Conversation;
   contextOpen: boolean;
+  canUpdate: boolean;
   onBack: () => void;
   onToggleContext: () => void;
   onStatusChange: (status: ConversationStatus) => void;
 }
 
-// TODO(api): status changes -> PATCH /support-desk/tickets/:id/status. The backend status set may differ from
-// the mock (open/pending/resolved/closed) — align STATUSES in meta.ts with the real enum.
-export function ChatHeader({ conversation: c, contextOpen, onBack, onToggleContext, onStatusChange }: Props) {
+export function ChatHeader({ conversation: c, contextOpen, canUpdate, onBack, onToggleContext, onStatusChange }: Props) {
   return (
     <header className="flex items-center gap-3 border-b px-3 py-2.5">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onBack} aria-label="Back to conversations">
@@ -32,10 +31,14 @@ export function ChatHeader({ conversation: c, contextOpen, onBack, onToggleConte
           {c.ticketNumber} · {CHANNELS[c.channel].label} · {c.role === "rider" ? "Rider" : "Driver"}
         </p>
       </div>
-      <OptionSelect label="Status" value={c.status} options={STATUS_OPTIONS} onChange={onStatusChange} />
-      <Button variant="outline" size="sm" onClick={() => onStatusChange("resolved")} disabled={c.status === "resolved"}>
-        <CheckCircle2 /> <span className="hidden sm:inline">Resolve</span>
-      </Button>
+      {canUpdate && (
+        <>
+          <OptionSelect label="Status" value={c.status} options={STATUS_OPTIONS} onChange={onStatusChange} />
+          <Button variant="outline" size="sm" onClick={() => onStatusChange("completed")} disabled={c.status === "completed"}>
+            <CheckCircle2 /> <span className="hidden sm:inline">Complete</span>
+          </Button>
+        </>
+      )}
       <Button variant={contextOpen ? "secondary" : "ghost"} size="icon" onClick={onToggleContext} aria-label="Toggle details panel">
         <PanelRight />
       </Button>

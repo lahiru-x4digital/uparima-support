@@ -3,12 +3,14 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Channel, ConversationFilters, ConversationStatus } from "@/types/inbox";
+import type { Channel, ConversationFilters } from "@/types/inbox";
 import { CHANNELS } from "./meta";
 import { OptionSelect } from "./option-select";
 
 interface Props {
   filters: ConversationFilters;
+  /** Number of drivers still waiting for contact, shown on the first tab. */
+  needsContactCount: number | undefined;
   onChange: (patch: Partial<ConversationFilters>) => void;
 }
 
@@ -23,16 +25,14 @@ const ASSIGNEE_OPTIONS: { value: ConversationFilters["assignee"]; label: string 
   { value: "unassigned", label: "Unassigned" },
 ];
 
-const STATUS_TABS: { value: ConversationStatus | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "open", label: "Open" },
-  { value: "pending", label: "Pending" },
-  { value: "resolved", label: "Resolved" },
-];
-
-// TODO(api): channel options are mock. Confirm which source/channel values the ticket DTO exposes (the support
-// module currently has ticket categories via GET /support-desk/ticket-categories) and build options from that.
-export function FilterBar({ filters, onChange }: Props) {
+export function FilterBar({ filters, needsContactCount, onChange }: Props) {
+  const tabs: { value: ConversationFilters["status"]; label: string }[] = [
+    { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
+    { value: "all", label: "All" },
+    { value: "pending", label: "Pending" },
+    { value: "in_review", label: "In review" },
+    { value: "completed", label: "Done" },
+  ];
   return (
     <div className="flex flex-col gap-2 border-b p-3">
       <div className="relative">
@@ -40,15 +40,15 @@ export function FilterBar({ filters, onChange }: Props) {
         <Input
           value={filters.search}
           onChange={(e) => onChange({ search: e.target.value })}
-          placeholder="Search name, ticket, phone…"
+          placeholder="Search loaded: name, ticket, phone…"
           aria-label="Search conversations"
           className="pl-8"
         />
       </div>
       <Tabs value={filters.status} onValueChange={(v) => onChange({ status: v as ConversationFilters["status"] })}>
         <TabsList className="w-full">
-          {STATUS_TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value}>
+          {tabs.map((t) => (
+            <TabsTrigger key={t.value} value={t.value} className="px-1.5 text-xs">
               {t.label}
             </TabsTrigger>
           ))}

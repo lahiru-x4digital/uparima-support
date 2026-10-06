@@ -1,36 +1,46 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@/types/inbox";
 import { MessageBubble } from "./message-bubble";
 
 interface Props {
+  conversationId: string;
   messages: Message[];
-  typingName: string | null;
 }
 
-export function MessageList({ messages, typingName }: Props) {
-  const endRef = useRef<HTMLDivElement>(null);
+const NEAR_BOTTOM_PX = 120;
 
-  // TODO(api): history is fully loaded here. For long tickets load the newest page first and fetch older
-  //   replies on scroll-up (cursor paging), keeping scroll position when prepending. Only auto-scroll to the
-  //   bottom if the agent is already near the bottom.
-  // TODO(realtime): new customer replies should arrive over a socket (rider/driver socket pattern in
-  //   uparima-backend `rides.gateway`) or poll while the tab is visible; the backend has no ticket socket yet.
+export function MessageList({ conversationId, messages }: Props) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  // Follow new messages only while the agent is already at the bottom, so reading
+  // older replies is not interrupted by a refresh.
+  const stick = useRef(true);
+
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length, typingName]);
+    stick.current = true;
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (stick.current) endRef.current?.scrollIntoView({ block: "end" });
+  }, [conversationId, messages.length]);
 
   return (
-    <ScrollArea className="min-h-0 flex-1 bg-muted/30">
+    <div
+      ref={scroller}
+      onScroll={(e) => {
+        const el = e.currentTarget;
+        stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+      }}
+      className="min-h-0 flex-1 overflow-y-auto bg-muted/30"
+    >
       <div className="flex flex-col gap-3 p-4">
         {messages.map((m) => (
           <MessageBubble key={m.id} message={m} />
         ))}
-        {typingName && <p className="text-xs text-muted-foreground">{typingName} is typing…</p>}
         <div ref={endRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

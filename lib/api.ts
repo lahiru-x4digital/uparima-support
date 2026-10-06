@@ -1,10 +1,11 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import { clearAuth, getRefreshToken, getSavedUser, getToken, saveAuth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import type { AuthTokens } from "@/types/auth";
+import type { PageMeta, Paginated } from "@/types/ticket";
 
 /** Backend API base URL (includes `/api/v1`). Set `NEXT_PUBLIC_API_BASE_URL` in `.env.local`. */
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api/v1";
+export const API_BASE_URL = env.NEXT_PUBLIC_API_BASE_URL;
 
 /** Single shared HTTP client. Only `lib/services/*.service.ts` should import this. */
 export const api = axios.create({
@@ -109,6 +110,18 @@ interface ApiEnvelope<T> {
  */
 export const apiGet = async <T>(url: string, config?: AxiosRequestConfig) =>
   (await api.get<ApiEnvelope<T>>(url, config)).data.data;
+
+/**
+ * Paginated lists: the backend puts `meta` next to `data` in the envelope, which `apiGet`
+ * would drop. Returns both.
+ */
+export const apiGetPage = async <T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<Paginated<T>> => {
+  const res = (await api.get<ApiEnvelope<T[]> & { meta: PageMeta }>(url, config)).data;
+  return { data: res.data, meta: res.meta };
+};
 
 export const apiPost = async <T>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
   (await api.post<ApiEnvelope<T>>(url, body, config)).data.data;

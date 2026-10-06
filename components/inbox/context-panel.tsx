@@ -1,19 +1,26 @@
-import { Bike, Car, MapPin, Phone, X } from "lucide-react";
+"use client";
+
+import { Bike, Car, Phone, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { Conversation, Priority, TeamMember } from "@/types/inbox";
-import { PRIORITIES, initials } from "./meta";
+import { useRide } from "@/lib/hooks/use-desk";
+import { formatTime, slaState } from "@/lib/inbox/mappers";
+import { cn } from "@/lib/utils";
+import type { Conversation, Priority } from "@/types/inbox";
+import type { Staff } from "@/types/ticket";
+import { PRIORITIES, initials, languageLabel, topicLabel } from "./meta";
 import { OptionSelect } from "./option-select";
 
 const PRIORITY_OPTIONS = (Object.keys(PRIORITIES) as Priority[]).map((p) => ({ value: p, label: PRIORITIES[p].label }));
+const UNASSIGNED = "__none__";
 
 interface Props {
   conversation: Conversation;
-  team: TeamMember[];
-  onAssign: (name: string | null) => void;
+  staff: Staff[];
+  canUpdate: boolean;
+  onAssign: (userId: number) => void;
   onPriority: (priority: Priority) => void;
   onClose: () => void;
 }
@@ -27,15 +34,46 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-// TODO(api): customer details (phone, city, rides, member-since) come from the lookup endpoints:
-//   GET /support-desk/lookup/riders | /drivers | /rides/:id | /tickets/:ticketNumber
-// "Tags" are display-only for now — there is no tags field/endpoint on tickets.
-export function ContextPanel({ conversation: c, team, onAssign, onPriority, onClose }: Props) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
+  );
+}
+
+function RideCard({ rideId }: { rideId: string }) {
+  const { data: ride, isLoading, isError } = useRide(rideId);
+  return (
+    <div className="rounded-lg border p-3 text-sm">
+      <p className="mb-1.5 text-xs font-medium text-muted-foreground">Linked ride</p>
+      {isLoading && <p className="text-muted-foreground">Loading…</p>}
+      {isError && <p className="text-muted-foreground">Couldn&apos;t load this ride.</p>}
+      {ride && (
+        <div className="flex flex-col gap-1">
+          <p className="truncate">{ride.pickupAddress ?? "Pickup"} → {ride.dropoffAddress ?? "Dropoff"}</p>
+          <p className="text-xs text-muted-foreground">
+            {ride.status} · LKR {Math.round(Number(ride.fareLkr))}{ride.createdAt ? ` · ${formatTime(ride.createdAt)}` : ""}
+          </p>
+          {ride.driver && <p className="text-xs text-muted-foreground">Driver: {ride.driver.name} · {ride.driver.vehicleRegistrationNumber ?? "—"}</p>}
+          {ride.rider && <p className="text-xs text-muted-foreground">Rider: {ride.rider.name ?? "—"}{ride.rider.phone ? ` · ${ride.rider.phone}` : ""}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
+  const sla = slaState(c.slaDueAt);
+  const topic = topicLabel(c.topic);
+  const language = languageLabel(c.language);
   const assignOptions = [
-    { value: "__none__", label: "Unassigned" },
-    ...team.map((t) => ({ value: t.name, label: t.name })),
+    { value: UNASSIGNED, label: c.assignedToUserId == null ? "Unassigned" : "Reassign to…" },
+    ...staff.map((s) => ({ value: String(s.id), label: s.name ?? `Staff #${s.id}` })),
   ];
+  const assignedValue = c.assignedToUserId == null ? UNASSIGNED : String(c.assignedToUserId);
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col border-l bg-background">
@@ -50,40 +88,50 @@ export function ContextPanel({ conversation: c, team, onAssign, onPriority, onCl
             <div>
               <p className="font-semibold">{c.customerName}</p>
               <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                <RoleIcon className="size-3" /> {c.role === "rider" ? "Rider" : "Driver"} · since {c.memberSince}
+                <RoleIcon className="size-3" /> {c.role === "rider" ? "Rider" : "Driver"}
+                {c.submitter?.kind === "driver" ? ` · ${c.submitter.status}` : ""}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 text-sm">
             <span className="flex items-center gap-2"><Phone className="size-4 text-muted-foreground" />{c.phone}</span>
-            <span className="flex items-center gap-2"><MapPin className="size-4 text-muted-foreground" />{c.city}</span>
+            {c.submitter?.kind === "driver" && c.submitter.vehicleRegistrationNumber && (
+              <span className="flex items-center gap-2"><Car className="size-4 text-muted-foreground" />{c.submitter.vehicleRegistrationNumber}</span>
+            )}
+            {c.submitter?.kind === "hire_tenant" && <span className="text-muted-foreground">Business: {c.submitter.tenantName}</span>}
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border p-2.5 text-center">
-              <p className="text-lg font-semibold">{c.totalRides}</p>
-              <p className="text-xs text-muted-foreground">Total rides</p>
-            </div>
-            <div className="rounded-lg border p-2.5 text-center">
-              <p className="text-lg font-semibold">{c.rideId ?? "—"}</p>
-              <p className="text-xs text-muted-foreground">Linked ride</p>
-            </div>
+          {c.rideId && <RideCard rideId={c.rideId} />}
+
+          <Separator />
+
+          <div className="flex flex-col gap-2">
+            <Row label="Ticket" value={c.ticketNumber} />
+            <Row label="Opened" value={formatTime(c.createdAt)} />
+            {topic && <Row label="Topic" value={topic} />}
+            {language && <Row label="Language" value={language} />}
+            {c.contactPreference && <Row label="Wants" value={c.contactPreference === "message" ? "A message" : "A call"} />}
+            {sla && <Row label="Response" value={<span className={cn(sla.overdue && "text-red-600 dark:text-red-400")}>{sla.label}</span>} />}
+            {c.contactedAt && <Row label="Contacted" value={formatTime(c.contactedAt)} />}
           </div>
 
           <Separator />
 
           <Field label="Assigned to">
-            <OptionSelect label="Assignee" className="w-full" value={c.assignedTo ?? "__none__"} options={assignOptions}
-              onChange={(v) => onAssign(v === "__none__" ? null : v)} />
+            {canUpdate ? (
+              <OptionSelect label="Assignee" className="w-full" value={assignedValue} options={assignOptions}
+                onChange={(v) => v !== UNASSIGNED && onAssign(Number(v))} />
+            ) : (
+              <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
+            )}
           </Field>
           <Field label="Priority">
-            <OptionSelect label="Priority" className="w-full" value={c.priority} options={PRIORITY_OPTIONS} onChange={onPriority} />
-          </Field>
-          <Field label="Tags">
-            <div className="flex flex-wrap gap-1.5">
-              {c.tags.map((t) => <Badge key={t} variant="secondary">{t}</Badge>)}
-            </div>
+            {canUpdate ? (
+              <OptionSelect label="Priority" className="w-full" value={c.priority} options={PRIORITY_OPTIONS} onChange={onPriority} />
+            ) : (
+              <p className="text-sm">{PRIORITIES[c.priority].label}</p>
+            )}
           </Field>
         </div>
       </ScrollArea>

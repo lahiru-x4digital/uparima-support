@@ -1,8 +1,10 @@
+import { MessageSquare, PhoneCall } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { slaState } from "@/lib/inbox/mappers";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/inbox";
-import { CHANNELS, PRIORITIES, STATUSES, initials } from "./meta";
+import { CHANNELS, PRIORITIES, STATUSES, initials, topicLabel } from "./meta";
 
 interface Props {
   conversation: Conversation;
@@ -13,7 +15,10 @@ interface Props {
 export function ConversationItem({ conversation: c, active, onSelect }: Props) {
   const channel = CHANNELS[c.channel];
   const ChannelIcon = channel.icon;
-  const last = c.messages.filter((m) => m.kind !== "system").at(-1);
+  const topic = topicLabel(c.topic);
+  // Only a waiting hand-off is urgent on the clock; finished tickets don't need an SLA chip.
+  const sla = c.needsContact || c.status !== "completed" ? slaState(c.slaDueAt) : null;
+  const PreferenceIcon = c.contactPreference === "message" ? MessageSquare : PhoneCall;
 
   return (
     <button
@@ -36,14 +41,16 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className={cn("truncate text-sm", c.unread > 0 ? "font-semibold" : "font-medium")}>{c.customerName}</span>
+          <span className={cn("truncate text-sm", c.needsContact ? "font-semibold" : "font-medium")}>{c.customerName}</span>
           <span className="shrink-0 text-xs text-muted-foreground">{c.lastAt}</span>
         </div>
-        <p className={cn("mt-0.5 truncate text-sm", c.unread > 0 ? "text-foreground" : "text-muted-foreground")}>
-          {last?.direction === "outbound" && "You: "}
-          {last?.body}
-        </p>
-        <div className="mt-1.5 flex items-center gap-1.5">
+        <p className="mt-0.5 truncate text-sm text-muted-foreground">{topic ? `${topic} · ${c.preview}` : c.preview}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {c.needsContact && (
+            <Badge className="h-4 gap-1 px-1.5 text-[10px]">
+              <PreferenceIcon className="size-2.5" /> Needs {c.contactPreference === "message" ? "message" : "call"}
+            </Badge>
+          )}
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <span className={cn("size-1.5 rounded-full", STATUSES[c.status].dot)} />
             {STATUSES[c.status].label}
@@ -53,12 +60,12 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
               {PRIORITIES[c.priority].label}
             </Badge>
           )}
-          <span className="ml-auto text-xs text-muted-foreground">{c.ticketNumber}</span>
-          {c.unread > 0 && (
-            <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-              {c.unread}
+          {sla && (
+            <span className={cn("text-xs", sla.overdue ? "font-medium text-red-600 dark:text-red-400" : sla.soon ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground")}>
+              {sla.label}
             </span>
           )}
+          <span className="ml-auto text-xs text-muted-foreground">{c.ticketNumber}</span>
         </div>
       </div>
     </button>
