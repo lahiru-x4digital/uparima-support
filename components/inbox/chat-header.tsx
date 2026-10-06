@@ -15,6 +15,8 @@ interface Props {
   onStatusChange: (status: ConversationStatus) => void;
 }
 
+// TODO(api): status changes -> PATCH /support-desk/tickets/:id/status. The backend status set may differ from
+// the mock (open/pending/resolved/closed) — align STATUSES in meta.ts with the real enum.
 export function ChatHeader({ conversation: c, contextOpen, onBack, onToggleContext, onStatusChange }: Props) {
   return (
     <header className="flex items-center gap-3 border-b px-3 py-2.5">

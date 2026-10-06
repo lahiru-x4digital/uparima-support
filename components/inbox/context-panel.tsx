@@ -27,6 +27,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+// TODO(api): customer details (phone, city, rides, member-since) come from the lookup endpoints:
+//   GET /support-desk/lookup/riders | /drivers | /rides/:id | /tickets/:ticketNumber
+// "Tags" are display-only for now — there is no tags field/endpoint on tickets.
 export function ContextPanel({ conversation: c, team, onAssign, onPriority, onClose }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
   const assignOptions = [

@@ -22,6 +22,7 @@ interface Props {
   onChange: (status: PresenceStatus) => void;
 }
 
+// TODO(api): "N online" should come from the staff list (GET /support-desk/staff) plus a live presence feed.
 export function PresenceWidget({ status, onlineCount, onChange }: Props) {
   return (
     <div className="flex items-center gap-2">

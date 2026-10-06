@@ -9,6 +9,8 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
+// TODO(api): add loading skeletons, an error state with retry, and "load more" / infinite scroll
+// (GET /support-desk/tickets is paginated) — only the empty state exists in this design.
 export function ConversationList({ conversations, activeId, onSelect }: Props) {
   if (conversations.length === 0) {
     return (

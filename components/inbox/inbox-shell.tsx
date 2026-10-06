@@ -21,14 +21,21 @@ const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channe
  * `useState` below with service hooks (lib/services/*.service.ts) when wiring the API.
  */
 export function InboxShell() {
+  // TODO(api): replace this mock state with a `useTickets(filters)` hook over lib/services/tickets.service.ts
+  //   -> GET /support-desk/tickets?page&perPage&status&category (paginated; no `search`, `channel` or
+  //   `assignee` params exist yet — add them backend-side or keep filtering client-side for the loaded page).
+  // TODO(api): current agent + permissions come from GET /support-desk/me (lib/services/support-desk.service.ts);
+  //   use permissions to hide reply/status/assign controls the account can't use.
   const { logout } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(MOCK_CONVERSATIONS[0].id);
   const [contextOpen, setContextOpen] = useState(true);
   const [mobilePane, setMobilePane] = useState<"list" | "chat">("list");
+  // TODO(api): presence has no backend endpoint yet (needs GET/POST presence + a socket event) — local only for now.
   const [presence, setPresence] = useState<PresenceStatus>("available");
 
+  // TODO(api): once the backend filters server-side, drop this and pass `filters` to the query instead.
   const visible = useMemo(() => {
     const q = filters.search.trim().toLowerCase();
     return conversations.filter((c) => {
@@ -48,12 +55,17 @@ export function InboxShell() {
   const patch = (id: string, change: Partial<Conversation>) =>
     setConversations((list) => list.map((c) => (c.id === id ? { ...c, ...change } : c)));
 
+  // TODO(api): opening a thread should load the full ticket + replies (GET /support-desk/tickets/:id)
+  //   and mark it read. No "mark read"/unread-count endpoint exists yet — needs backend support.
   function select(id: string) {
     setActiveId(id);
     setMobilePane("chat");
     patch(id, { unread: 0 });
   }
 
+  // TODO(api): "text" -> POST /support-desk/tickets/:id/replies (multipart: message + files), then replace the
+  //   optimistic row with the saved reply (see inbox-react's optimistic send: temp negative id, swap on success,
+  //   remove + toast on failure). "note" has NO endpoint yet — internal notes need a backend field/route.
   function addMessage(kind: Message["kind"], body: string) {
     if (!active) return;
     const message: Message = {
@@ -80,6 +92,7 @@ export function InboxShell() {
         <div className="flex items-center gap-3">
           <PresenceWidget status={presence} onlineCount={onlineCount} onChange={setPresence} />
           <ThemeToggle />
+          {/* logout() already calls POST /auth/logout via auth.service — nothing more to wire. */}
           <Button variant="ghost" size="sm" onClick={logout}><LogOut /> <span className="hidden sm:inline">Sign out</span></Button>
         </div>
       </header>
@@ -97,6 +110,7 @@ export function InboxShell() {
             typingName={null}
             onBack={() => setMobilePane("list")}
             onToggleContext={() => setContextOpen((o) => !o)}
+            // TODO(api): PATCH /support-desk/tickets/:id/status — update optimistically, roll back on error.
             onStatusChange={(status: ConversationStatus) => active && patch(active.id, { status })}
             onSend={(t) => addMessage("text", t)}
             onNote={(t) => addMessage("note", t)}
@@ -108,7 +122,9 @@ export function InboxShell() {
             <ContextPanel
               conversation={active}
               team={TEAM}
+              // TODO(api): PATCH /support-desk/tickets/:id/assign { assignedToUserId } — send the staff user id, not the name.
               onAssign={(name) => patch(active.id, { assignedTo: name })}
+              // TODO(api): PATCH /support-desk/tickets/:id/priority.
               onPriority={(priority: Priority) => patch(active.id, { priority })}
               onClose={() => setContextOpen(false)}
             />

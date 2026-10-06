@@ -13,6 +13,11 @@ interface Props {
 export function MessageList({ messages, typingName }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
 
+  // TODO(api): history is fully loaded here. For long tickets load the newest page first and fetch older
+  //   replies on scroll-up (cursor paging), keeping scroll position when prepending. Only auto-scroll to the
+  //   bottom if the agent is already near the bottom.
+  // TODO(realtime): new customer replies should arrive over a socket (rider/driver socket pattern in
+  //   uparima-backend `rides.gateway`) or poll while the tab is visible; the backend has no ticket socket yet.
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, typingName]);

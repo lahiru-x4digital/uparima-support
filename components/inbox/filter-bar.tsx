@@ -30,6 +30,8 @@ const STATUS_TABS: { value: ConversationStatus | "all"; label: string }[] = [
   { value: "resolved", label: "Resolved" },
 ];
 
+// TODO(api): channel options are mock. Confirm which source/channel values the ticket DTO exposes (the support
+// module currently has ticket categories via GET /support-desk/ticket-categories) and build options from that.
 export function FilterBar({ filters, onChange }: Props) {
   return (
     <div className="flex flex-col gap-2 border-b p-3">

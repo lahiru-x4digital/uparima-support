@@ -1,5 +1,7 @@
 import type { Conversation, TeamMember } from "@/types/inbox";
 
+// MOCK DATA — design only. Delete this file once the inbox reads from lib/services/*.service.ts.
+// Shapes mirror types/inbox.ts; map the backend ticket DTO onto them in the service layer.
 export const CURRENT_AGENT = "Nimali Perera";
 
 export const TEAM: TeamMember[] = [

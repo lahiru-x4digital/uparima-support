@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+// TODO(api): quick replies are hard-coded. Load canned responses from the backend (no endpoint yet) or a
+// per-category template list, and support {placeholders} like the translation files do.
 const QUICK_REPLIES = [
   "Thanks for reaching out — I'm looking into this now.",
   "Could you share the ride ID so I can check?",
@@ -23,6 +25,8 @@ export function Composer({ disabled, onSend, onNote }: Props) {
   const [text, setText] = useState("");
   const isNote = mode === "note";
 
+  // TODO(ux): send state — keep the text and show an error toast if the request fails; disable while sending.
+  // TODO(ux): emit a "typing" signal (throttled) once a realtime channel exists.
   function submit() {
     const value = text.trim();
     if (!value) return;
@@ -66,6 +70,8 @@ export function Composer({ disabled, onSend, onNote }: Props) {
           className="max-h-40 min-h-10 resize-none"
           rows={2}
         />
+        {/* TODO(api): attachments — open a file picker, upload with the reply (multipart `files` on
+            POST /support-desk/tickets/:id/replies), show previews/progress, enforce size/type limits. */}
         <Button variant="ghost" size="icon" aria-label="Attach file" disabled={disabled}><Paperclip /></Button>
         <Button size="icon" aria-label={isNote ? "Add note" : "Send"} disabled={disabled || !text.trim()} onClick={submit}>
           <Send />
