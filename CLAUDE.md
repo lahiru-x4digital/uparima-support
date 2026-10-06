@@ -52,14 +52,13 @@ Rules:
 
 ```ts
 // lib/services/tickets.service.ts
-import { api } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import type { Ticket, TicketListParams } from "@/types/ticket";
 
-// Backend wraps payloads as { success, data } — unwrap here so callers get the DTO.
-export const listTickets = async (params: TicketListParams) =>
-  (await api.get<{ data: Ticket[] }>("/support/tickets", { params })).data.data;
-export const getTicket = async (id: string) =>
-  (await api.get<{ data: Ticket }>(`/support/tickets/${id}`)).data.data;
+// apiGet/apiPost/apiPatch/apiPut/apiDelete unwrap the backend's { success, data } envelope.
+export const listTickets = (params: TicketListParams) =>
+  apiGet<Ticket[]>("/support/tickets", { params });
+export const getTicket = (id: string) => apiGet<Ticket>(`/support/tickets/${id}`);
 ```
 
 ## UI — shadcn/ui

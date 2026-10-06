@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import { clearAuth, getRefreshToken, getSavedUser, getToken, saveAuth } from "@/lib/auth";
 import type { AuthTokens } from "@/types/auth";
 
@@ -94,3 +94,30 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return "An unexpected error occurred";
 }
+
+/** Backend envelope: every successful response is `{ success, data }`. */
+interface ApiEnvelope<T> {
+  success: boolean;
+  data: T;
+}
+
+/**
+ * Typed helpers for `lib/services/*.service.ts`. They unwrap the `{ success, data }`
+ * envelope so services return the DTO directly:
+ *
+ *   export const getTicket = (id: string) => apiGet<Ticket>(`/support/tickets/${id}`);
+ */
+export const apiGet = async <T>(url: string, config?: AxiosRequestConfig) =>
+  (await api.get<ApiEnvelope<T>>(url, config)).data.data;
+
+export const apiPost = async <T>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
+  (await api.post<ApiEnvelope<T>>(url, body, config)).data.data;
+
+export const apiPut = async <T>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
+  (await api.put<ApiEnvelope<T>>(url, body, config)).data.data;
+
+export const apiPatch = async <T>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
+  (await api.patch<ApiEnvelope<T>>(url, body, config)).data.data;
+
+export const apiDelete = async <T = void>(url: string, config?: AxiosRequestConfig) =>
+  (await api.delete<ApiEnvelope<T>>(url, config)).data.data;
