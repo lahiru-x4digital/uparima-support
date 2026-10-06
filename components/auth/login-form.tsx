@@ -23,7 +23,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.replace("/dashboard");
+      router.replace("/inbox");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
