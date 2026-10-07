@@ -1,4 +1,4 @@
-import type { Attachment, Channel, Conversation, CustomerRole, Message } from "@/types/inbox";
+import type { Attachment, Channel, Product, Conversation, CustomerRole, Message } from "@/types/inbox";
 import type { Staff, Ticket, TicketDetail, TicketReply, TicketRow } from "@/types/ticket";
 import type { BotChatMessage, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
@@ -17,6 +17,20 @@ export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submit
   if (t.source === "email") return "email";
   if (t.loggedByUserId != null) return "phone";
   return t.submitterType === "driver" ? "driver_app" : "rider_app";
+}
+
+/**
+ * Product from the ticket category. Covers the app keys (`uparima_rides`, `ride_reports`,
+ * `uparima_ads`, `uparima_jobs`, `uparima_mart`) and the email mailbox keys (`riders`, `ads`, `hire`).
+ */
+export function productOf(category: string | null | undefined): Product | null {
+  const c = (category ?? "").toLowerCase();
+  if (!c) return null;
+  if (/hire|job/.test(c)) return "hire";
+  if (/ride|driver/.test(c)) return "riders";
+  if (/(^|_)ads?($|_)|classified/.test(c)) return "ads";
+  if (/mart/.test(c)) return "mart";
+  return null;
 }
 
 export const roleOf = (t: Pick<Ticket, "submitterType">): CustomerRole =>
@@ -72,6 +86,7 @@ function base(
     ticketNumber: ticket.ticketNumber,
     role: roleOf(ticket),
     channel: channelOf(ticket),
+    product: productOf(ticket.category),
     status: ticket.status,
     priority: ticket.priority,
     assignedToUserId: ticket.assignedToUserId,
@@ -219,6 +234,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     phone: row.phone,
     email: null,
     channel: "whatsapp",
+    product: null,
     status: "bot_only",
     priority: null,
     assignedToUserId: null,
@@ -251,6 +267,7 @@ export function botChatThreadToConversation(phone: string, thread: BotChatThread
     phone,
     email: null,
     channel: "whatsapp",
+    product: null,
     status: "bot_only",
     priority: null,
     assignedToUserId: null,

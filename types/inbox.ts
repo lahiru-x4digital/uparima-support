@@ -6,6 +6,8 @@ export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email
  * the bot and customer exchanged, but nobody from support has replied. */
 export type ConversationStatus = TicketStatus | "bot_only";
 export type Priority = TicketPriority;
+/** Which Uparima product a conversation is about (derived from the ticket category). */
+export type Product = "riders" | "ads" | "hire" | "mart";
 export type CustomerRole = "rider" | "driver";
 export type MessageDirection = "inbound" | "outbound";
 /**
@@ -63,6 +65,8 @@ export interface Conversation {
   /** Sender address for tickets that arrived by email. */
   email: string | null;
   channel: Channel;
+  /** Null when the category does not say (e.g. a WhatsApp chat with no ticket yet). */
+  product: Product | null;
   status: ConversationStatus;
   /** null for a bot-only conversation, which has no ticket to prioritise. */
   priority: Priority | null;

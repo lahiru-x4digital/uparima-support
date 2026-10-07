@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { slaState } from "@/lib/inbox/mappers";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/inbox";
-import { CHANNELS, PRIORITIES, STATUSES, initials, topicLabel } from "./meta";
+import { CHANNELS, PRIORITIES, PRODUCTS, STATUSES, initials, topicLabel } from "./meta";
 
 interface Props {
   conversation: Conversation;
@@ -46,6 +46,15 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
         </div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">{topic ? `${topic} · ${c.preview}` : c.preview}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {/* Where it came from and which product it is about, so mixed lists read at a glance. */}
+          <span className={cn("inline-flex h-4 items-center gap-1 rounded px-1.5 text-[10px] font-medium", channel.className)}>
+            <ChannelIcon className="size-2.5" /> {channel.label}
+          </span>
+          {c.product && (
+            <span className={cn("inline-flex h-4 items-center rounded px-1.5 text-[10px] font-medium", PRODUCTS[c.product].className)}>
+              {PRODUCTS[c.product].label}
+            </span>
+          )}
           {c.needsContact && (
             <Badge className="h-4 gap-1 px-1.5 text-[10px]">
               <PreferenceIcon className="size-2.5" /> Needs {c.contactPreference === "message" ? "message" : "call"}

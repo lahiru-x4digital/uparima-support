@@ -9,6 +9,7 @@ import {
   channelOf,
   detailToConversation,
   phoneFromBotChatId,
+  productOf,
   rowToConversation,
   slaState,
   whatsappDigits,
@@ -232,5 +233,20 @@ describe("helpers", () => {
 
   it("keeps only digits for wa.me links", () => {
     expect(whatsappDigits("+94 77 123 4567")).toBe("94771234567");
+  });
+});
+
+describe("productOf", () => {
+  it("maps app and email category keys to a product", () => {
+    expect(productOf("uparima_rides")).toBe("riders");
+    expect(productOf("ride_reports")).toBe("riders");
+    expect(productOf("riders")).toBe("riders");
+    expect(productOf("uparima_ads")).toBe("ads");
+    expect(productOf("ads")).toBe("ads");
+    expect(productOf("uparima_jobs")).toBe("hire");
+    expect(productOf("hire")).toBe("hire");
+    expect(productOf("uparima_mart")).toBe("mart");
+    expect(productOf("")).toBeNull();
+    expect(productOf("something_else")).toBeNull();
   });
 });
