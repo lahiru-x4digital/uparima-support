@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 
 export default function DashboardPage() {
-  redirect("/inbox");
+  return <DashboardOverview />;
 }

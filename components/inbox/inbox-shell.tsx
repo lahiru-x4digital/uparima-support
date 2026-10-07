@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Inbox, Loader2, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Inbox, Loader2 } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
@@ -24,7 +22,7 @@ const NO_STAFF: never[] = [];
 
 /** The support inbox: tickets from the apps and the WhatsApp bot, with a "Needs contact" queue. */
 export function InboxShell() {
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [contextOpen, setContextOpen] = useState(true);
@@ -73,11 +71,11 @@ export function InboxShell() {
   const filtered = filters.search !== "" || filters.channel !== "all" || filters.assignee !== "all" || filters.status !== "all";
 
   return (
-    <div className="flex h-svh min-h-0 flex-col bg-background">
+    <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="flex items-center justify-between border-b px-4 py-2">
         <div className="flex items-center gap-2 font-semibold">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Inbox className="size-4" /></span>
-          <span className="font-heading text-base font-bold">Support Inbox</span>
+          <span className="font-heading text-base font-bold">Messages</span>
           {!!needsContact.data && (
             <button type="button" onClick={() => setFilters((f) => ({ ...f, status: "needs_contact" }))}
               className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
@@ -87,8 +85,6 @@ export function InboxShell() {
         </div>
         <div className="flex items-center gap-3">
           {me && <span className="hidden text-sm text-muted-foreground sm:inline">{me.name ?? me.email}</span>}
-          <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={logout}><LogOut /> <span className="hidden sm:inline">Sign out</span></Button>
         </div>
       </header>
 

@@ -14,3 +14,8 @@ export const deskKeys = {
 };
 
 export const rideKeys = { detail: (id: string) => ["ride", id] as const };
+
+export const careTemplateKeys = {
+  all: ["care-templates"] as const,
+  detail: (id: number) => ["care-templates", id] as const,
+};
