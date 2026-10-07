@@ -54,7 +54,13 @@ export function ChatPane({
         <MessageList conversationId={conversation.id} messages={conversation.messages} />
       )}
       {canReply ? (
-        <Composer onSend={onSend} disabled={conversation.status === "completed" || !!error || loading} />
+        conversation.channel === "whatsapp" && !conversation.canReply ? (
+          <p className="border-t p-3 text-center text-xs text-muted-foreground">
+            Can&apos;t reply: this customer&apos;s last WhatsApp message was over 23.5 hours ago. They&apos;ll need to write again first.
+          </p>
+        ) : (
+          <Composer onSend={onSend} disabled={conversation.status === "completed" || !!error || loading} />
+        )
       ) : (
         <p className="border-t p-3 text-center text-xs text-muted-foreground">Your account can&apos;t reply to tickets.</p>
       )}

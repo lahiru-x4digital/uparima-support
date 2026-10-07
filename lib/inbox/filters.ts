@@ -10,7 +10,9 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
   const params: TicketListParams = {};
   if (filters.status === "needs_contact") {
     params.needsContact = true;
-  } else if (filters.status !== "all") {
+    // "bot_only" is a synthetic, client-only status for ticketless WhatsApp
+    // conversations — the ticket list endpoint knows nothing about it.
+  } else if (filters.status !== "all" && filters.status !== "bot_only") {
     params.status = filters.status;
   }
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
@@ -18,7 +20,10 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
   return params;
 }
 
-/** Search, non-WhatsApp channels and assignee, over what is already loaded. */
+/** Search, non-WhatsApp channels and assignee, over what is already loaded.
+ * A bot-only (ticketless) row has no ticket status, so the Pending/In
+ * review/Done status tabs never apply to it — it shows on every status tab,
+ * same as it does on "All" and "Needs contact". */
 export function applyClientFilters(
   conversations: Conversation[],
   filters: ConversationFilters,

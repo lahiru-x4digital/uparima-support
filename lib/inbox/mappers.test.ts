@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Staff, TicketDetail, TicketRow } from "@/types/ticket";
+import type { BotChatRow, BotChatThread } from "@/types/bot-chat";
 import {
   attachmentOf,
+  botChatId,
+  botChatRowToConversation,
+  botChatThreadToConversation,
   channelOf,
   detailToConversation,
+  phoneFromBotChatId,
   rowToConversation,
   slaState,
   whatsappDigits,
@@ -98,12 +103,113 @@ describe("detailToConversation", () => {
         { id: "r2", ticketId: "t1", authorId: 9, isStaffReply: false, message: "Thanks", attachments: null, createdAt: "2026-10-06T11:50:00Z" },
         { id: "r1", ticketId: "t1", authorId: 5, isStaffReply: true, message: "Calling you", attachments: null, createdAt: "2026-10-06T11:40:00Z" },
       ],
+      canReply: true,
     };
     const c = detailToConversation(detail, r, staff, NOW);
     expect(c.messages.map((m) => m.id)).toEqual(["t1:first", "r1", "r2"]);
     expect(c.messages[1]).toMatchObject({ direction: "outbound", sender: "Nimal" });
     expect(c.messages[2]).toMatchObject({ direction: "inbound", sender: "Kamal Perera" });
     expect(c.submitter).toMatchObject({ kind: "driver", vehicleRegistrationNumber: "CAB-1234" });
+  });
+});
+
+describe("botChatId / phoneFromBotChatId", () => {
+  it("round-trips a phone number through the synthetic id", () => {
+    expect(botChatId("94771234567")).toBe("bot:94771234567");
+    expect(phoneFromBotChatId("bot:94771234567")).toBe("94771234567");
+  });
+  it("returns null for a real ticket id", () => {
+    expect(phoneFromBotChatId("t1")).toBeNull();
+  });
+});
+
+describe("botChatRowToConversation", () => {
+  it("maps a bot-only row to a synthetic, read-no-ticket conversation", () => {
+    const row: BotChatRow = {
+      phone: "94771234567",
+      name: "Kamal",
+      language: "si",
+      userId: 9,
+      state: "idle",
+      lastAt: "2026-10-06T11:40:00Z",
+      lastDirection: "in",
+      lastKind: "text",
+      lastBody: "hi",
+    };
+    const c = botChatRowToConversation(row, NOW);
+    expect(c.id).toBe("bot:94771234567");
+    expect(c.ticketNumber).toBe("");
+    expect(c.status).toBe("bot_only");
+    expect(c.priority).toBeNull();
+    expect(c.canReply).toBe(true);
+    expect(c.preview).toBe("hi");
+  });
+
+  it("prefixes the bot's own message in the preview", () => {
+    const row: BotChatRow = {
+      phone: "94771234567",
+      name: null,
+      language: null,
+      userId: null,
+      state: "idle",
+      lastAt: "2026-10-06T11:40:00Z",
+      lastDirection: "out",
+      lastKind: "text",
+      lastBody: "How can I help?",
+    };
+    const c = botChatRowToConversation(row, NOW);
+    expect(c.customerName).toBe("+94771234567");
+    expect(c.preview).toBe("Bot: How can I help?");
+  });
+});
+
+describe("botChatThreadToConversation", () => {
+  it("maps the thread's canReply window and messages", () => {
+    const thread: BotChatThread = {
+      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      canReply: false,
+      hasMore: false,
+      messages: [
+        { id: "1", direction: "in", kind: "text", body: "hi", meta: null, createdAt: "2026-10-06T11:40:00Z" },
+        { id: "2", direction: "out", kind: "text", body: "Hello!", meta: null, createdAt: "2026-10-06T11:41:00Z" },
+      ],
+    };
+    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    expect(c.canReply).toBe(false);
+    expect(c.messages).toHaveLength(2);
+    expect(c.messages[0]).toMatchObject({ direction: "inbound", sender: "Kamal" });
+    expect(c.messages[1]).toMatchObject({ direction: "outbound", sender: "Bot" });
+  });
+
+  it("maps buttons/list messages to kind 'options' with their titles, and a tapped choice to kind 'tap'", () => {
+    const thread: BotChatThread = {
+      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      canReply: true,
+      hasMore: false,
+      messages: [
+        {
+          id: "1",
+          direction: "out",
+          kind: "buttons",
+          body: "What would you like to do?",
+          meta: { options: ["Book a ride", "Driver account", "My rides"] },
+          createdAt: "2026-10-06T11:40:00Z",
+        },
+        { id: "2", direction: "in", kind: "tap", body: "Driver account", meta: { id: "hub:menu" }, createdAt: "2026-10-06T11:40:30Z" },
+        {
+          id: "3",
+          direction: "out",
+          kind: "location_request",
+          body: "Share your current location",
+          meta: null,
+          createdAt: "2026-10-06T11:41:00Z",
+        },
+      ],
+    };
+    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    expect(c.messages[0]).toMatchObject({ kind: "options", meta: { options: ["Book a ride", "Driver account", "My rides"] } });
+    expect(c.messages[1]).toMatchObject({ kind: "tap", body: "Driver account" });
+    expect(c.messages[2]).toMatchObject({ kind: "location_request" });
   });
 });
 

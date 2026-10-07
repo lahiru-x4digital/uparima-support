@@ -4,14 +4,22 @@ import { useMemo, useState } from "react";
 import { Loader2, Mail } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
+import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters } from "@/lib/inbox/filters";
-import { detailToConversation, rowToConversation } from "@/lib/inbox/mappers";
+import {
+  botChatRowToConversation,
+  botChatThreadToConversation,
+  detailToConversation,
+  phoneFromBotChatId,
+  rowToConversation,
+} from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
 import { cn } from "@/lib/utils";
-import type { Channel, ConversationFilters } from "@/types/inbox";
+import type { Channel, Conversation, ConversationFilters } from "@/types/inbox";
 import { ChatPane } from "./chat-pane";
 import { ContextPanel } from "./context-panel";
 import { ConversationList } from "./conversation-list";
@@ -19,9 +27,14 @@ import { FilterBar } from "./filter-bar";
 
 const NO_STAFF: never[] = [];
 
+/** Which conversations the list shows: tickets and live bot chats together, or one kind. */
+export type WorkspaceView = "all" | "tickets" | "bot";
+
 interface Props {
   filters: ConversationFilters;
   onFiltersChange: (next: ConversationFilters) => void;
+  /** Defaults to "all". */
+  view?: WorkspaceView;
   /** Pin the list to one channel (e.g. Email) and hide the channel picker. */
   lockedChannel?: Channel;
   /** When set and the Email channel is selected, offers a shortcut to the raw mailbox. */
@@ -29,11 +42,13 @@ interface Props {
 }
 
 /**
- * Ticket cards on the left, the open thread in the middle, ticket properties on the right.
- * Owns the selection and the ticket actions; the filters are controlled by the caller so the
+ * Conversation cards on the left, the open thread in the middle, ticket properties on the right.
+ * Tickets and the live WhatsApp bot conversations are merged into one list (nothing is deduped by
+ * phone — a person can have several rows at once: an earlier closed ticket, a new one, the live
+ * bot chat). Owns the selection and the actions; the filters are controlled by the caller so the
  * page header can drive them too.
  */
-export function TicketWorkspace({ filters: given, onFiltersChange, lockedChannel, onOpenMailbox }: Props) {
+export function TicketWorkspace({ filters: given, onFiltersChange, view = "all", lockedChannel, onOpenMailbox }: Props) {
   const { user } = useAuth();
   const filters = useMemo(() => (lockedChannel ? { ...given, channel: lockedChannel } : given), [given, lockedChannel]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -43,52 +58,91 @@ export function TicketWorkspace({ filters: given, onFiltersChange, lockedChannel
   const { data: me } = useMe();
   const { data: staffData } = useStaff();
   const staff = staffData ?? NO_STAFF;
-  const canReply = useCan("support-ticket-reply.create");
+  const canReplyPerm = useCan("support-ticket-reply.create");
   const canUpdate = useCan("support-ticket.update");
   const canSeeEmail = useCan("email-account.view");
 
   const list = useTicketList(filters);
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
-  const detail = useTicketDetail(activeId);
+  const botList = useBotChatList(view === "bot" ? filters.search.trim() : "");
 
   const rows = useMemo(() => flattenRows(list.data), [list.data]);
-  const conversations = useMemo(() => rows.map((r) => rowToConversation(r, staff)), [rows, staff]);
+  const botRows = useMemo(() => botList.data?.pages.flatMap((p) => p.data) ?? [], [botList.data]);
+
+  const ticketConversations = useMemo(() => rows.map((r) => rowToConversation(r, staff)), [rows, staff]);
+  const allBotConversations = useMemo(() => botRows.map((r) => botChatRowToConversation(r)), [botRows]);
+
+  const merged = useMemo(() => {
+    // A channel-locked list (Email) is tickets only: bot chats are WhatsApp.
+    if (lockedChannel || view === "tickets") return ticketConversations;
+    if (view === "bot") return allBotConversations;
+    return [...ticketConversations, ...allBotConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [lockedChannel, view, ticketConversations, allBotConversations]);
+
   const visible = useMemo(
-    () => applyClientFilters(conversations, filters, me?.id ?? user?.id ?? null),
-    [conversations, filters, me?.id, user?.id],
+    () => applyClientFilters(merged, filters, me?.id ?? user?.id ?? null),
+    [merged, filters, me?.id, user?.id],
   );
 
-  const active = useMemo(() => {
+  const activePhone = activeId ? phoneFromBotChatId(activeId) : null;
+  const isBotActive = !!activePhone;
+
+  const detail = useTicketDetail(isBotActive ? null : activeId);
+  const botThread = useBotChatThread(activePhone);
+
+  const active = useMemo((): Conversation | null => {
     if (!activeId) return null;
+    if (activePhone) {
+      if (botThread.data) return botChatThreadToConversation(activePhone, botThread.data);
+      return allBotConversations.find((c) => c.id === activeId) ?? null;
+    }
     const row = rows.find((r) => r.id === activeId);
     if (detail.data) return detailToConversation(detail.data, row, staff);
-    return conversations.find((c) => c.id === activeId) ?? null;
-  }, [activeId, rows, detail.data, conversations, staff]);
+    return ticketConversations.find((c) => c.id === activeId) ?? null;
+  }, [activeId, activePhone, botThread.data, allBotConversations, rows, detail.data, ticketConversations, staff]);
 
-  const id = activeId ?? "";
-  const reply = useReply(id);
-  const updateStatus = useUpdateStatus(id);
-  const updatePriority = useUpdatePriority(id);
-  const assign = useAssign(id);
-  const markContacted = useMarkContacted(id);
+  const ticketId = isBotActive ? "" : (activeId ?? "");
+  const reply = useReply(ticketId);
+  const replyToBot = useReplyToBotChat(activePhone ?? "");
+  const updateStatus = useUpdateStatus(ticketId);
+  const updatePriority = useUpdatePriority(ticketId);
+  const assign = useAssign(ticketId);
+  const markContacted = useMarkContacted(ticketId);
 
   // A live hand-off alert can open its ticket straight away.
-  function select(ticketId: string) {
-    setActiveId(ticketId);
+  function select(id: string) {
+    setActiveId(id);
     setMobilePane("chat");
   }
   useSupportAlerts(!!user, select);
 
-  const threadLoading = !!activeId && detail.isLoading;
-  const threadError = detail.isError ? getErrorMessage(detail.error) : null;
+  const botView = view === "bot" && !lockedChannel;
+  const threadLoading = isBotActive ? botThread.isLoading : !!activeId && detail.isLoading;
+  const threadError = isBotActive
+    ? botThread.isError
+      ? getErrorMessage(botThread.error)
+      : null
+    : detail.isError
+      ? getErrorMessage(detail.error)
+      : null;
   const filtered =
     filters.search !== "" || (!lockedChannel && filters.channel !== "all") || filters.assignee !== "all" || filters.status !== "all";
+
+  // Sending the first reply to a bot-only chat opens a ticket behind the scenes, but the agent
+  // stays on the bot conversation they were already reading; the row gains a ticket number next
+  // time the list refreshes. Replies on an email ticket go out as a real email (see backend).
+  async function send(message: string, files: File[]) {
+    if (isBotActive) return replyToBot.mutateAsync(message);
+    return reply.mutateAsync({ message, files });
+  }
 
   return (
     <div className="flex min-h-0 flex-1">
       <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
-        <FilterBar filters={filters} needsContactCount={needsContact.data} hideChannel={!!lockedChannel}
-          onChange={(p) => onFiltersChange({ ...given, ...p })} />
+        {!botView && (
+          <FilterBar filters={filters} needsContactCount={needsContact.data} hideChannel={!!lockedChannel}
+            onChange={(p) => onFiltersChange({ ...given, ...p })} />
+        )}
         {!lockedChannel && filters.channel === "email" && canSeeEmail && onOpenMailbox && (
           <button type="button" onClick={onOpenMailbox}
             className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2 text-left text-xs text-muted-foreground hover:bg-muted">
@@ -100,14 +154,14 @@ export function TicketWorkspace({ filters: given, onFiltersChange, lockedChannel
         <ConversationList
           conversations={visible}
           activeId={activeId}
-          loading={list.isLoading}
-          error={list.isError ? getErrorMessage(list.error) : null}
-          hasMore={!!list.hasNextPage}
-          loadingMore={list.isFetchingNextPage}
+          loading={botView ? botList.isLoading : list.isLoading}
+          error={(botView ? botList.isError : list.isError) ? getErrorMessage(botView ? botList.error : list.error) : null}
+          hasMore={!!(botView ? botList.hasNextPage : list.hasNextPage)}
+          loadingMore={botView ? botList.isFetchingNextPage : list.isFetchingNextPage}
           filtered={filtered}
           onSelect={select}
-          onRetry={() => void list.refetch()}
-          onLoadMore={() => void list.fetchNextPage()}
+          onRetry={() => (botView ? void botList.refetch() : void list.refetch())}
+          onLoadMore={() => (botView ? void botList.fetchNextPage() : void list.fetchNextPage())}
         />
       </section>
 
@@ -120,14 +174,14 @@ export function TicketWorkspace({ filters: given, onFiltersChange, lockedChannel
             loading={threadLoading}
             error={threadError}
             contextOpen={contextOpen}
-            canReply={canReply}
+            canReply={canReplyPerm}
             canUpdate={canUpdate}
             markingContacted={markContacted.isPending}
-            onRetry={() => void detail.refetch()}
+            onRetry={() => (isBotActive ? void botThread.refetch() : void detail.refetch())}
             onBack={() => setMobilePane("list")}
             onToggleContext={() => setContextOpen((o) => !o)}
-            onStatusChange={(status) => updateStatus.mutate(status)}
-            onSend={(message, files) => reply.mutateAsync({ message, files })}
+            onStatusChange={(status) => status !== "bot_only" && updateStatus.mutate(status)}
+            onSend={send}
             onMarkContacted={() => markContacted.mutate()}
           />
         )}

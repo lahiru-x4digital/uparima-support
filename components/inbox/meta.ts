@@ -9,11 +9,13 @@ export const CHANNELS: Record<Channel, { label: string; icon: LucideIcon; classN
   email: { label: "Email", icon: Mail, className: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" },
 };
 
-// Mirrors the backend SupportTicketStatus enum.
+// Mirrors the backend SupportTicketStatus enum, plus the synthetic
+// "bot_only" status for a WhatsApp conversation with no ticket yet.
 export const STATUSES: Record<ConversationStatus, { label: string; dot: string }> = {
   pending: { label: "Pending", dot: "bg-amber-500" },
   in_review: { label: "In review", dot: "bg-sky-500" },
   completed: { label: "Completed", dot: "bg-emerald-500" },
+  bot_only: { label: "No ticket", dot: "bg-muted-foreground" },
 };
 
 export const PRIORITIES: Record<Priority, { label: string; className: string }> = {

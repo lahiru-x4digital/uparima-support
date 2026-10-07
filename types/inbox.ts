@@ -2,11 +2,19 @@ import type { ContactPreference, Submitter, TicketPriority, TicketStatus } from 
 
 /** Where the customer reached us from (derived from the ticket, see lib/inbox/mappers.ts). */
 export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email";
-export type ConversationStatus = TicketStatus;
+/** "bot_only" is a conversation with no ticket yet — every WhatsApp message
+ * the bot and customer exchanged, but nobody from support has replied. */
+export type ConversationStatus = TicketStatus | "bot_only";
 export type Priority = TicketPriority;
 export type CustomerRole = "rider" | "driver";
 export type MessageDirection = "inbound" | "outbound";
-export type MessageKind = "text" | "system";
+/**
+ * "text"/"system" are ticket-thread messages. The rest mirror what the
+ * WhatsApp bot actually sent or the customer actually did, so the portal
+ * can render it the way WhatsApp itself does — a menu's option chips, a
+ * tapped choice as its own small bubble, a location/media/link marker.
+ */
+export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template";
 export type MessageState = "sending" | "sent" | "failed";
 export type AttachmentKind = "image" | "audio" | "file";
 
@@ -14,6 +22,20 @@ export interface Attachment {
   key: string;
   name: string;
   kind: AttachmentKind;
+}
+
+/** Extra, kind-specific detail a bot message carries, straight from the WhatsApp payload. */
+export interface MessageMeta {
+  /** Button/list option titles, for kind "options". */
+  options?: string[];
+  /** The menu's own title (a WhatsApp list's button label), for kind "options". */
+  menu?: string;
+  /** Link text, for kind "cta". */
+  label?: string;
+  /** "image" | "document" etc., for kind "media". */
+  mediaKind?: string;
+  /** Template name, for kind "template". */
+  template?: string;
 }
 
 export interface Message {
@@ -26,11 +48,14 @@ export interface Message {
   sender: string;
   state?: MessageState;
   attachments: Attachment[];
+  meta?: MessageMeta;
 }
 
 export interface Conversation {
-  /** The ticket id. */
+  /** The ticket id, or `bot:<phone>` for a WhatsApp conversation with no
+   * ticket yet (see lib/inbox/mappers.ts botChatRowToConversation). */
   id: string;
+  /** "" for a bot-only conversation — it has no ticket. */
   ticketNumber: string;
   customerName: string;
   role: CustomerRole;
@@ -39,7 +64,8 @@ export interface Conversation {
   email: string | null;
   channel: Channel;
   status: ConversationStatus;
-  priority: Priority;
+  /** null for a bot-only conversation, which has no ticket to prioritise. */
+  priority: Priority | null;
   assignedToUserId: number | null;
   assignedTo: string | null;
   /** Last activity, display text. */
@@ -56,6 +82,9 @@ export interface Conversation {
   topic: string | null;
   language: string | null;
   slaDueAt: string | null;
+  /** Whether a reply can still be delivered over WhatsApp right now (23.5h
+   * window). Always true for a non-WhatsApp conversation. */
+  canReply: boolean;
   submitter: Submitter;
   messages: Message[];
 }

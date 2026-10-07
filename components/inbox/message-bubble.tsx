@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Clock, Paperclip } from "lucide-react";
+import { AlertCircle, Check, Clock, ExternalLink, FileText, Image as ImageIcon, MapPin, MapPinned, Paperclip } from "lucide-react";
 import { assetUrl, cn } from "@/lib/utils";
 import type { Attachment, Message } from "@/types/inbox";
 
@@ -47,6 +47,58 @@ function Attachments({ items, out }: { items: Attachment[]; out: boolean }) {
   );
 }
 
+/** What a kind-specific message shows instead of (or alongside) its plain body — an icon-led
+ * line for a one-off event (location, media, link), matching how WhatsApp itself renders them. */
+function KindLine({ m }: { m: Message }) {
+  switch (m.kind) {
+    case "location":
+      return (
+        <p className="flex items-center gap-1.5">
+          <MapPin className="size-3.5 shrink-0" /> <span className="whitespace-pre-wrap break-words">{m.body}</span>
+        </p>
+      );
+    case "location_request":
+      return (
+        <p className="flex items-center gap-1.5">
+          <MapPinned className="size-3.5 shrink-0" /> <span className="whitespace-pre-wrap break-words">{m.body}</span>
+        </p>
+      );
+    case "media":
+      return (
+        <p className="flex items-center gap-1.5">
+          {m.meta?.mediaKind === "image" ? <ImageIcon className="size-3.5 shrink-0" /> : <FileText className="size-3.5 shrink-0" />}
+          {m.body}
+        </p>
+      );
+    case "cta":
+      return (
+        <div>
+          <p className="whitespace-pre-wrap break-words">{m.body}</p>
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs opacity-80">
+            <ExternalLink className="size-3 shrink-0" /> {m.meta?.label ?? "Open link"}
+          </p>
+        </div>
+      );
+    default:
+      return <p className="whitespace-pre-wrap break-words">{m.body}</p>;
+  }
+}
+
+/** The menu's option titles, shown as their own full-width rows under the bubble — the way
+ * WhatsApp renders a list or quick-reply buttons message (not as plain text in the bubble). */
+function OptionRows({ options }: { options: string[] }) {
+  if (options.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-col gap-px overflow-hidden rounded-lg border border-current/15">
+      {options.map((o, i) => (
+        <div key={`${o}-${i}`} className="bg-background/50 px-3 py-1.5 text-center text-sm font-medium text-primary">
+          {o}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MessageBubble({ message: m }: { message: Message }) {
   if (m.kind === "system") {
     return (
@@ -59,6 +111,25 @@ export function MessageBubble({ message: m }: { message: Message }) {
   }
 
   const out = m.direction === "outbound";
+
+  // What the customer tapped: WhatsApp shows this as the customer's own
+  // small reply bubble, not a full message — same side, same style, just
+  // the chosen option's title as its body.
+  if (m.kind === "tap") {
+    return (
+      <div className={cn("flex", out ? "justify-end" : "justify-start")}>
+        <div className={cn("max-w-[80%] rounded-2xl px-3 py-2 text-sm", out ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm bg-muted")}>
+          <div className={cn("mb-0.5 text-xs", out ? "opacity-80" : "text-muted-foreground")}>{m.sender}</div>
+          <p className="font-medium">{m.body}</p>
+          <div className={cn("mt-1 flex items-center justify-end gap-1 text-[11px]", !out && "text-muted-foreground")}>
+            <span className={cn(out && "opacity-80")}>{m.time}</span>
+            {out && <StateIcon state={m.state} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex", out ? "justify-end" : "justify-start")}>
       <div
@@ -69,7 +140,8 @@ export function MessageBubble({ message: m }: { message: Message }) {
         )}
       >
         <div className={cn("mb-0.5 text-xs", out ? "opacity-80" : "text-muted-foreground")}>{m.sender}</div>
-        <p className="whitespace-pre-wrap break-words">{m.body}</p>
+        <KindLine m={m} />
+        {m.kind === "options" && <OptionRows options={m.meta?.options ?? []} />}
         <Attachments items={m.attachments} out={out} />
         <div className={cn("mt-1 flex items-center justify-end gap-1 text-[11px]", !out && "text-muted-foreground")}>
           <span className={cn(out && "opacity-80")}>{m.time}</span>

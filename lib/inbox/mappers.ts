@@ -1,5 +1,6 @@
 import type { Attachment, Channel, Conversation, CustomerRole, Message } from "@/types/inbox";
 import type { Staff, Ticket, TicketDetail, TicketReply, TicketRow } from "@/types/ticket";
+import type { BotChatMessage, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
 const IMAGE = /\.(jpe?g|png|webp|gif)$/i;
 const AUDIO = /\.(ogg|oga|mp3|m4a|aac|wav)$/i;
@@ -60,7 +61,12 @@ export function slaState(slaDueAt: string | null, now: Date = new Date()): SlaSt
 const staffName = (staff: Staff[], id: number | null) =>
   id == null ? null : (staff.find((s) => s.id === id)?.name ?? `Staff #${id}`);
 
-function base(ticket: Ticket, staff: Staff[], now: Date): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages"> {
+function base(
+  ticket: Ticket,
+  staff: Staff[],
+  now: Date,
+  canReply = true,
+): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages"> {
   return {
     id: ticket.id,
     ticketNumber: ticket.ticketNumber,
@@ -81,6 +87,7 @@ function base(ticket: Ticket, staff: Staff[], now: Date): Omit<Conversation, "cu
     topic: ticket.topic,
     language: ticket.contactLanguage,
     slaDueAt: ticket.slaDueAt,
+    canReply,
   };
 }
 
@@ -130,7 +137,7 @@ export function detailToConversation(
   staff: Staff[],
   now: Date = new Date(),
 ): Conversation {
-  const { ticket, replies, submitter } = detail;
+  const { ticket, replies, submitter, canReply } = detail;
   const customerName =
     row?.submitterName ??
     (submitter?.kind === "driver" ? submitter.name : submitter?.kind === "hire_tenant" ? submitter.tenantName : null) ??
@@ -140,7 +147,7 @@ export function detailToConversation(
   const phone =
     row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
   return {
-    ...base(ticket, staff, now),
+    ...base(ticket, staff, now, canReply),
     customerName,
     phone,
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
@@ -156,3 +163,111 @@ export function detailToConversation(
 
 /** International digits only, for wa.me links ("+94 77 123 4567" -> "94771234567"). */
 export const whatsappDigits = (phone: string) => phone.replace(/\D/g, "");
+
+const BOT_CHAT_PREFIX = "bot:";
+export const botChatId = (phone: string) => `${BOT_CHAT_PREFIX}${phone}`;
+export const phoneFromBotChatId = (id: string) =>
+  id.startsWith(BOT_CHAT_PREFIX) ? id.slice(BOT_CHAT_PREFIX.length) : null;
+
+function metaOptions(meta: BotChatMessage["meta"]): string[] | undefined {
+  const list = meta?.options;
+  return Array.isArray(list) ? list.filter((o): o is string => typeof o === "string") : undefined;
+}
+
+const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
+
+const PASSTHROUGH_KINDS = new Set(["tap", "location", "location_request", "media", "cta", "template"]);
+
+/** Maps the bot's own message kind (buttons/list/tap/location/...) to the
+ * portal's Message kind, so the thread renders the way WhatsApp itself
+ * does — see MessageBubble. "buttons" and "list" both become "options":
+ * WhatsApp shows either as tappable chips under the bubble. */
+function botMessage(m: BotChatMessage, customerName: string): Message {
+  const kind: Message["kind"] =
+    m.kind === "buttons" || m.kind === "list"
+      ? "options"
+      : PASSTHROUGH_KINDS.has(m.kind)
+        ? (m.kind as Message["kind"])
+        : "text";
+  return {
+    id: m.id,
+    direction: m.direction === "in" ? "inbound" : "outbound",
+    kind,
+    body: m.body,
+    time: formatTime(m.createdAt),
+    sender: m.direction === "in" ? customerName : "Bot",
+    attachments: [],
+    meta: {
+      options: metaOptions(m.meta),
+      menu: str(m.meta?.menu),
+      label: str(m.meta?.label),
+      mediaKind: str(m.meta?.mediaKind),
+      template: str(m.meta?.template),
+    },
+  };
+}
+
+/** A WhatsApp conversation the bot has had with no ticket yet, as a
+ * list-row-shaped synthetic `Conversation` (id `bot:<phone>`). */
+export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()): Conversation {
+  const customerName = row.name ?? `+${row.phone}`;
+  return {
+    id: botChatId(row.phone),
+    ticketNumber: "",
+    customerName,
+    role: "driver",
+    phone: row.phone,
+    email: null,
+    channel: "whatsapp",
+    status: "bot_only",
+    priority: null,
+    assignedToUserId: null,
+    assignedTo: null,
+    lastAt: formatTime(row.lastAt, now),
+    createdAt: row.lastAt,
+    subject: "WhatsApp conversation",
+    preview: row.lastDirection === "out" ? `Bot: ${row.lastBody}` : row.lastBody,
+    rideId: null,
+    needsContact: false,
+    contactPreference: null,
+    contactedAt: null,
+    topic: null,
+    language: row.language,
+    slaDueAt: null,
+    canReply: true,
+    submitter: null,
+    messages: [],
+  };
+}
+
+/** The full bot-chat thread for a ticketless conversation, in `ChatPane` shape. */
+export function botChatThreadToConversation(phone: string, thread: BotChatThread, now: Date = new Date()): Conversation {
+  const customerName = thread.contact.name ?? `+${phone}`;
+  return {
+    id: botChatId(phone),
+    ticketNumber: "",
+    customerName,
+    role: "driver",
+    phone,
+    email: null,
+    channel: "whatsapp",
+    status: "bot_only",
+    priority: null,
+    assignedToUserId: null,
+    assignedTo: null,
+    lastAt: thread.messages.length ? formatTime(thread.messages[thread.messages.length - 1].createdAt, now) : "",
+    createdAt: thread.messages[0]?.createdAt ?? new Date().toISOString(),
+    subject: "WhatsApp conversation",
+    preview: thread.messages[thread.messages.length - 1]?.body ?? "",
+    rideId: null,
+    needsContact: false,
+    contactPreference: null,
+    contactedAt: null,
+    topic: null,
+    language: thread.contact.language,
+    slaDueAt: null,
+    canReply: thread.canReply,
+    submitter: null,
+    messages: thread.messages.map((m) => botMessage(m, customerName)),
+  };
+}

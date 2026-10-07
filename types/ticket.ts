@@ -75,6 +75,10 @@ export interface TicketDetail {
   ticket: Ticket;
   replies: TicketReply[];
   submitter: Submitter;
+  /** Whether a reply can still be delivered over WhatsApp right now (23.5h
+   * window from the customer's last message). Always true for non-WhatsApp
+   * tickets, which deliver in-app instead. */
+  canReply: boolean;
 }
 
 export interface PageMeta {

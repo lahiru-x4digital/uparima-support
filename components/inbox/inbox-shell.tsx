@@ -6,12 +6,12 @@ import { useCan, useMe } from "@/lib/hooks/use-desk";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
 import { cn } from "@/lib/utils";
 import type { ConversationFilters } from "@/types/inbox";
-import { BotChatsView } from "./bot-chats-view";
 import { EmailView } from "./email-view";
-import { TicketWorkspace } from "./ticket-workspace";
+import { TicketWorkspace, type WorkspaceView } from "./ticket-workspace";
 
-type InboxView = "tickets" | "bot" | "email";
+type InboxView = WorkspaceView | "email";
 const TABS: { key: InboxView; label: string }[] = [
+  { key: "all", label: "All" },
   { key: "tickets", label: "Tickets" },
   { key: "bot", label: "Bot chats" },
   { key: "email", label: "Email" },
@@ -19,10 +19,13 @@ const TABS: { key: InboxView; label: string }[] = [
 
 const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "all" };
 
-/** The support inbox page: a header with the view switch, then Tickets, Bot chats or the Email mailbox. */
+/**
+ * The support inbox page: a header with the view switch, then the merged conversation workspace
+ * (All / Tickets / Bot chats) or the Email mailbox.
+ */
 export function InboxShell() {
   const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
-  const [view, setView] = useState<InboxView>("tickets");
+  const [view, setView] = useState<InboxView>("all");
   const { data: me } = useMe();
   const canSeeEmail = useCan("email-account.view");
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
@@ -53,8 +56,10 @@ export function InboxShell() {
         </div>
       </header>
 
-      {view === "bot" ? <BotChatsView /> : view === "email" ? <EmailView /> : (
-        <TicketWorkspace filters={filters} onFiltersChange={setFilters} onOpenMailbox={() => setView("email")} />
+      {view === "email" ? (
+        <EmailView />
+      ) : (
+        <TicketWorkspace filters={filters} onFiltersChange={setFilters} view={view} onOpenMailbox={() => setView("email")} />
       )}
     </div>
   );
