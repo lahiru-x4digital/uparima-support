@@ -30,7 +30,10 @@ const NO_STAFF: never[] = [];
 type View = "all" | "tickets" | "bot";
 
 /** The support inbox: tickets from the apps and the WhatsApp bot, merged with
- * raw bot-only chats into one default "All" list, with a "Needs contact" queue. */
+ * the live bot conversation into one default "All" list, with a "Needs
+ * contact" queue. Nothing is deduped by phone — a person can have several
+ * rows at once (an earlier, now-closed ticket; a new one; the live bot
+ * chat), since each is a separate, distinct conversation in its own right. */
 export function InboxShell() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
@@ -53,31 +56,18 @@ export function InboxShell() {
   const botRows = useMemo(() => botList.data?.pages.flatMap((p) => p.data) ?? [], [botList.data]);
 
   const ticketConversations = useMemo(() => rows.map((r) => rowToConversation(r, staff)), [rows, staff]);
-
-  // A bot-only row whose phone already has a ticket (e.g. the bot itself
-  // handed it off) is dropped — that conversation already shows up via its
-  // ticket, with the full thread including the pre-hand-off bot messages.
-  const ticketPhones = useMemo(
-    () => new Set(rows.map((r) => r.submitterPhone ?? r.reporterPhone).filter((p): p is string => !!p)),
-    [rows],
-  );
-  // Every raw WhatsApp conversation the bot has logged, regardless of
-  // whether it also has a ticket — this is the full read view.
+  // Every raw WhatsApp conversation the bot has logged. Shown alongside
+  // tickets for the same number, not deduped — a closed/completed ticket
+  // means that conversation is done, and a new message starts a fresh one,
+  // so the same person can legitimately have several rows at once (older
+  // ticket(s), plus the live bot conversation).
   const allBotConversations = useMemo(() => botRows.map((r) => botChatRowToConversation(r)), [botRows]);
-  // For the merged "All" list specifically: drop a bot row whose phone
-  // already has a ticket, so that conversation shows once (via its ticket,
-  // with the full thread including the pre-hand-off bot messages) and not
-  // twice.
-  const botOnlyConversations = useMemo(
-    () => allBotConversations.filter((c) => !ticketPhones.has(c.phone)),
-    [allBotConversations, ticketPhones],
-  );
 
   const merged = useMemo(() => {
     if (view === "tickets") return ticketConversations;
     if (view === "bot") return allBotConversations;
-    return [...ticketConversations, ...botOnlyConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [view, ticketConversations, allBotConversations, botOnlyConversations]);
+    return [...ticketConversations, ...allBotConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [view, ticketConversations, allBotConversations]);
 
   const visible = useMemo(
     () => applyClientFilters(merged, filters, me?.id ?? user?.id ?? null),
@@ -94,12 +84,12 @@ export function InboxShell() {
     if (!activeId) return null;
     if (activePhone) {
       if (botThread.data) return botChatThreadToConversation(activePhone, botThread.data);
-      return botOnlyConversations.find((c) => c.id === activeId) ?? null;
+      return allBotConversations.find((c) => c.id === activeId) ?? null;
     }
     const row = rows.find((r) => r.id === activeId);
     if (detail.data) return detailToConversation(detail.data, row, staff);
     return ticketConversations.find((c) => c.id === activeId) ?? null;
-  }, [activeId, activePhone, botThread.data, botOnlyConversations, rows, detail.data, ticketConversations, staff]);
+  }, [activeId, activePhone, botThread.data, allBotConversations, rows, detail.data, ticketConversations, staff]);
 
   const ticketId = isBotActive ? "" : (activeId ?? "");
   const reply = useReply(ticketId);
