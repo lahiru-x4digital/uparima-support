@@ -107,7 +107,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           <Separator />
 
           <div className="flex flex-col gap-2">
-            <Row label="Ticket" value={c.ticketNumber} />
+            <Row label="Ticket" value={c.ticketNumber || "—"} />
             <Row label="Opened" value={formatTime(c.createdAt)} />
             {topic && <Row label="Topic" value={topic} />}
             {language && <Row label="Language" value={language} />}
@@ -118,21 +118,29 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
 
           <Separator />
 
-          <Field label="Assigned to">
-            {canUpdate ? (
-              <OptionSelect label="Assignee" className="w-full" value={assignedValue} options={assignOptions}
-                onChange={(v) => v !== UNASSIGNED && onAssign(Number(v))} />
-            ) : (
-              <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
-            )}
-          </Field>
-          <Field label="Priority">
-            {canUpdate ? (
-              <OptionSelect label="Priority" className="w-full" value={c.priority} options={PRIORITY_OPTIONS} onChange={onPriority} />
-            ) : (
-              <p className="text-sm">{PRIORITIES[c.priority].label}</p>
-            )}
-          </Field>
+          {c.ticketNumber ? (
+            <Field label="Assigned to">
+              {canUpdate ? (
+                <OptionSelect label="Assignee" className="w-full" value={assignedValue} options={assignOptions}
+                  onChange={(v) => v !== UNASSIGNED && onAssign(Number(v))} />
+              ) : (
+                <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
+              )}
+            </Field>
+          ) : (
+            <p className="text-xs text-muted-foreground">Assignment is available once a ticket exists.</p>
+          )}
+          {c.priority ? (
+            <Field label="Priority">
+              {canUpdate ? (
+                <OptionSelect label="Priority" className="w-full" value={c.priority} options={PRIORITY_OPTIONS} onChange={onPriority} />
+              ) : (
+                <p className="text-sm">{PRIORITIES[c.priority].label}</p>
+              )}
+            </Field>
+          ) : (
+            <p className="text-xs text-muted-foreground">No ticket yet — reply to start one.</p>
+          )}
         </div>
       </ScrollArea>
     </aside>

@@ -2,7 +2,9 @@ import type { ContactPreference, Submitter, TicketPriority, TicketStatus } from 
 
 /** Where the customer reached us from (derived from the ticket, see lib/inbox/mappers.ts). */
 export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone";
-export type ConversationStatus = TicketStatus;
+/** "bot_only" is a conversation with no ticket yet — every WhatsApp message
+ * the bot and customer exchanged, but nobody from support has replied. */
+export type ConversationStatus = TicketStatus | "bot_only";
 export type Priority = TicketPriority;
 export type CustomerRole = "rider" | "driver";
 export type MessageDirection = "inbound" | "outbound";
@@ -29,15 +31,18 @@ export interface Message {
 }
 
 export interface Conversation {
-  /** The ticket id. */
+  /** The ticket id, or `bot:<phone>` for a WhatsApp conversation with no
+   * ticket yet (see lib/inbox/mappers.ts botChatRowToConversation). */
   id: string;
+  /** "" for a bot-only conversation — it has no ticket. */
   ticketNumber: string;
   customerName: string;
   role: CustomerRole;
   phone: string;
   channel: Channel;
   status: ConversationStatus;
-  priority: Priority;
+  /** null for a bot-only conversation, which has no ticket to prioritise. */
+  priority: Priority | null;
   assignedToUserId: number | null;
   assignedTo: string | null;
   /** Last activity, display text. */
@@ -54,6 +59,9 @@ export interface Conversation {
   topic: string | null;
   language: string | null;
   slaDueAt: string | null;
+  /** Whether a reply can still be delivered over WhatsApp right now (23.5h
+   * window). Always true for a non-WhatsApp conversation. */
+  canReply: boolean;
   submitter: Submitter;
   messages: Message[];
 }

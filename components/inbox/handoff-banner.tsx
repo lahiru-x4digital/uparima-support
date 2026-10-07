@@ -13,8 +13,9 @@ interface Props {
 }
 
 /**
- * Shown on tickets raised through the WhatsApp bot. Staff replies are saved on the ticket but
- * are not delivered over WhatsApp yet, so the agent is pointed at the driver's phone instead.
+ * Shown on a WhatsApp conversation (ticket or bot-only). A reply typed in the composer is
+ * delivered straight to the driver's WhatsApp — the call/message links below are a fallback for
+ * when the 23.5h reply window has closed and a direct reply can no longer go out.
  */
 export function HandoffBanner({ conversation: c, canUpdate, marking, onMarkContacted }: Props) {
   const sla = slaState(c.slaDueAt);
@@ -38,9 +39,11 @@ export function HandoffBanner({ conversation: c, canUpdate, marking, onMarkConta
         <p className="text-muted-foreground">Raised through the WhatsApp bot.</p>
       )}
       {details.length > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{details.join(" · ")}</p>}
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Replies here are saved on the ticket but are not sent to the driver&apos;s WhatsApp yet, so call or message them directly.
-      </p>
+      {!c.canReply && (
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Can&apos;t reply directly right now — their last WhatsApp message was over 23.5 hours ago. Call or message them instead.
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap gap-2">
         {c.phone !== "—" && (
           <>

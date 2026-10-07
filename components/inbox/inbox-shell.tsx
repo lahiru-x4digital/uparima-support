@@ -4,15 +4,22 @@ import { useMemo, useState } from "react";
 import { Bot, Inbox, Loader2 } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
+import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters } from "@/lib/inbox/filters";
-import { detailToConversation, rowToConversation } from "@/lib/inbox/mappers";
+import {
+  botChatRowToConversation,
+  botChatThreadToConversation,
+  detailToConversation,
+  phoneFromBotChatId,
+  rowToConversation,
+} from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
 import { cn } from "@/lib/utils";
-import type { ConversationFilters } from "@/types/inbox";
-import { BotChatsView } from "./bot-chats-view";
+import type { Conversation, ConversationFilters } from "@/types/inbox";
 import { ChatPane } from "./chat-pane";
 import { ContextPanel } from "./context-panel";
 import { ConversationList } from "./conversation-list";
@@ -20,46 +27,80 @@ import { FilterBar } from "./filter-bar";
 
 const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "all" };
 const NO_STAFF: never[] = [];
+type View = "all" | "tickets" | "bot";
 
-/** The support inbox: tickets from the apps and the WhatsApp bot, with a "Needs contact" queue. */
+/** The support inbox: tickets from the apps and the WhatsApp bot, merged with
+ * raw bot-only chats into one default "All" list, with a "Needs contact" queue. */
 export function InboxShell() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [contextOpen, setContextOpen] = useState(true);
-  const [view, setView] = useState<"tickets" | "bot">("tickets");
+  const [view, setView] = useState<View>("all");
   const [mobilePane, setMobilePane] = useState<"list" | "chat">("list");
 
   const { data: me } = useMe();
   const { data: staffData } = useStaff();
   const staff = staffData ?? NO_STAFF;
-  const canReply = useCan("support-ticket-reply.create");
+  const canReplyPerm = useCan("support-ticket-reply.create");
   const canUpdate = useCan("support-ticket.update");
 
   const list = useTicketList(filters);
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
-  const detail = useTicketDetail(activeId);
+  const botList = useBotChatList(view === "bot" ? filters.search.trim() : "");
 
   const rows = useMemo(() => flattenRows(list.data), [list.data]);
-  const conversations = useMemo(() => rows.map((r) => rowToConversation(r, staff)), [rows, staff]);
-  const visible = useMemo(
-    () => applyClientFilters(conversations, filters, me?.id ?? user?.id ?? null),
-    [conversations, filters, me?.id, user?.id],
+  const botRows = useMemo(() => botList.data?.pages.flatMap((p) => p.data) ?? [], [botList.data]);
+
+  const ticketConversations = useMemo(() => rows.map((r) => rowToConversation(r, staff)), [rows, staff]);
+
+  // A bot-only row whose phone already has a ticket (e.g. the bot itself
+  // handed it off) is dropped — that conversation already shows up via its
+  // ticket, with the full thread including the pre-hand-off bot messages.
+  const ticketPhones = useMemo(
+    () => new Set(rows.map((r) => r.submitterPhone ?? r.reporterPhone).filter((p): p is string => !!p)),
+    [rows],
+  );
+  const botOnlyConversations = useMemo(
+    () => botRows.filter((r) => !ticketPhones.has(r.phone)).map((r) => botChatRowToConversation(r)),
+    [botRows, ticketPhones],
   );
 
-  const active = useMemo(() => {
+  const merged = useMemo(() => {
+    if (view === "tickets") return ticketConversations;
+    if (view === "bot") return botOnlyConversations;
+    return [...ticketConversations, ...botOnlyConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [view, ticketConversations, botOnlyConversations]);
+
+  const visible = useMemo(
+    () => applyClientFilters(merged, filters, me?.id ?? user?.id ?? null),
+    [merged, filters, me?.id, user?.id],
+  );
+
+  const activePhone = activeId ? phoneFromBotChatId(activeId) : null;
+  const isBotActive = !!activePhone;
+
+  const detail = useTicketDetail(isBotActive ? null : activeId);
+  const botThread = useBotChatThread(activePhone);
+
+  const active = useMemo((): Conversation | null => {
     if (!activeId) return null;
+    if (activePhone) {
+      if (botThread.data) return botChatThreadToConversation(activePhone, botThread.data);
+      return botOnlyConversations.find((c) => c.id === activeId) ?? null;
+    }
     const row = rows.find((r) => r.id === activeId);
     if (detail.data) return detailToConversation(detail.data, row, staff);
-    return conversations.find((c) => c.id === activeId) ?? null;
-  }, [activeId, rows, detail.data, conversations, staff]);
+    return ticketConversations.find((c) => c.id === activeId) ?? null;
+  }, [activeId, activePhone, botThread.data, botOnlyConversations, rows, detail.data, ticketConversations, staff]);
 
-  const id = activeId ?? "";
-  const reply = useReply(id);
-  const updateStatus = useUpdateStatus(id);
-  const updatePriority = useUpdatePriority(id);
-  const assign = useAssign(id);
-  const markContacted = useMarkContacted(id);
+  const ticketId = isBotActive ? "" : (activeId ?? "");
+  const reply = useReply(ticketId);
+  const replyToBot = useReplyToBotChat(activePhone ?? "");
+  const updateStatus = useUpdateStatus(ticketId);
+  const updatePriority = useUpdatePriority(ticketId);
+  const assign = useAssign(ticketId);
+  const markContacted = useMarkContacted(ticketId);
 
   // A live hand-off alert can open its ticket straight away.
   function select(ticketId: string) {
@@ -68,9 +109,27 @@ export function InboxShell() {
   }
   useSupportAlerts(!!user, select);
 
-  const threadLoading = !!activeId && detail.isLoading;
-  const threadError = detail.isError ? getErrorMessage(detail.error) : null;
+  const threadLoading = isBotActive ? botThread.isLoading : !!activeId && detail.isLoading;
+  const threadError = isBotActive
+    ? botThread.isError
+      ? getErrorMessage(botThread.error)
+      : null
+    : detail.isError
+      ? getErrorMessage(detail.error)
+      : null;
   const filtered = filters.search !== "" || filters.channel !== "all" || filters.assignee !== "all" || filters.status !== "all";
+
+  // Sending the first reply to a bot-only chat opens a ticket behind the
+  // scenes — follow the conversation into ticket-space once that happens,
+  // so the next reply (and every status/assign control) targets the ticket.
+  async function send(message: string, files: File[]) {
+    if (isBotActive) {
+      const result = await replyToBot.mutateAsync(message);
+      setActiveId(result.ticketId);
+      return result;
+    }
+    return reply.mutateAsync({ message, files });
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -79,7 +138,7 @@ export function InboxShell() {
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Inbox className="size-4" /></span>
           <span className="font-heading text-base font-bold">Messages</span>
           {!!needsContact.data && (
-            <button type="button" onClick={() => setFilters((f) => ({ ...f, status: "needs_contact" }))}
+            <button type="button" onClick={() => { setView("tickets"); setFilters((f) => ({ ...f, status: "needs_contact" })); }}
               className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
               {needsContact.data} waiting for contact
             </button>
@@ -87,7 +146,7 @@ export function InboxShell() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex rounded-lg border p-0.5 text-sm" role="tablist" aria-label="Inbox view">
-            {([["tickets", "Tickets"], ["bot", "Bot chats"]] as const).map(([key, label]) => (
+            {([["all", "All"], ["tickets", "Tickets"], ["bot", "Bot chats"]] as const).map(([key, label]) => (
               <button key={key} type="button" role="tab" aria-selected={view === key} onClick={() => setView(key)}
                 className={cn("flex items-center gap-1 rounded-md px-2.5 py-1", view === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
                 {key === "bot" && <Bot className="size-3.5" />}{label}
@@ -98,22 +157,23 @@ export function InboxShell() {
         </div>
       </header>
 
-      {view === "bot" ? <BotChatsView /> : (
       <div className="flex min-h-0 flex-1">
         <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
-          <FilterBar filters={filters} needsContactCount={needsContact.data}
-            onChange={(p) => setFilters((f) => ({ ...f, ...p }))} />
+          {view !== "bot" && (
+            <FilterBar filters={filters} needsContactCount={needsContact.data}
+              onChange={(p) => setFilters((f) => ({ ...f, ...p }))} />
+          )}
           <ConversationList
             conversations={visible}
             activeId={activeId}
-            loading={list.isLoading}
-            error={list.isError ? getErrorMessage(list.error) : null}
-            hasMore={!!list.hasNextPage}
-            loadingMore={list.isFetchingNextPage}
+            loading={view === "bot" ? botList.isLoading : list.isLoading}
+            error={(view === "bot" ? botList.isError : list.isError) ? getErrorMessage(view === "bot" ? botList.error : list.error) : null}
+            hasMore={!!(view === "bot" ? botList.hasNextPage : list.hasNextPage)}
+            loadingMore={view === "bot" ? botList.isFetchingNextPage : list.isFetchingNextPage}
             filtered={filtered}
             onSelect={select}
-            onRetry={() => void list.refetch()}
-            onLoadMore={() => void list.fetchNextPage()}
+            onRetry={() => (view === "bot" ? void botList.refetch() : void list.refetch())}
+            onLoadMore={() => (view === "bot" ? void botList.fetchNextPage() : void list.fetchNextPage())}
           />
         </section>
 
@@ -126,14 +186,14 @@ export function InboxShell() {
               loading={threadLoading}
               error={threadError}
               contextOpen={contextOpen}
-              canReply={canReply}
+              canReply={canReplyPerm}
               canUpdate={canUpdate}
               markingContacted={markContacted.isPending}
-              onRetry={() => void detail.refetch()}
+              onRetry={() => (isBotActive ? void botThread.refetch() : void detail.refetch())}
               onBack={() => setMobilePane("list")}
               onToggleContext={() => setContextOpen((o) => !o)}
-              onStatusChange={(status) => updateStatus.mutate(status)}
-              onSend={(message, files) => reply.mutateAsync({ message, files })}
+              onStatusChange={(status) => status !== "bot_only" && updateStatus.mutate(status)}
+              onSend={send}
               onMarkContacted={() => markContacted.mutate()}
             />
           )}
@@ -152,7 +212,6 @@ export function InboxShell() {
           </div>
         )}
       </div>
-      )}
     </div>
   );
 }

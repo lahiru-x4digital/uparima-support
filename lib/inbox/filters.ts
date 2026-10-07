@@ -10,7 +10,9 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
   const params: TicketListParams = {};
   if (filters.status === "needs_contact") {
     params.needsContact = true;
-  } else if (filters.status !== "all") {
+    // "bot_only" is a synthetic, client-only status for ticketless WhatsApp
+    // conversations — the ticket list endpoint knows nothing about it.
+  } else if (filters.status !== "all" && filters.status !== "bot_only") {
     params.status = filters.status;
   }
   if (filters.channel === "whatsapp") params.channel = "whatsapp";

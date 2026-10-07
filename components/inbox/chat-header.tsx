@@ -28,10 +28,10 @@ export function ChatHeader({ conversation: c, contextOpen, canUpdate, onBack, on
       <div className="min-w-0 flex-1">
         <h2 className="truncate text-sm font-semibold">{c.customerName}</h2>
         <p className="truncate text-xs text-muted-foreground">
-          {c.ticketNumber} · {CHANNELS[c.channel].label} · {c.role === "rider" ? "Rider" : "Driver"}
+          {c.ticketNumber ? `${c.ticketNumber} · ` : ""}{CHANNELS[c.channel].label} · {c.role === "rider" ? "Rider" : "Driver"}
         </p>
       </div>
-      {canUpdate && (
+      {canUpdate && c.ticketNumber && (
         <>
           <OptionSelect label="Status" value={c.status} options={STATUS_OPTIONS} onChange={onStatusChange} />
           <Button variant="outline" size="sm" onClick={() => onStatusChange("completed")} disabled={c.status === "completed"}>

@@ -35,6 +35,10 @@ describe("toListParams", () => {
   it("leaves channels the backend cannot filter to the browser", () => {
     expect(toListParams(filters({ channel: "driver_app" }))).toEqual({});
   });
+
+  it("never sends the synthetic bot_only status to the ticket list endpoint", () => {
+    expect(toListParams(filters({ status: "bot_only" }))).toEqual({});
+  });
 });
 
 describe("applyClientFilters", () => {

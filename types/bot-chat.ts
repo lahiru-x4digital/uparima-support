@@ -29,7 +29,17 @@ export interface BotChatThread {
     state: string;
     lastInboundAt: string | null;
   };
+  /** Whether a staff reply can still go out as a free-form WhatsApp message
+   * right now (server-computed from `lastInboundAt`, 23.5h window). */
+  canReply: boolean;
   /** True when older messages exist than the ones returned. */
   hasMore: boolean;
   messages: BotChatMessage[];
+}
+
+/** `POST /support-desk/bot-chats/:phone/replies` */
+export interface BotChatReplyResult {
+  reply: { id: string; message: string; createdAt: string };
+  ticketId: string;
+  ticketNumber: string;
 }
