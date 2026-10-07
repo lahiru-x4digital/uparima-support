@@ -117,14 +117,12 @@ export function InboxShell() {
   const filtered = filters.search !== "" || filters.channel !== "all" || filters.assignee !== "all" || filters.status !== "all";
 
   // Sending the first reply to a bot-only chat opens a ticket behind the
-  // scenes — follow the conversation into ticket-space once that happens,
-  // so the next reply (and every status/assign control) targets the ticket.
+  // scenes, but the agent stays on the bot conversation they were already
+  // reading — jumping them straight to the new ticket felt like the page
+  // had redirected on them mid-reply. The row simply gains a ticket number
+  // next time the list refreshes.
   async function send(message: string, files: File[]) {
-    if (isBotActive) {
-      const result = await replyToBot.mutateAsync(message);
-      setActiveId(result.ticketId);
-      return result;
-    }
+    if (isBotActive) return replyToBot.mutateAsync(message);
     return reply.mutateAsync({ message, files });
   }
 
