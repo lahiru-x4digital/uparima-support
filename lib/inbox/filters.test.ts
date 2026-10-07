@@ -61,12 +61,10 @@ describe("applyClientFilters", () => {
     expect(ids(applyClientFilters(list, filters({ assignee: "mine" }), null))).toEqual([]);
   });
 
-  it("hides a bot-only (ticketless) row once a specific status tab is picked", () => {
+  it("shows a bot-only (ticketless) row on every status tab, since it has no ticket status to match against", () => {
     const withBotOnly = [...list, conv({ id: "bot:94779999999", ticketNumber: "", status: "bot_only" })];
-    // "All" and "Needs contact" show it; any real status tab hides it, since
-    // a conversation with no ticket can't be "pending"/"in_review"/"completed".
     expect(ids(applyClientFilters(withBotOnly, filters({ status: "all" }), 5))).toEqual(["a", "b", "bot:94779999999"]);
-    expect(ids(applyClientFilters(withBotOnly, filters({ status: "completed" }), 5))).toEqual(["a", "b"]);
-    expect(ids(applyClientFilters(withBotOnly, filters({ status: "pending" }), 5))).toEqual(["a", "b"]);
+    expect(ids(applyClientFilters(withBotOnly, filters({ status: "completed" }), 5))).toEqual(["a", "b", "bot:94779999999"]);
+    expect(ids(applyClientFilters(withBotOnly, filters({ status: "pending" }), 5))).toEqual(["a", "b", "bot:94779999999"]);
   });
 });
