@@ -8,7 +8,13 @@ export type ConversationStatus = TicketStatus | "bot_only";
 export type Priority = TicketPriority;
 export type CustomerRole = "rider" | "driver";
 export type MessageDirection = "inbound" | "outbound";
-export type MessageKind = "text" | "system";
+/**
+ * "text"/"system" are ticket-thread messages. The rest mirror what the
+ * WhatsApp bot actually sent or the customer actually did, so the portal
+ * can render it the way WhatsApp itself does — a menu's option chips, a
+ * tapped choice as its own small bubble, a location/media/link marker.
+ */
+export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template";
 export type MessageState = "sending" | "sent" | "failed";
 export type AttachmentKind = "image" | "audio" | "file";
 
@@ -16,6 +22,20 @@ export interface Attachment {
   key: string;
   name: string;
   kind: AttachmentKind;
+}
+
+/** Extra, kind-specific detail a bot message carries, straight from the WhatsApp payload. */
+export interface MessageMeta {
+  /** Button/list option titles, for kind "options". */
+  options?: string[];
+  /** The menu's own title (a WhatsApp list's button label), for kind "options". */
+  menu?: string;
+  /** Link text, for kind "cta". */
+  label?: string;
+  /** "image" | "document" etc., for kind "media". */
+  mediaKind?: string;
+  /** Template name, for kind "template". */
+  template?: string;
 }
 
 export interface Message {
@@ -28,6 +48,7 @@ export interface Message {
   sender: string;
   state?: MessageState;
   attachments: Attachment[];
+  meta?: MessageMeta;
 }
 
 export interface Conversation {

@@ -179,6 +179,37 @@ describe("botChatThreadToConversation", () => {
     expect(c.messages[0]).toMatchObject({ direction: "inbound", sender: "Kamal" });
     expect(c.messages[1]).toMatchObject({ direction: "outbound", sender: "Bot" });
   });
+
+  it("maps buttons/list messages to kind 'options' with their titles, and a tapped choice to kind 'tap'", () => {
+    const thread: BotChatThread = {
+      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      canReply: true,
+      hasMore: false,
+      messages: [
+        {
+          id: "1",
+          direction: "out",
+          kind: "buttons",
+          body: "What would you like to do?",
+          meta: { options: ["Book a ride", "Driver account", "My rides"] },
+          createdAt: "2026-10-06T11:40:00Z",
+        },
+        { id: "2", direction: "in", kind: "tap", body: "Driver account", meta: { id: "hub:menu" }, createdAt: "2026-10-06T11:40:30Z" },
+        {
+          id: "3",
+          direction: "out",
+          kind: "location_request",
+          body: "Share your current location",
+          meta: null,
+          createdAt: "2026-10-06T11:41:00Z",
+        },
+      ],
+    };
+    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    expect(c.messages[0]).toMatchObject({ kind: "options", meta: { options: ["Book a ride", "Driver account", "My rides"] } });
+    expect(c.messages[1]).toMatchObject({ kind: "tap", body: "Driver account" });
+    expect(c.messages[2]).toMatchObject({ kind: "location_request" });
+  });
 });
 
 describe("slaState", () => {

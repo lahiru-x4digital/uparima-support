@@ -165,15 +165,41 @@ export const botChatId = (phone: string) => `${BOT_CHAT_PREFIX}${phone}`;
 export const phoneFromBotChatId = (id: string) =>
   id.startsWith(BOT_CHAT_PREFIX) ? id.slice(BOT_CHAT_PREFIX.length) : null;
 
+function metaOptions(meta: BotChatMessage["meta"]): string[] | undefined {
+  const list = meta?.options;
+  return Array.isArray(list) ? list.filter((o): o is string => typeof o === "string") : undefined;
+}
+
+const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
+
+const PASSTHROUGH_KINDS = new Set(["tap", "location", "location_request", "media", "cta", "template"]);
+
+/** Maps the bot's own message kind (buttons/list/tap/location/...) to the
+ * portal's Message kind, so the thread renders the way WhatsApp itself
+ * does — see MessageBubble. "buttons" and "list" both become "options":
+ * WhatsApp shows either as tappable chips under the bubble. */
 function botMessage(m: BotChatMessage, customerName: string): Message {
+  const kind: Message["kind"] =
+    m.kind === "buttons" || m.kind === "list"
+      ? "options"
+      : PASSTHROUGH_KINDS.has(m.kind)
+        ? (m.kind as Message["kind"])
+        : "text";
   return {
     id: m.id,
     direction: m.direction === "in" ? "inbound" : "outbound",
-    kind: "text",
+    kind,
     body: m.body,
     time: formatTime(m.createdAt),
     sender: m.direction === "in" ? customerName : "Bot",
     attachments: [],
+    meta: {
+      options: metaOptions(m.meta),
+      menu: str(m.meta?.menu),
+      label: str(m.meta?.label),
+      mediaKind: str(m.meta?.mediaKind),
+      template: str(m.meta?.template),
+    },
   };
 }
 
