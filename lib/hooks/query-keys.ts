@@ -19,3 +19,9 @@ export const careTemplateKeys = {
   all: ["care-templates"] as const,
   detail: (id: number) => ["care-templates", id] as const,
 };
+
+export const botChatKeys = {
+  all: ["bot-chats"] as const,
+  list: (search: string) => ["bot-chats", "list", search] as const,
+  thread: (phone: string) => ["bot-chats", "thread", phone] as const,
+};

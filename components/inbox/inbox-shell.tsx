@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Inbox, Loader2 } from "lucide-react";
+import { Bot, Inbox, Loader2 } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
@@ -12,6 +12,7 @@ import { detailToConversation, rowToConversation } from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
 import { cn } from "@/lib/utils";
 import type { ConversationFilters } from "@/types/inbox";
+import { BotChatsView } from "./bot-chats-view";
 import { ChatPane } from "./chat-pane";
 import { ContextPanel } from "./context-panel";
 import { ConversationList } from "./conversation-list";
@@ -26,6 +27,7 @@ export function InboxShell() {
   const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [contextOpen, setContextOpen] = useState(true);
+  const [view, setView] = useState<"tickets" | "bot">("tickets");
   const [mobilePane, setMobilePane] = useState<"list" | "chat">("list");
 
   const { data: me } = useMe();
@@ -84,10 +86,19 @@ export function InboxShell() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex rounded-lg border p-0.5 text-sm" role="tablist" aria-label="Inbox view">
+            {([["tickets", "Tickets"], ["bot", "Bot chats"]] as const).map(([key, label]) => (
+              <button key={key} type="button" role="tab" aria-selected={view === key} onClick={() => setView(key)}
+                className={cn("flex items-center gap-1 rounded-md px-2.5 py-1", view === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+                {key === "bot" && <Bot className="size-3.5" />}{label}
+              </button>
+            ))}
+          </div>
           {me && <span className="hidden text-sm text-muted-foreground sm:inline">{me.name ?? me.email}</span>}
         </div>
       </header>
 
+      {view === "bot" ? <BotChatsView /> : (
       <div className="flex min-h-0 flex-1">
         <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
           <FilterBar filters={filters} needsContactCount={needsContact.data}
@@ -141,6 +152,7 @@ export function InboxShell() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
