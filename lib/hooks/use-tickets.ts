@@ -10,7 +10,7 @@ import { ticketKeys } from "./query-keys";
 const PER_PAGE = 20;
 /** Customers' new replies are not pushed to staff, so the open views refresh on a timer while visible. */
 const LIST_POLL_MS = 30_000;
-const THREAD_POLL_MS = 15_000;
+const THREAD_POLL_MS = 5_000;
 
 /** The ticket list for the current tab, loaded page by page. */
 export function useTicketList(filters: ConversationFilters) {

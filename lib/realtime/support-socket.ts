@@ -68,6 +68,11 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
       }
     });
 
+    // A customer wrote, a ticket was opened, or another agent changed it: refresh like a chat would.
+    socket.on("support:ticket_updated", () => {
+      void qc.invalidateQueries({ queryKey: ticketKeys.all });
+    });
+
     socket.on("incident:critical", (incident: CriticalIncident) => {
       toast.error("Critical safety incident reported", {
         description: incident.description?.slice(0, 140),
@@ -79,6 +84,7 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       socket.off("support:handoff");
+      socket.off("support:ticket_updated");
       socket.off("incident:critical");
       socket.disconnect();
       clearBadge();
