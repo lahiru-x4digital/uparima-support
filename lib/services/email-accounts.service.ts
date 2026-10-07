@@ -21,6 +21,9 @@ export const createServiceAccountEmail = (body: ServiceAccountInput) =>
 export const updateEmailAccount = (id: number, body: EmailAccountUpdate) => apiPut<EmailAccount>(`${BASE}/${id}`, body);
 export const deleteEmailAccount = (id: number) => apiDelete(`${BASE}/${id}`);
 export const testEmailConnection = (body: EmailTestInput) => apiPost<EmailTestResult>(`${BASE}/test`, body);
+/** Turn mail already in the mailbox (last `days` days) into tickets; safe to rerun. */
+export const importEmailAccount = (id: number, days: number) =>
+  apiPost<EmailSyncResult>(`${BASE}/${id}/import`, { days });
 export const syncEmailAccount = (id: number) => apiPost<EmailSyncResult>(`${BASE}/${id}/sync`);
 /** Returns the Google / Microsoft consent URL to send the browser to. */
 export const startEmailOauth = (provider: "gmail" | "outlook", body: EmailOauthStartInput) =>

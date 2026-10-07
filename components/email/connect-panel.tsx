@@ -304,7 +304,7 @@ export function ConnectPanel({
         )}
 
         <p className="text-xs text-muted-foreground">
-          Once connected, open <strong>Email → Inbox</strong> to read, reply and send. New emails that arrive <strong>after</strong> you connect also become tickets; replies that mention the ticket number (TKT-…) are added to that ticket.
+          Once connected, open <strong>Email → Inbox</strong> to read, reply and send. Emails from the last 7 days and every new email become tickets (use <strong>Import existing emails</strong> for older mail); replies that mention the ticket number (TKT-…) are added to that ticket.
         </p>
       </div>
     </div>

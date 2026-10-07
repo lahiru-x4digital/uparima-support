@@ -9,6 +9,7 @@ import {
   createServiceAccountEmail,
   deleteEmailAccount,
   getEmailProviders,
+  importEmailAccount,
   listEmailAccounts,
   startEmailOauth,
   syncEmailAccount,
@@ -16,7 +17,7 @@ import {
   updateEmailAccount,
 } from "@/lib/services/email-accounts.service";
 import type { EmailAccountInput, EmailAccountUpdate, ServiceAccountInput } from "@/types/email-account";
-import { emailAccountKeys } from "./query-keys";
+import { emailAccountKeys, ticketKeys } from "./query-keys";
 
 export function useEmailAccounts() {
   const { user } = useAuth();
@@ -105,6 +106,34 @@ export function useStartEmailOauth() {
       startEmailOauth(provider, body),
     onSuccess: ({ url }) => {
       window.location.href = url;
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+}
+
+/** Import existing mail from one or more mailboxes as tickets, then refresh the ticket lists. */
+export function useImportEmails() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, days }: { ids: number[]; days: number }) => {
+      let imported = 0;
+      let replies = 0;
+      // One mailbox at a time: each import holds an IMAP connection.
+      for (const id of ids) {
+        const r = await importEmailAccount(id, days);
+        imported += r.imported;
+        replies += r.replies;
+      }
+      return { imported, replies };
+    },
+    onSuccess: ({ imported, replies }) => {
+      void qc.invalidateQueries({ queryKey: ticketKeys.all });
+      void qc.invalidateQueries({ queryKey: emailAccountKeys.all });
+      toast.success(
+        imported + replies
+          ? `${imported} ticket(s) created, ${replies} repl${replies === 1 ? "y" : "ies"} added`
+          : "Nothing new to import — every email is already a ticket",
+      );
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });

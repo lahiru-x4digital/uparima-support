@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Loader2, Mail, Pause, Pencil, Play, RefreshCw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, Loader2, Mail, Pause, Pencil, Play, RefreshCw, Save, Trash2 } from "lucide-react";
 import { OptionSelect } from "@/components/inbox/option-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useDeleteEmailAccount, useSyncEmailAccount, useUpdateEmailAccount } from "@/lib/hooks/use-email-accounts";
+import { useDeleteEmailAccount, useImportEmails, useSyncEmailAccount, useUpdateEmailAccount } from "@/lib/hooks/use-email-accounts";
 import type { EmailAccount, EmailCategory, EmailPriority } from "@/types/email-account";
 import { CATEGORY_OPTIONS, PRIORITY_OPTIONS, PROVIDER_META, STATUS_META, timeAgo } from "./meta";
 
@@ -18,6 +18,7 @@ export function AccountRow({ account: a, canUpdate, canDelete }: { account: Emai
   const update = useUpdateEmailAccount();
   const remove = useDeleteEmailAccount();
   const sync = useSyncEmailAccount();
+  const importEmails = useImportEmails();
   const status = STATUS_META[a.status];
   const paused = a.status === "inactive";
 
@@ -39,6 +40,11 @@ export function AccountRow({ account: a, canUpdate, canDelete }: { account: Emai
           <>
             <Button variant="outline" size="sm" disabled={sync.isPending || paused} onClick={() => sync.mutate(a.id)}>
               {sync.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />} Sync now
+            </Button>
+            <Button variant="outline" size="sm" disabled={importEmails.isPending || paused}
+              title="Turn the last 30 days of mail already in this mailbox into tickets"
+              onClick={() => importEmails.mutate({ ids: [a.id], days: 30 })}>
+              {importEmails.isPending ? <Loader2 className="animate-spin" /> : <Download />} Import 30 days
             </Button>
             <Button variant="ghost" size="icon" aria-label={paused ? `Resume ${a.name}` : `Pause ${a.name}`} title={paused ? "Resume" : "Pause"}
               disabled={update.isPending} onClick={() => update.mutate({ id: a.id, body: { status: paused ? "active" : "inactive" } })}>
