@@ -61,16 +61,23 @@ export function InboxShell() {
     () => new Set(rows.map((r) => r.submitterPhone ?? r.reporterPhone).filter((p): p is string => !!p)),
     [rows],
   );
+  // Every raw WhatsApp conversation the bot has logged, regardless of
+  // whether it also has a ticket — this is the full read view.
+  const allBotConversations = useMemo(() => botRows.map((r) => botChatRowToConversation(r)), [botRows]);
+  // For the merged "All" list specifically: drop a bot row whose phone
+  // already has a ticket, so that conversation shows once (via its ticket,
+  // with the full thread including the pre-hand-off bot messages) and not
+  // twice.
   const botOnlyConversations = useMemo(
-    () => botRows.filter((r) => !ticketPhones.has(r.phone)).map((r) => botChatRowToConversation(r)),
-    [botRows, ticketPhones],
+    () => allBotConversations.filter((c) => !ticketPhones.has(c.phone)),
+    [allBotConversations, ticketPhones],
   );
 
   const merged = useMemo(() => {
     if (view === "tickets") return ticketConversations;
-    if (view === "bot") return botOnlyConversations;
+    if (view === "bot") return allBotConversations;
     return [...ticketConversations, ...botOnlyConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [view, ticketConversations, botOnlyConversations]);
+  }, [view, ticketConversations, allBotConversations, botOnlyConversations]);
 
   const visible = useMemo(
     () => applyClientFilters(merged, filters, me?.id ?? user?.id ?? null),
