@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, ClipboardList, Inbox, LayoutDashboard, Mail, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { type LucideIcon, ClipboardList, History, Inbox, LayoutDashboard, Mail, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
@@ -24,6 +24,8 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
   { href: "/templates", label: "Care Templates", icon: ClipboardList },
+  { href: "/sms", label: "Send SMS", icon: Send },
+  { href: "/sms/history", label: "SMS History", icon: History },
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
   { href: "/email/config", label: "Email Config", icon: Settings2 },
 ];

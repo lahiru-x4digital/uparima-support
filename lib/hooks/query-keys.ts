@@ -1,4 +1,5 @@
 import type { TicketListParams } from "@/types/ticket";
+import type { SmsHistoryParams } from "@/types/sms";
 
 export const ticketKeys = {
   all: ["tickets"] as const,
@@ -35,4 +36,9 @@ export const mailboxKeys = {
   all: ["mailbox"] as const,
   list: (accountId: number, folder: string, q: string) => ["mailbox", accountId, "list", folder, q] as const,
   message: (accountId: number, id: string) => ["mailbox", accountId, "message", id] as const,
+};
+
+export const smsKeys = {
+  countries: ["sms", "countries"] as const,
+  history: (params: SmsHistoryParams) => ["sms", "history", params] as const,
 };
