@@ -84,23 +84,6 @@ export function InboxShell() {
     [merged, filters, me?.id, user?.id],
   );
 
-  // TEMP DEBUG — remove once the missing-row issue is found.
-  if (typeof window !== "undefined") {
-    console.log("[inbox-debug]", {
-      view,
-      filtersStatus: filters.status,
-      rowsCount: rows.length,
-      rowTicketNumbers: rows.map((r) => r.ticketNumber),
-      ticketConversationsCount: ticketConversations.length,
-      ticketConversationIds: ticketConversations.map((c) => `${c.ticketNumber}:${c.channel}:${c.status}`),
-      botOnlyCount: botOnlyConversations.length,
-      mergedCount: merged.length,
-      mergedTicketNumbers: merged.map((c) => c.ticketNumber || c.id),
-      visibleCount: visible.length,
-      visibleTicketNumbers: visible.map((c) => c.ticketNumber || c.id),
-    });
-  }
-
   const activePhone = activeId ? phoneFromBotChatId(activeId) : null;
   const isBotActive = !!activePhone;
 
