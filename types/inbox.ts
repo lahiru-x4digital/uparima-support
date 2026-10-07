@@ -1,7 +1,7 @@
 import type { ContactPreference, Submitter, TicketPriority, TicketStatus } from "@/types/ticket";
 
 /** Where the customer reached us from (derived from the ticket, see lib/inbox/mappers.ts). */
-export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone";
+export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email";
 export type ConversationStatus = TicketStatus;
 export type Priority = TicketPriority;
 export type CustomerRole = "rider" | "driver";
@@ -35,6 +35,8 @@ export interface Conversation {
   customerName: string;
   role: CustomerRole;
   phone: string;
+  /** Sender address for tickets that arrived by email. */
+  email: string | null;
   channel: Channel;
   status: ConversationStatus;
   priority: Priority;

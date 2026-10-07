@@ -25,3 +25,14 @@ export const botChatKeys = {
   list: (search: string) => ["bot-chats", "list", search] as const,
   thread: (phone: string) => ["bot-chats", "thread", phone] as const,
 };
+
+export const emailAccountKeys = {
+  all: ["email-accounts"] as const,
+  providers: ["email-accounts", "providers"] as const,
+};
+
+export const mailboxKeys = {
+  all: ["mailbox"] as const,
+  list: (accountId: number, folder: string, q: string) => ["mailbox", accountId, "list", folder, q] as const,
+  message: (accountId: number, id: string) => ["mailbox", accountId, "message", id] as const,
+};

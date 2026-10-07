@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, LayoutDashboard, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { type LucideIcon, ClipboardList, Inbox, LayoutDashboard, Mail, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
@@ -11,11 +11,22 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "support_sidebar_collapsed";
 
-const NAV = [
+// `section` starts a labelled group (a small heading above its items; hidden when the rail is collapsed).
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  section?: string;
+  sectionIcon?: LucideIcon;
+}
+
+const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
   { href: "/templates", label: "Care Templates", icon: ClipboardList },
-] as const;
+  { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
+  { href: "/email/config", label: "Email Config", icon: Settings2 },
+];
 
 /** Left navigation: violet gradient rail with the portal brand, nav items and account actions. */
 export function AppSidebar() {
@@ -74,12 +85,16 @@ export function AppSidebar() {
       )}
 
       <nav className={cn("flex-1 space-y-1 py-2", collapsed ? "px-2.5" : "px-3")} aria-label="Main">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.map((item) => {
+          const { href, label, icon: Icon, section, sectionIcon: SectionIcon } = item;
           const active = pathname === href || pathname.startsWith(`${href}/`);
           const badge = href === "/inbox" ? needsContact.data : undefined;
           return (
+            <div key={href}>
+              {section && (collapsed
+                ? <div className="mx-auto my-2 h-px w-6 bg-sidebar-foreground/20" />
+                : <p className="mb-1 mt-4 flex items-center gap-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/60">{SectionIcon && <SectionIcon className="size-3" />}{section}</p>)}
             <Link
-              key={href}
               href={href}
               aria-current={active ? "page" : undefined}
               title={label}
@@ -102,6 +117,7 @@ export function AppSidebar() {
                   </span>
                 ))}
             </Link>
+            </div>
           );
         })}
       </nav>

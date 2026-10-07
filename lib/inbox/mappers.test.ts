@@ -46,6 +46,7 @@ describe("channelOf", () => {
   it("prefers whatsapp, then agent-logged phone, then the app by submitter type", () => {
     expect(channelOf(row())).toBe("whatsapp");
     expect(channelOf(row({ channel: "app", loggedByUserId: 3 }))).toBe("phone");
+    expect(channelOf(row({ channel: "app", source: "email" }))).toBe("email");
     expect(channelOf(row({ channel: "app" }))).toBe("driver_app");
     expect(channelOf(row({ channel: "app", submitterType: "user" }))).toBe("rider_app");
   });

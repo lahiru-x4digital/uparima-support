@@ -23,6 +23,10 @@ const conv = (over: Partial<Conversation>): Conversation =>
   }) as Conversation;
 
 describe("toListParams", () => {
+  it("asks the backend for email tickets only on the Email channel", () => {
+    expect(toListParams(filters({ channel: "email" }))).toEqual({ source: "email" });
+  });
+
   it("maps the needs-contact tab, a status and the WhatsApp channel to backend params", () => {
     expect(toListParams(filters())).toEqual({});
     expect(toListParams(filters({ status: "needs_contact" }))).toEqual({ needsContact: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bike, Car, Phone, X } from "lucide-react";
+import { Bike, Car, Mail, Phone, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -96,6 +96,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
 
           <div className="flex flex-col gap-2 text-sm">
             <span className="flex items-center gap-2"><Phone className="size-4 text-muted-foreground" />{c.phone}</span>
+            {c.email && <span className="flex items-center gap-2 break-all"><Mail className="size-4 shrink-0 text-muted-foreground" />{c.email}</span>}
             {c.submitter?.kind === "driver" && c.submitter.vehicleRegistrationNumber && (
               <span className="flex items-center gap-2"><Car className="size-4 text-muted-foreground" />{c.submitter.vehicleRegistrationNumber}</span>
             )}

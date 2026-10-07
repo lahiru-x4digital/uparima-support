@@ -12,6 +12,8 @@ interface Props {
   /** Number of drivers still waiting for contact, shown on the first tab. */
   needsContactCount: number | undefined;
   onChange: (patch: Partial<ConversationFilters>) => void;
+  /** The list is pinned to one channel, so don't offer the picker. */
+  hideChannel?: boolean;
 }
 
 const CHANNEL_OPTIONS: { value: Channel | "all"; label: string }[] = [
@@ -25,7 +27,7 @@ const ASSIGNEE_OPTIONS: { value: ConversationFilters["assignee"]; label: string 
   { value: "unassigned", label: "Unassigned" },
 ];
 
-export function FilterBar({ filters, needsContactCount, onChange }: Props) {
+export function FilterBar({ filters, needsContactCount, onChange, hideChannel }: Props) {
   const tabs: { value: ConversationFilters["status"]; label: string }[] = [
     { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
     { value: "all", label: "All" },
@@ -54,9 +56,9 @@ export function FilterBar({ filters, needsContactCount, onChange }: Props) {
           ))}
         </TabsList>
       </Tabs>
-      <div className="grid grid-cols-2 gap-2">
-        <OptionSelect label="Channel" value={filters.channel} options={CHANNEL_OPTIONS}
-          onChange={(channel) => onChange({ channel })} className="w-full" />
+      <div className={hideChannel ? "grid gap-2" : "grid grid-cols-2 gap-2"}>
+        {!hideChannel && <OptionSelect label="Channel" value={filters.channel} options={CHANNEL_OPTIONS}
+          onChange={(channel) => onChange({ channel })} className="w-full" />}
         <OptionSelect label="Assignee" value={filters.assignee} options={ASSIGNEE_OPTIONS}
           onChange={(assignee) => onChange({ assignee })} className="w-full" />
       </div>

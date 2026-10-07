@@ -1,4 +1,4 @@
-import { Bike, Car, MessageCircle, Phone, type LucideIcon } from "lucide-react";
+import { Bike, Car, Mail, MessageCircle, Phone, type LucideIcon } from "lucide-react";
 import type { Channel, ConversationStatus, Priority } from "@/types/inbox";
 
 export const CHANNELS: Record<Channel, { label: string; icon: LucideIcon; className: string }> = {
@@ -6,6 +6,7 @@ export const CHANNELS: Record<Channel, { label: string; icon: LucideIcon; classN
   driver_app: { label: "Driver app", icon: Car, className: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300" },
   whatsapp: { label: "WhatsApp", icon: MessageCircle, className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" },
   phone: { label: "Phone", icon: Phone, className: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300" },
+  email: { label: "Email", icon: Mail, className: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" },
 };
 
 // Mirrors the backend SupportTicketStatus enum.

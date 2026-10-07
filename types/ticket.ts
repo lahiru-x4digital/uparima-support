@@ -23,6 +23,9 @@ export interface Ticket {
   slaDueAt: string | null;
   rideId: string | null;
   reporterPhone: string | null;
+  /** Set on tickets imported from a connected mailbox. */
+  source?: "app" | "phone" | "email";
+  reporterEmail?: string | null;
   loggedByUserId: number | null;
   channel: TicketChannel;
   needsContact: boolean;
@@ -44,7 +47,7 @@ export interface TicketRow extends Ticket {
 export interface TicketReply {
   id: string;
   ticketId: string;
-  authorId: number;
+  authorId: number | null;
   isStaffReply: boolean;
   message: string;
   attachments: string[] | null;
@@ -93,6 +96,8 @@ export interface TicketListParams {
   category?: string;
   needsContact?: boolean;
   channel?: TicketChannel;
+  /** Only tickets imported from email. */
+  source?: "email";
 }
 
 export interface Staff {

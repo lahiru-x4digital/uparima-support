@@ -3,7 +3,7 @@ import type { TicketListParams } from "@/types/ticket";
 
 /**
  * The part of the filters the backend can apply: ticket status, the WhatsApp
- * channel, and the "needs contact" queue. Everything else (search, other
+ * and email channels, and the "needs contact" queue. Everything else (search, other
  * channels, assignee) is applied to the loaded pages in the browser.
  */
 export function toListParams(filters: ConversationFilters): TicketListParams {
@@ -14,6 +14,7 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
     params.status = filters.status;
   }
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
+  if (filters.channel === "email") params.source = "email";
   return params;
 }
 

@@ -11,8 +11,9 @@ export function attachmentOf(key: string): Attachment {
 }
 
 /** Where the customer reached us: the bot, an agent-logged call, or one of the apps. */
-export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submitterType">): Channel {
+export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submitterType"> & Partial<Pick<Ticket, "source">>): Channel {
   if (t.channel === "whatsapp") return "whatsapp";
+  if (t.source === "email") return "email";
   if (t.loggedByUserId != null) return "phone";
   return t.submitterType === "driver" ? "driver_app" : "rider_app";
 }
@@ -59,7 +60,7 @@ export function slaState(slaDueAt: string | null, now: Date = new Date()): SlaSt
 const staffName = (staff: Staff[], id: number | null) =>
   id == null ? null : (staff.find((s) => s.id === id)?.name ?? `Staff #${id}`);
 
-function base(ticket: Ticket, staff: Staff[], now: Date): Omit<Conversation, "customerName" | "phone" | "submitter" | "messages"> {
+function base(ticket: Ticket, staff: Staff[], now: Date): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages"> {
   return {
     id: ticket.id,
     ticketNumber: ticket.ticketNumber,
@@ -111,11 +112,12 @@ function replyMessage(reply: TicketReply, customerName: string, staff: Staff[], 
 
 /** A list row: no replies yet, so the thread holds just the customer's first message. */
 export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = new Date()): Conversation {
-  const customerName = row.submitterName ?? row.submitterPhone ?? row.reporterPhone ?? "Unknown caller";
+  const customerName = row.submitterName ?? row.submitterPhone ?? row.reporterPhone ?? row.reporterEmail ?? "Unknown caller";
   return {
     ...base(row, staff, now),
     customerName,
     phone: row.submitterPhone ?? row.reporterPhone ?? "—",
+    email: row.reporterEmail ?? null,
     submitter: null,
     messages: [firstMessage(row, customerName, now)],
   };
@@ -133,6 +135,7 @@ export function detailToConversation(
     row?.submitterName ??
     (submitter?.kind === "driver" ? submitter.name : submitter?.kind === "hire_tenant" ? submitter.tenantName : null) ??
     ticket.reporterPhone ??
+    ticket.reporterEmail ??
     "Unknown caller";
   const phone =
     row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
@@ -140,6 +143,7 @@ export function detailToConversation(
     ...base(ticket, staff, now),
     customerName,
     phone,
+    email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
     submitter,
     messages: [
       firstMessage(ticket, customerName, now),
