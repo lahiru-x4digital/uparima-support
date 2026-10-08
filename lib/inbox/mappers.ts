@@ -149,14 +149,17 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
   };
 }
 
-/** The full ticket: the first message followed by every reply, oldest first. */
+/** The full ticket: for a WhatsApp hand-off whose linked session is known,
+ * the actual bot conversation (mirroring WhatsApp itself) followed by staff
+ * replies; otherwise the ticket's own stored first message plus replies, as
+ * before. */
 export function detailToConversation(
   detail: TicketDetail,
   row: TicketRow | undefined,
   staff: Staff[],
   now: Date = new Date(),
 ): Conversation {
-  const { ticket, replies, submitter, canReply } = detail;
+  const { ticket, replies, submitter, canReply, whatsappSession } = detail;
   const customerName =
     row?.submitterName ??
     (submitter?.kind === "driver" ? submitter.name : submitter?.kind === "hire_tenant" ? submitter.tenantName : null) ??
@@ -165,6 +168,9 @@ export function detailToConversation(
     "Unknown caller";
   const phone =
     row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
+  const leadMessages = whatsappSession?.length
+    ? whatsappSession.map((m) => botMessage(m, customerName))
+    : [firstMessage(ticket, customerName, now)];
   return {
     ...base(ticket, staff, now, canReply),
     customerName,
@@ -172,7 +178,7 @@ export function detailToConversation(
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
     submitter,
     messages: [
-      firstMessage(ticket, customerName, now),
+      ...leadMessages,
       ...[...replies]
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         .map((r) => replyMessage(r, customerName, staff, now)),
