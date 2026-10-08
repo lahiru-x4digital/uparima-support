@@ -7,30 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCan } from "@/lib/hooks/use-desk";
-import { useSendSms, useSmsCountries } from "@/lib/hooks/use-sms";
-import { PhoneInput, isValidNumber } from "./phone-input";
+import { useSendSms } from "@/lib/hooks/use-sms";
+import { PhoneInput, SRI_LANKA_ISO2, isValidNumber } from "./phone-input";
 import type { SendSmsForm } from "@/types/sms";
 
 const MAX_LENGTH = 1000;
 
-const EMPTY: SendSmsForm = { countryIso2: "", phone: "", message: "" };
+const EMPTY: SendSmsForm = { countryIso2: SRI_LANKA_ISO2, phone: "", message: "" };
 
 export function SendSmsForm() {
-  const { data: countries = [], isLoading: loadingCountries } = useSmsCountries();
   const canSend = useCan("sms.send");
   const send = useSendSms();
   const [form, setForm] = useState<SendSmsForm>(EMPTY);
 
   const set = <K extends keyof SendSmsForm>(key: K, value: SendSmsForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
-  const canSubmit =
-    canSend && !!form.countryIso2 && isValidNumber(form.phone) && form.message.trim().length > 0 && !send.isPending;
+  const canSubmit = canSend && isValidNumber(form.phone) && form.message.trim().length > 0 && !send.isPending;
 
   function submit() {
-    if (!form.countryIso2) {
-      toast.error("Select a country");
-      return;
-    }
     if (!isValidNumber(form.phone)) {
       toast.error("Enter a valid mobile number");
       return;
@@ -54,14 +48,7 @@ export function SendSmsForm() {
         </div>
 
         <div className="space-y-5 p-5 sm:p-6">
-          <PhoneInput
-            countries={countries}
-            countryIso2={form.countryIso2}
-            phone={form.phone}
-            onCountryChange={(v) => set("countryIso2", v)}
-            onPhoneChange={(v) => set("phone", v)}
-          />
-          {loadingCountries && <p className="text-xs text-muted-foreground">Loading countries…</p>}
+          <PhoneInput phone={form.phone} onPhoneChange={(v) => set("phone", v)} />
 
           <div>
             <Label className="mb-1.5 text-xs font-semibold">Message</Label>
