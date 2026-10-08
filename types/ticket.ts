@@ -4,7 +4,7 @@ export type TicketStatus = "pending" | "in_review" | "completed";
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
 export type SubmitterType = "user" | "rider" | "ads" | "jobs" | "driver" | "hire_tenant";
 /** Where a ticket came from: the apps/portal, or the WhatsApp bot. */
-export type TicketChannel = "app" | "whatsapp";
+export type TicketChannel = "app" | "whatsapp" | "email";
 export type ContactPreference = "call" | "message";
 
 export interface Ticket {
@@ -23,8 +23,6 @@ export interface Ticket {
   slaDueAt: string | null;
   rideId: string | null;
   reporterPhone: string | null;
-  /** Set on tickets imported from a connected mailbox. */
-  source?: "app" | "phone" | "email";
   reporterEmail?: string | null;
   loggedByUserId: number | null;
   channel: TicketChannel;
@@ -100,8 +98,6 @@ export interface TicketListParams {
   category?: string;
   needsContact?: boolean;
   channel?: TicketChannel;
-  /** Only tickets imported from email. */
-  source?: "email";
 }
 
 export interface Staff {

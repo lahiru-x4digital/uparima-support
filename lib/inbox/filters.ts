@@ -16,7 +16,7 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
     params.status = filters.status;
   }
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
-  if (filters.channel === "email") params.source = "email";
+  if (filters.channel === "email") params.channel = "email";
   return params;
 }
 

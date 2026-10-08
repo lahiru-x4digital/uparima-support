@@ -12,9 +12,9 @@ export function attachmentOf(key: string): Attachment {
 }
 
 /** Where the customer reached us: the bot, an agent-logged call, or one of the apps. */
-export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submitterType"> & Partial<Pick<Ticket, "source">>): Channel {
+export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submitterType">): Channel {
   if (t.channel === "whatsapp") return "whatsapp";
-  if (t.source === "email") return "email";
+  if (t.channel === "email") return "email";
   if (t.loggedByUserId != null) return "phone";
   return t.submitterType === "driver" ? "driver_app" : "rider_app";
 }
