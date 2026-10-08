@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import type { WhatsappButton, WhatsappHeaderType, WhatsappTemplate, WhatsappTemplateInput } from "@/types/message-template";
 import { PRODUCT_OPTIONS } from "../meta-products";
 import { CATEGORY_OPTIONS, EDITABLE, LANGUAGE_OPTIONS, LIMITS, WA_STATUS } from "./meta";
-import { WhatsappPreview } from "./whatsapp-preview";
+import { WhatsappPreview } from "@/components/template-preview/whatsapp-preview";
 
 const EMPTY: WhatsappTemplateInput = {
   name: "", language: "en", category: "UTILITY", product: null, headerType: "none", headerText: null, headerExample: null,

@@ -12,6 +12,7 @@ import { useClampPage, usePagedListState } from "@/lib/hooks/use-paged-list";
 import { productLabel } from "../meta-products";
 import { TemplateTabs } from "../template-tabs";
 import { WA_STATUS } from "./meta";
+import { WhatsappTemplateView } from "./whatsapp-template-view";
 import { ListPagination } from "../list-pagination";
 import { ListSearch } from "../list-search";
 
@@ -80,7 +81,8 @@ export function WhatsappTemplateList() {
                 <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", WA_STATUS[t.status].className)} title={WA_STATUS[t.status].hint}>
                   {WA_STATUS[t.status].label}
                 </span>
-                <Link href={`/templates/whatsapp/${t.id}`} aria-label={`Open ${t.name}`} className={buttonVariants({ variant: "ghost", size: "icon" })}><Pencil /></Link>
+                <WhatsappTemplateView t={t} />
+                <Link href={`/templates/whatsapp/${t.id}`} aria-label={`Edit ${t.name}`} title="Edit" className={buttonVariants({ variant: "ghost", size: "icon" })}><Pencil /></Link>
               </li>
             ))}
           </ul>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextVar, previewHtml, templateVars } from "./format";
+import { fillVars, nextVar, previewHtml, templateVars } from "./format";
 
 describe("templateVars / nextVar", () => {
   it("finds variables and the next free number", () => {
@@ -17,5 +17,11 @@ describe("previewHtml", () => {
     expect(html).toContain("<em>x</em>");
     expect(html).toContain("<s>y</s>");
     expect(html).toContain("&lt;b&gt;");
+  });
+});
+
+describe("fillVars", () => {
+  it("fills numbered variables and keeps missing ones", () => {
+    expect(fillVars("Hi {{1}}, ride {{2}}", ["Kamal"])).toBe("Hi Kamal, ride {{2}}");
   });
 });

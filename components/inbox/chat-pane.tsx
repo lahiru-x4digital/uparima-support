@@ -5,6 +5,7 @@ import { ChatHeader } from "./chat-header";
 import { Composer } from "./composer";
 import { HandoffBanner } from "./handoff-banner";
 import { MessageList } from "./message-list";
+import { TemplatePicker } from "./template-picker/template-picker";
 
 interface Props {
   conversation: Conversation | null;
@@ -20,12 +21,14 @@ interface Props {
   onToggleContext: () => void;
   onStatusChange: (status: ConversationStatus) => void;
   onSend: (text: string, files: File[]) => Promise<unknown>;
+  /** Email tickets: send a designed email template as the reply. */
+  onSendEmailTemplate: (templateId: number, text: string) => Promise<unknown>;
   onMarkContacted: () => void;
 }
 
 export function ChatPane({
   conversation, loading, error, contextOpen, canReply, canUpdate, markingContacted,
-  onRetry, onBack, onToggleContext, onStatusChange, onSend, onMarkContacted,
+  onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted,
 }: Props) {
   if (!conversation) {
     return (
@@ -55,15 +58,23 @@ export function ChatPane({
       )}
       {canReply ? (
         conversation.channel === "whatsapp" && !conversation.isCurrentSession ? (
+          // A reply always reaches the customer now, in their current
+          // session — no template or free text here helps a session that
+          // has already ended; open the current one to reply instead.
           <p className="border-t p-3 text-center text-xs text-muted-foreground">
             This conversation has ended. A reply would reach the customer now, in their current conversation — open that one to reply.
           </p>
         ) : conversation.channel === "whatsapp" && !conversation.canReply ? (
-          <p className="border-t p-3 text-center text-xs text-muted-foreground">
-            Can&apos;t reply: this customer&apos;s last WhatsApp message was over 23.5 hours ago. They&apos;ll need to write again first.
-          </p>
+          // Outside the 24-hour window only an approved template can reach the customer.
+          <div className="flex flex-wrap items-center justify-center gap-3 border-t p-3 text-center text-xs text-muted-foreground">
+            <span>The customer&apos;s last WhatsApp message was over 23.5 hours ago — free text can&apos;t be sent, but an approved template can.</span>
+            <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} sendOnly label="Send a template" />
+          </div>
         ) : (
-          <Composer onSend={onSend} disabled={conversation.status === "completed" || !!error || loading} />
+          <Composer onSend={onSend} disabled={conversation.status === "completed" || !!error || loading}
+            renderTemplates={(insert) => (
+              <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} onInsertText={insert} />
+            )} />
         )
       ) : (
         <p className="border-t p-3 text-center text-xs text-muted-foreground">Your account can&apos;t reply to tickets.</p>

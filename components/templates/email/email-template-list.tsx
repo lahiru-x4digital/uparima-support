@@ -11,6 +11,7 @@ import { useClampPage, usePagedListState } from "@/lib/hooks/use-paged-list";
 import { productLabel } from "../meta-products";
 import { TemplateTabs } from "../template-tabs";
 import { ListPagination } from "../list-pagination";
+import { EmailTemplateView } from "./email-template-view";
 import { ListSearch } from "../list-search";
 
 export function EmailTemplateList() {
@@ -60,6 +61,7 @@ export function EmailTemplateList() {
                   </p>
                 </div>
                 {t.product && <Badge variant="secondary">{productLabel(t.product)}</Badge>}
+                <EmailTemplateView t={t} />
                 {canUpdate && (
                   <Link href={`/templates/email/${t.id}`} aria-label={`Edit ${t.name}`} className={buttonVariants({ variant: "ghost", size: "icon" })}><Pencil /></Link>
                 )}

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useClampPage, usePagedListState } from "@/lib/hooks/use-paged-list";
 import { requestTypeLabel } from "./meta";
 import { TemplateTabs } from "./template-tabs";
+import { CareTemplateView } from "./care-template-view";
 import { ListPagination } from "./list-pagination";
 import { ListSearch } from "./list-search";
 
@@ -62,6 +63,7 @@ export function TemplateList() {
                   </p>
                 </div>
                 <Badge variant={t.status === "active" ? "default" : "secondary"} className={cn("capitalize")}>{t.status}</Badge>
+                <CareTemplateView t={t} />
                 {canUpdate && (
                   <Link href={`/templates/${t.id}`} aria-label={`Edit ${t.name}`} className={buttonVariants({ variant: "ghost", size: "icon" })}>
                     <Pencil />

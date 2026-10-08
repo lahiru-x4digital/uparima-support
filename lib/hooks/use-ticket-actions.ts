@@ -98,7 +98,8 @@ export function useReply(id: string) {
   const qc = useQueryClient();
   const { data: me } = useMe();
   return useMutation({
-    mutationFn: ({ message, files }: { message: string; files: File[] }) => replyToTicket(id, message, files),
+    mutationFn: ({ message, files, emailTemplateId }: { message: string; files: File[]; emailTemplateId?: number }) =>
+      replyToTicket(id, message, files, emailTemplateId),
     onMutate: async ({ message }) => {
       await qc.cancelQueries({ queryKey: ticketKeys.detail(id) });
       const previous = qc.getQueryData<TicketDetail>(ticketKeys.detail(id));

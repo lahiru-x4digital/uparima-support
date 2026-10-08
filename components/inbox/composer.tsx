@@ -23,9 +23,11 @@ interface Props {
   disabled?: boolean;
   /** Resolves when saved, rejects on failure (the composer then keeps the text). */
   onSend: (text: string, files: File[]) => Promise<unknown>;
+  /** Renders the Templates button; `insert` adds text to the reply box (after any existing text). */
+  renderTemplates?: (insert: (text: string) => void) => React.ReactNode;
 }
 
-export function Composer({ disabled, onSend }: Props) {
+export function Composer({ disabled, onSend, renderTemplates }: Props) {
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
@@ -74,6 +76,9 @@ export function Composer({ disabled, onSend }: Props) {
           </TooltipTrigger>
           <TooltipContent>Internal notes aren&apos;t available yet</TooltipContent>
         </Tooltip>
+        {renderTemplates && !disabled && (
+          <div className="ml-auto">{renderTemplates((t) => setText((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${t}` : t)))}</div>
+        )}
       </div>
 
       <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
