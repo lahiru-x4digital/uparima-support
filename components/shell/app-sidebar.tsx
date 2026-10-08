@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, Siren, UserCheck, UserPlus, Wallet } from "lucide-react";
@@ -75,6 +75,13 @@ export function AppSidebar() {
     }
   });
 
+  // The menu can be longer than the screen, so it scrolls inside the sidebar. Keep the current
+  // page's item in view when the page (or the rail's width) changes.
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    navRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
+  }, [pathname, collapsed, visibleNav.length]);
+
   function toggle() {
     setCollapsed((c) => {
       try {
@@ -89,11 +96,11 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "flex shrink-0 flex-col bg-linear-to-b from-sidebar to-sidebar-end text-sidebar-foreground transition-[width] duration-200",
+        "flex h-full min-h-0 shrink-0 flex-col bg-linear-to-b from-sidebar to-sidebar-end text-sidebar-foreground transition-[width] duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >
-      <div className={cn("flex items-center gap-2.5 py-5", collapsed ? "justify-center px-2" : "px-4")}>
+      <div className={cn("flex shrink-0 items-center gap-2.5 py-5", collapsed ? "justify-center px-2" : "px-4")}>
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-foreground/15 ring-1 ring-sidebar-foreground/20">
           <LifeBuoy className="size-5" />
         </span>
@@ -112,12 +119,20 @@ export function AppSidebar() {
       </div>
       {collapsed && (
         <button type="button" onClick={toggle} aria-label="Open sidebar" title="Open sidebar" aria-expanded={false}
-          className="mx-auto mb-2 inline-flex size-9 items-center justify-center rounded-lg bg-sidebar-foreground/10 text-sidebar-foreground ring-1 ring-sidebar-foreground/20 transition-colors hover:bg-sidebar-foreground/20">
+          className="mx-auto mb-2 inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-foreground/10 text-sidebar-foreground ring-1 ring-sidebar-foreground/20 transition-colors hover:bg-sidebar-foreground/20">
           <PanelLeftOpen className="size-4" />
         </button>
       )}
 
-      <nav className={cn("flex-1 space-y-1 py-2", collapsed ? "px-2.5" : "px-3")} aria-label="Main">
+      <nav
+        ref={navRef}
+        aria-label="Main"
+        className={cn(
+          // min-h-0 lets it shrink below its content so it scrolls instead of spilling out of the rail
+          "min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain py-2 [scrollbar-color:color-mix(in_oklch,var(--sidebar-foreground)_30%,transparent)_transparent] [scrollbar-width:thin]",
+          collapsed ? "px-2.5" : "px-3",
+        )}
+      >
         {visibleNav.map((item, index) => {
           const { href, label, icon: Icon, exact } = item;
           const heading = headingFor(item, index);
@@ -158,7 +173,7 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className={cn("flex items-center gap-1 border-t border-sidebar-foreground/15 px-3 py-3", collapsed ? "flex-col pb-14" : "justify-between")}>
+      <div className={cn("flex shrink-0 items-center gap-1 border-t border-sidebar-foreground/15 px-3 py-3", collapsed ? "flex-col pb-14" : "justify-between")}>
         <ThemeToggle />
         <button
           type="button"
