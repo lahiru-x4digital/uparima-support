@@ -184,6 +184,10 @@ export const botChatId = (phone: string) => `${BOT_CHAT_PREFIX}${phone}`;
 export const phoneFromBotChatId = (id: string) =>
   id.startsWith(BOT_CHAT_PREFIX) ? id.slice(BOT_CHAT_PREFIX.length) : null;
 
+/** A bot-only conversation counts as needing contact once the bot has handed
+ * the customer into the support flow, even though no ticket exists yet. */
+export const botNeedsContact = (state: string): boolean => state.startsWith("support.");
+
 function metaOptions(meta: BotChatMessage["meta"]): string[] | undefined {
   const list = meta?.options;
   return Array.isArray(list) ? list.filter((o): o is string => typeof o === "string") : undefined;
@@ -192,6 +196,15 @@ function metaOptions(meta: BotChatMessage["meta"]): string[] | undefined {
 const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
 
 const PASSTHROUGH_KINDS = new Set(["tap", "location", "location_request", "media", "cta", "template"]);
+
+/** The backend already knows the WhatsApp media type ("image" | "document" |
+ * "audio") — trusting it instead of re-inferring from the synthetic S3 key's
+ * extension avoids two independent extension-guessing paths drifting apart. */
+function mediaKindOf(mediaKind: string | undefined): Attachment["kind"] {
+  if (mediaKind === "image") return "image";
+  if (mediaKind === "audio") return "audio";
+  return "file";
+}
 
 /** Maps the bot's own message kind (buttons/list/tap/location/...) to the
  * portal's Message kind, so the thread renders the way WhatsApp itself
@@ -204,6 +217,14 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
       : PASSTHROUGH_KINDS.has(m.kind)
         ? (m.kind as Message["kind"])
         : "text";
+  // Populated once the backend has downloaded and stored the media (a few
+  // seconds after the message itself); absent for older messages or a still
+  // in-flight/failed capture, in which case the bubble falls back to its
+  // icon+text rendering (see MessageBubble's KindLine "media" case).
+  const s3Key = str(m.meta?.s3Key);
+  const attachments: Attachment[] = s3Key
+    ? [{ key: s3Key, name: s3Key.split("/").pop() ?? s3Key, kind: mediaKindOf(str(m.meta?.mediaKind)) }]
+    : [];
   return {
     id: m.id,
     direction: m.direction === "in" ? "inbound" : "outbound",
@@ -211,7 +232,7 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
     body: m.body,
     time: formatTime(m.createdAt),
     sender: m.direction === "in" ? customerName : "Bot",
-    attachments: [],
+    attachments,
     meta: {
       options: metaOptions(m.meta),
       menu: str(m.meta?.menu),
@@ -244,7 +265,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     subject: "WhatsApp conversation",
     preview: row.lastDirection === "out" ? `Bot: ${row.lastBody}` : row.lastBody,
     rideId: null,
-    needsContact: false,
+    needsContact: botNeedsContact(row.state),
     contactPreference: null,
     contactedAt: null,
     topic: null,
@@ -277,7 +298,7 @@ export function botChatThreadToConversation(phone: string, thread: BotChatThread
     subject: "WhatsApp conversation",
     preview: thread.messages[thread.messages.length - 1]?.body ?? "",
     rideId: null,
-    needsContact: false,
+    needsContact: botNeedsContact(thread.contact.state),
     contactPreference: null,
     contactedAt: null,
     topic: null,

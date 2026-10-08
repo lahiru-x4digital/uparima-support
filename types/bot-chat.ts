@@ -16,6 +16,9 @@ export interface BotChatMessage {
   direction: "in" | "out";
   kind: string;
   body: string;
+  /** For `kind: "media"`, may include `mediaKind`/`mimeType` and, once the
+   * backend has downloaded and stored the file (a few seconds later), an
+   * `s3Key: string` the portal resolves into a real preview/player. */
   meta: Record<string, unknown> | null;
   createdAt: string;
 }

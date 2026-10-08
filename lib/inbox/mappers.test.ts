@@ -6,6 +6,7 @@ import {
   botChatId,
   botChatRowToConversation,
   botChatThreadToConversation,
+  botNeedsContact,
   channelOf,
   detailToConversation,
   phoneFromBotChatId,
@@ -162,6 +163,30 @@ describe("botChatRowToConversation", () => {
     expect(c.customerName).toBe("+94771234567");
     expect(c.preview).toBe("Bot: How can I help?");
   });
+
+  it("flags needsContact once the bot has handed the conversation to support", () => {
+    const row: BotChatRow = {
+      phone: "94771234567",
+      name: "Kamal",
+      language: "si",
+      userId: 9,
+      state: "support.detail",
+      lastAt: "2026-10-06T11:40:00Z",
+      lastDirection: "in",
+      lastKind: "text",
+      lastBody: "help",
+    };
+    expect(botChatRowToConversation(row, NOW).needsContact).toBe(true);
+  });
+});
+
+describe("botNeedsContact", () => {
+  it("is true only once the bot state has handed off to support", () => {
+    expect(botNeedsContact("support.who")).toBe(true);
+    expect(botNeedsContact("support.detail")).toBe(true);
+    expect(botNeedsContact("idle")).toBe(false);
+    expect(botNeedsContact("signup.photo")).toBe(false);
+  });
 });
 
 describe("botChatThreadToConversation", () => {
@@ -211,6 +236,37 @@ describe("botChatThreadToConversation", () => {
     expect(c.messages[0]).toMatchObject({ kind: "options", meta: { options: ["Book a ride", "Driver account", "My rides"] } });
     expect(c.messages[1]).toMatchObject({ kind: "tap", body: "Driver account" });
     expect(c.messages[2]).toMatchObject({ kind: "location_request" });
+  });
+
+  it("renders a real attachment once the backend has stored the media, and falls back otherwise", () => {
+    const thread: BotChatThread = {
+      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      canReply: true,
+      hasMore: false,
+      messages: [
+        {
+          id: "1",
+          direction: "in",
+          kind: "media",
+          body: "Photo",
+          meta: { mediaKind: "image", mimeType: "image/jpeg", s3Key: "support/whatsapp-media/wamid.1/abc.jpg" },
+          createdAt: "2026-10-06T11:40:00Z",
+        },
+        {
+          id: "2",
+          direction: "in",
+          kind: "media",
+          body: "Document",
+          meta: { mediaKind: "audio", mimeType: "audio/ogg" },
+          createdAt: "2026-10-06T11:41:00Z",
+        },
+      ],
+    };
+    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    expect(c.messages[0].attachments).toEqual([
+      { key: "support/whatsapp-media/wamid.1/abc.jpg", name: "abc.jpg", kind: "image" },
+    ]);
+    expect(c.messages[1].attachments).toEqual([]);
   });
 });
 
