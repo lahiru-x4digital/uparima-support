@@ -23,7 +23,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
-  { href: "/templates", label: "Care Templates", icon: ClipboardList },
+  { href: "/templates", label: "Templates", icon: ClipboardList },
   { href: "/sms", label: "Send SMS", icon: Send },
   { href: "/sms/history", label: "SMS History", icon: History },
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },

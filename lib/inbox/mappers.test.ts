@@ -241,6 +241,9 @@ describe("productOf", () => {
     expect(productOf("uparima_rides")).toBe("riders");
     expect(productOf("ride_reports")).toBe("riders");
     expect(productOf("riders")).toBe("riders");
+    expect(productOf("uparima_rides", "driver")).toBe("drivers");
+    expect(productOf("uparima_rides", "user")).toBe("riders");
+    expect(productOf("drivers")).toBe("drivers");
     expect(productOf("uparima_ads")).toBe("ads");
     expect(productOf("ads")).toBe("ads");
     expect(productOf("uparima_jobs")).toBe("hire");

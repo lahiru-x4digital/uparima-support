@@ -11,6 +11,7 @@ export const CHANNELS: Record<Channel, { label: string; icon: LucideIcon; classN
 
 export const PRODUCTS: Record<Product, { label: string; className: string }> = {
   riders: { label: "Riders", className: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300" },
+  drivers: { label: "Drivers", className: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300" },
   ads: { label: "Ads", className: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300" },
   hire: { label: "Hire", className: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300" },
   mart: { label: "Mart", className: "bg-lime-100 text-lime-700 dark:bg-lime-950 dark:text-lime-300" },

@@ -1,7 +1,7 @@
 export type EmailProvider = "gmail" | "outlook" | "imap";
 export type EmailAuthType = "password" | "oauth" | "service_account";
 export type EmailAccountStatus = "active" | "inactive" | "error";
-export type EmailCategory = "riders" | "ads" | "hire";
+export type EmailCategory = "riders" | "drivers" | "ads" | "hire";
 export type EmailPriority = "low" | "normal" | "high" | "urgent";
 
 /** A connected mailbox as returned by `/support-desk/email-accounts` (secrets are never included). */

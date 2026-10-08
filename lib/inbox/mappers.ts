@@ -21,13 +21,16 @@ export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submit
 
 /**
  * Product from the ticket category. Covers the app keys (`uparima_rides`, `ride_reports`,
- * `uparima_ads`, `uparima_jobs`, `uparima_mart`) and the email mailbox keys (`riders`, `ads`, `hire`).
+ * `uparima_ads`, `uparima_jobs`, `uparima_mart`) and the email mailbox keys (`riders`, `drivers`,
+ * `ads`, `hire`). The rider and driver apps both send `uparima_rides`, so a ride ticket filed by a
+ * driver is "drivers" and one filed by anyone else is "riders".
  */
-export function productOf(category: string | null | undefined): Product | null {
+export function productOf(category: string | null | undefined, submitterType?: Ticket["submitterType"]): Product | null {
   const c = (category ?? "").toLowerCase();
   if (!c) return null;
   if (/hire|job/.test(c)) return "hire";
-  if (/ride|driver/.test(c)) return "riders";
+  if (/driver/.test(c)) return "drivers";
+  if (/ride/.test(c)) return submitterType === "driver" ? "drivers" : "riders";
   if (/(^|_)ads?($|_)|classified/.test(c)) return "ads";
   if (/mart/.test(c)) return "mart";
   return null;
@@ -86,7 +89,7 @@ function base(
     ticketNumber: ticket.ticketNumber,
     role: roleOf(ticket),
     channel: channelOf(ticket),
-    product: productOf(ticket.category),
+    product: productOf(ticket.category, ticket.submitterType),
     status: ticket.status,
     priority: ticket.priority,
     assignedToUserId: ticket.assignedToUserId,
