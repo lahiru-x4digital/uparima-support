@@ -11,10 +11,10 @@ import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStat
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters } from "@/lib/inbox/filters";
 import {
+  botChatRefFromId,
   botChatRowToConversation,
   botChatThreadToConversation,
   detailToConversation,
-  phoneFromBotChatId,
   rowToConversation,
 } from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
@@ -84,22 +84,26 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     [merged, filters, me?.id, user?.id],
   );
 
-  const activePhone = activeId ? phoneFromBotChatId(activeId) : null;
-  const isBotActive = !!activePhone;
+  const activeBotRef = activeId ? botChatRefFromId(activeId) : null;
+  const activePhone = activeBotRef?.phone ?? null;
+  const activeSessionId = activeBotRef?.sessionId ?? null;
+  const isBotActive = !!activeBotRef;
 
   const detail = useTicketDetail(isBotActive ? null : activeId);
-  const botThread = useBotChatThread(activePhone);
+  const botThread = useBotChatThread(activePhone, activeSessionId);
 
   const active = useMemo((): Conversation | null => {
     if (!activeId) return null;
-    if (activePhone) {
-      if (botThread.data) return botChatThreadToConversation(activePhone, botThread.data);
+    if (activeBotRef) {
+      if (botThread.data) {
+        return botChatThreadToConversation(activeBotRef.phone, activeBotRef.sessionId, botThread.data);
+      }
       return allBotConversations.find((c) => c.id === activeId) ?? null;
     }
     const row = rows.find((r) => r.id === activeId);
     if (detail.data) return detailToConversation(detail.data, row, staff);
     return ticketConversations.find((c) => c.id === activeId) ?? null;
-  }, [activeId, activePhone, botThread.data, allBotConversations, rows, detail.data, ticketConversations, staff]);
+  }, [activeId, activeBotRef, botThread.data, allBotConversations, rows, detail.data, ticketConversations, staff]);
 
   const ticketId = isBotActive ? "" : (activeId ?? "");
   const reply = useReply(ticketId);

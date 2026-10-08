@@ -20,10 +20,10 @@ export function useBotChatList(search: string) {
   });
 }
 
-export function useBotChatThread(phone: string | null) {
+export function useBotChatThread(phone: string | null, sessionId: string | null) {
   return useQuery({
-    queryKey: botChatKeys.thread(phone ?? ""),
-    queryFn: () => getBotChat(phone as string),
+    queryKey: botChatKeys.thread(phone ?? "", sessionId),
+    queryFn: () => getBotChat(phone as string, sessionId),
     enabled: !!phone,
     refetchInterval: THREAD_POLL_MS,
     refetchIntervalInBackground: false,

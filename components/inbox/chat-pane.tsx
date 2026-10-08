@@ -54,7 +54,11 @@ export function ChatPane({
         <MessageList conversationId={conversation.id} messages={conversation.messages} />
       )}
       {canReply ? (
-        conversation.channel === "whatsapp" && !conversation.canReply ? (
+        conversation.channel === "whatsapp" && !conversation.isCurrentSession ? (
+          <p className="border-t p-3 text-center text-xs text-muted-foreground">
+            This conversation has ended. A reply would reach the customer now, in their current conversation — open that one to reply.
+          </p>
+        ) : conversation.channel === "whatsapp" && !conversation.canReply ? (
           <p className="border-t p-3 text-center text-xs text-muted-foreground">
             Can&apos;t reply: this customer&apos;s last WhatsApp message was over 23.5 hours ago. They&apos;ll need to write again first.
           </p>

@@ -106,6 +106,7 @@ function base(
     language: ticket.contactLanguage,
     slaDueAt: ticket.slaDueAt,
     canReply,
+    isCurrentSession: true,
   };
 }
 
@@ -183,13 +184,27 @@ export function detailToConversation(
 export const whatsappDigits = (phone: string) => phone.replace(/\D/g, "");
 
 const BOT_CHAT_PREFIX = "bot:";
-export const botChatId = (phone: string) => `${BOT_CHAT_PREFIX}${phone}`;
-export const phoneFromBotChatId = (id: string) =>
-  id.startsWith(BOT_CHAT_PREFIX) ? id.slice(BOT_CHAT_PREFIX.length) : null;
+/** A synthetic conversation id for one session: `bot:<phone>:<sessionId>`,
+ * or `bot:<phone>:legacy` for messages logged before sessions existed. */
+export const botChatId = (phone: string, sessionId: string | null) =>
+  `${BOT_CHAT_PREFIX}${phone}:${sessionId ?? "legacy"}`;
 
-/** A bot-only conversation counts as needing contact once the bot has handed
- * the customer into the support flow, even though no ticket exists yet. */
-export const botNeedsContact = (state: string): boolean => state.startsWith("support.");
+export interface BotChatRef {
+  phone: string;
+  sessionId: string | null;
+}
+
+export function botChatRefFromId(id: string): BotChatRef | null {
+  if (!id.startsWith(BOT_CHAT_PREFIX)) return null;
+  const rest = id.slice(BOT_CHAT_PREFIX.length);
+  const sep = rest.lastIndexOf(":");
+  if (sep === -1) return null;
+  const sessionId = rest.slice(sep + 1);
+  return {
+    phone: rest.slice(0, sep),
+    sessionId: sessionId === "legacy" ? null : sessionId,
+  };
+}
 
 function metaOptions(meta: BotChatMessage["meta"]): string[] | undefined {
   const list = meta?.options;
@@ -246,12 +261,13 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
   };
 }
 
-/** A WhatsApp conversation the bot has had with no ticket yet, as a
- * list-row-shaped synthetic `Conversation` (id `bot:<phone>`). */
+/** One session of a WhatsApp conversation the bot has had with no ticket
+ * yet, as a list-row-shaped synthetic `Conversation` (id
+ * `bot:<phone>:<sessionId>`). */
 export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()): Conversation {
   const customerName = row.name ?? `+${row.phone}`;
   return {
-    id: botChatId(row.phone),
+    id: botChatId(row.phone, row.sessionId),
     ticketNumber: "",
     customerName,
     role: "driver",
@@ -268,23 +284,33 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     subject: "WhatsApp conversation",
     preview: row.lastDirection === "out" ? `Bot: ${row.lastBody}` : row.lastBody,
     rideId: null,
-    needsContact: botNeedsContact(row.state),
+    needsContact: row.needsContact,
     contactPreference: null,
     contactedAt: null,
     topic: null,
     language: row.language,
     slaDueAt: null,
     canReply: true,
+    isCurrentSession: row.isCurrentSession,
     submitter: null,
     messages: [],
   };
 }
 
-/** The full bot-chat thread for a ticketless conversation, in `ChatPane` shape. */
-export function botChatThreadToConversation(phone: string, thread: BotChatThread, now: Date = new Date()): Conversation {
+/** The full bot-chat thread for a ticketless conversation, in `ChatPane`
+ * shape. `sessionId` is the session being viewed, which the caller already
+ * knows from the row/id it opened — it may differ from
+ * `thread.contact.sessionId`, the phone's *current* session (see
+ * `BotChatThread.contact.sessionId`). */
+export function botChatThreadToConversation(
+  phone: string,
+  sessionId: string | null,
+  thread: BotChatThread,
+  now: Date = new Date(),
+): Conversation {
   const customerName = thread.contact.name ?? `+${phone}`;
   return {
-    id: botChatId(phone),
+    id: botChatId(phone, sessionId),
     ticketNumber: "",
     customerName,
     role: "driver",
@@ -301,13 +327,14 @@ export function botChatThreadToConversation(phone: string, thread: BotChatThread
     subject: "WhatsApp conversation",
     preview: thread.messages[thread.messages.length - 1]?.body ?? "",
     rideId: null,
-    needsContact: botNeedsContact(thread.contact.state),
+    needsContact: thread.contact.needsContact,
     contactPreference: null,
     contactedAt: null,
     topic: null,
     language: thread.contact.language,
     slaDueAt: null,
     canReply: thread.canReply,
+    isCurrentSession: thread.isCurrentSession,
     submitter: null,
     messages: thread.messages.map((m) => botMessage(m, customerName)),
   };

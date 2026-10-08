@@ -4,9 +4,12 @@ import type { BotChatReplyResult, BotChatRow, BotChatThread } from "@/types/bot-
 export const listBotChats = (params: { page: number; perPage: number; search?: string }) =>
   apiGetPage<BotChatRow>("/support-desk/bot-chats", { params });
 
-/** The newest `limit` messages of one number, oldest first. */
-export const getBotChat = (phone: string, limit = 200) =>
-  apiGet<BotChatThread>(`/support-desk/bot-chats/${phone}/messages`, { params: { limit } });
+/** The newest `limit` messages of one session, oldest first. `sessionId` null
+ * means the legacy bucket of messages logged before sessions existed. */
+export const getBotChat = (phone: string, sessionId: string | null, limit = 200) =>
+  apiGet<BotChatThread>(`/support-desk/bot-chats/${phone}/messages`, {
+    params: { sessionId: sessionId ?? "legacy", limit },
+  });
 
 /** A staff reply to a conversation with no ticket yet (or whose ticket is
  * closed): opens/reuses a ticket behind the scenes and delivers over

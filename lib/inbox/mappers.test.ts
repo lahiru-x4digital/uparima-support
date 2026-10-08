@@ -4,12 +4,11 @@ import type { BotChatRow, BotChatThread } from "@/types/bot-chat";
 import {
   attachmentOf,
   botChatId,
+  botChatRefFromId,
   botChatRowToConversation,
   botChatThreadToConversation,
-  botNeedsContact,
   channelOf,
   detailToConversation,
-  phoneFromBotChatId,
   productOf,
   rowToConversation,
   slaState,
@@ -115,13 +114,17 @@ describe("detailToConversation", () => {
   });
 });
 
-describe("botChatId / phoneFromBotChatId", () => {
-  it("round-trips a phone number through the synthetic id", () => {
-    expect(botChatId("94771234567")).toBe("bot:94771234567");
-    expect(phoneFromBotChatId("bot:94771234567")).toBe("94771234567");
+describe("botChatId / botChatRefFromId", () => {
+  it("round-trips a phone and session through the synthetic id", () => {
+    expect(botChatId("94771234567", "s1")).toBe("bot:94771234567:s1");
+    expect(botChatRefFromId("bot:94771234567:s1")).toEqual({ phone: "94771234567", sessionId: "s1" });
+  });
+  it("encodes a null session as the legacy bucket", () => {
+    expect(botChatId("94771234567", null)).toBe("bot:94771234567:legacy");
+    expect(botChatRefFromId("bot:94771234567:legacy")).toEqual({ phone: "94771234567", sessionId: null });
   });
   it("returns null for a real ticket id", () => {
-    expect(phoneFromBotChatId("t1")).toBeNull();
+    expect(botChatRefFromId("t1")).toBeNull();
   });
 });
 
@@ -133,13 +136,16 @@ describe("botChatRowToConversation", () => {
       language: "si",
       userId: 9,
       state: "idle",
+      sessionId: "s1",
+      isCurrentSession: true,
       lastAt: "2026-10-06T11:40:00Z",
       lastDirection: "in",
       lastKind: "text",
       lastBody: "hi",
+      needsContact: false,
     };
     const c = botChatRowToConversation(row, NOW);
-    expect(c.id).toBe("bot:94771234567");
+    expect(c.id).toBe("bot:94771234567:s1");
     expect(c.ticketNumber).toBe("");
     expect(c.status).toBe("bot_only");
     expect(c.priority).toBeNull();
@@ -154,45 +160,53 @@ describe("botChatRowToConversation", () => {
       language: null,
       userId: null,
       state: "idle",
+      sessionId: null,
+      isCurrentSession: false,
       lastAt: "2026-10-06T11:40:00Z",
       lastDirection: "out",
       lastKind: "text",
       lastBody: "How can I help?",
+      needsContact: false,
     };
     const c = botChatRowToConversation(row, NOW);
     expect(c.customerName).toBe("+94771234567");
     expect(c.preview).toBe("Bot: How can I help?");
+    expect(c.id).toBe("bot:94771234567:legacy");
   });
 
-  it("flags needsContact once the bot has handed the conversation to support", () => {
+  it("carries the backend's needsContact flag straight through", () => {
     const row: BotChatRow = {
       phone: "94771234567",
       name: "Kamal",
       language: "si",
       userId: 9,
-      state: "support.detail",
+      state: "idle",
+      sessionId: "s1",
+      isCurrentSession: true,
       lastAt: "2026-10-06T11:40:00Z",
       lastDirection: "in",
       lastKind: "text",
       lastBody: "help",
+      needsContact: true,
     };
     expect(botChatRowToConversation(row, NOW).needsContact).toBe(true);
-  });
-});
-
-describe("botNeedsContact", () => {
-  it("is true only once the bot state has handed off to support", () => {
-    expect(botNeedsContact("support.who")).toBe(true);
-    expect(botNeedsContact("support.detail")).toBe(true);
-    expect(botNeedsContact("idle")).toBe(false);
-    expect(botNeedsContact("signup.photo")).toBe(false);
   });
 });
 
 describe("botChatThreadToConversation", () => {
   it("maps the thread's canReply window and messages", () => {
     const thread: BotChatThread = {
-      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      contact: {
+        phone: "94771234567",
+        name: "Kamal",
+        language: "si",
+        userId: 9,
+        state: "idle",
+        sessionId: "s1",
+        lastInboundAt: "2026-10-06T11:40:00Z",
+        needsContact: false,
+      },
+      isCurrentSession: true,
       canReply: false,
       hasMore: false,
       messages: [
@@ -200,7 +214,8 @@ describe("botChatThreadToConversation", () => {
         { id: "2", direction: "out", kind: "text", body: "Hello!", meta: null, createdAt: "2026-10-06T11:41:00Z" },
       ],
     };
-    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    const c = botChatThreadToConversation("94771234567", "s1", thread, NOW);
+    expect(c.id).toBe("bot:94771234567:s1");
     expect(c.canReply).toBe(false);
     expect(c.messages).toHaveLength(2);
     expect(c.messages[0]).toMatchObject({ direction: "inbound", sender: "Kamal" });
@@ -209,7 +224,17 @@ describe("botChatThreadToConversation", () => {
 
   it("maps buttons/list messages to kind 'options' with their titles, and a tapped choice to kind 'tap'", () => {
     const thread: BotChatThread = {
-      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      contact: {
+        phone: "94771234567",
+        name: "Kamal",
+        language: "si",
+        userId: 9,
+        state: "idle",
+        sessionId: "s1",
+        lastInboundAt: "2026-10-06T11:40:00Z",
+        needsContact: false,
+      },
+      isCurrentSession: true,
       canReply: true,
       hasMore: false,
       messages: [
@@ -232,7 +257,7 @@ describe("botChatThreadToConversation", () => {
         },
       ],
     };
-    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    const c = botChatThreadToConversation("94771234567", "s1", thread, NOW);
     expect(c.messages[0]).toMatchObject({ kind: "options", meta: { options: ["Book a ride", "Driver account", "My rides"] } });
     expect(c.messages[1]).toMatchObject({ kind: "tap", body: "Driver account" });
     expect(c.messages[2]).toMatchObject({ kind: "location_request" });
@@ -240,7 +265,17 @@ describe("botChatThreadToConversation", () => {
 
   it("renders a real attachment once the backend has stored the media, and falls back otherwise", () => {
     const thread: BotChatThread = {
-      contact: { phone: "94771234567", name: "Kamal", language: "si", userId: 9, state: "idle", lastInboundAt: "2026-10-06T11:40:00Z" },
+      contact: {
+        phone: "94771234567",
+        name: "Kamal",
+        language: "si",
+        userId: 9,
+        state: "idle",
+        sessionId: "s1",
+        lastInboundAt: "2026-10-06T11:40:00Z",
+        needsContact: false,
+      },
+      isCurrentSession: true,
       canReply: true,
       hasMore: false,
       messages: [
@@ -262,11 +297,31 @@ describe("botChatThreadToConversation", () => {
         },
       ],
     };
-    const c = botChatThreadToConversation("94771234567", thread, NOW);
+    const c = botChatThreadToConversation("94771234567", "s1", thread, NOW);
     expect(c.messages[0].attachments).toEqual([
       { key: "support/whatsapp-media/wamid.1/abc.jpg", name: "abc.jpg", kind: "image" },
     ]);
     expect(c.messages[1].attachments).toEqual([]);
+  });
+
+  it("flags needsContact from the backend, not from bot state", () => {
+    const thread: BotChatThread = {
+      contact: {
+        phone: "94771234567",
+        name: "Kamal",
+        language: "si",
+        userId: 9,
+        state: "idle",
+        sessionId: "s2",
+        lastInboundAt: "2026-10-06T11:40:00Z",
+        needsContact: true,
+      },
+      isCurrentSession: false,
+      canReply: true,
+      hasMore: false,
+      messages: [],
+    };
+    expect(botChatThreadToConversation("94771234567", "s1", thread, NOW).needsContact).toBe(true);
   });
 });
 
