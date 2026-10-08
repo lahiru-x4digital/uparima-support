@@ -34,6 +34,11 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
         <Avatar size="lg">
           <AvatarFallback>{initials(c.customerName)}</AvatarFallback>
         </Avatar>
+        {c.needsContact && (
+          <span className="absolute -top-1 -left-1 flex size-5 items-center justify-center rounded-full bg-destructive text-white ring-2 ring-background">
+            <span className="text-xs leading-none font-bold">!</span>
+          </span>
+        )}
         <span className={cn("absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-background", channel.className)}>
           <ChannelIcon className="size-3" />
         </span>
