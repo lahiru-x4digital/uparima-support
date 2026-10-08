@@ -1,13 +1,17 @@
 import type { Attachment, Channel, Product, Conversation, CustomerRole, Message } from "@/types/inbox";
+import { stableSignedUrl } from "./stable-url";
 import type { Staff, Ticket, TicketDetail, TicketReply, TicketRow } from "@/types/ticket";
 import type { BotChatMessage, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
 const IMAGE = /\.(jpe?g|png|webp|gif)$/i;
 const AUDIO = /\.(ogg|oga|mp3|m4a|aac|wav)$/i;
 
-export function attachmentOf(key: string): Attachment {
+export function attachmentOf(rawKey: string): Attachment {
   // `key` may be a signed URL ("...jpg?X-Amz-...") rather than a bare S3
-  // key, so the extension check must ignore the query string.
+  // key, so the extension check must ignore the query string. The backend
+  // re-signs it on every fetch; keep one link per file so a polled
+  // conversation does not reload its pictures (see stable-url.ts).
+  const key = stableSignedUrl(rawKey);
   const path = key.split("?")[0];
   const name = path.split("/").pop() || path;
   const kind = IMAGE.test(name) ? "image" : AUDIO.test(name) ? "audio" : "file";
@@ -251,9 +255,10 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
   // seconds after the message itself); absent for older messages or a still
   // in-flight/failed capture, in which case the bubble falls back to its
   // icon+text rendering (see MessageBubble's KindLine "media" case).
-  const s3Key = str(m.meta?.s3Key);
+  const rawS3Key = str(m.meta?.s3Key);
+  const s3Key = rawS3Key ? stableSignedUrl(rawS3Key) : rawS3Key;
   const attachments: Attachment[] = s3Key
-    ? [{ key: s3Key, name: s3Key.split("/").pop() ?? s3Key, kind: mediaKindOf(str(m.meta?.mediaKind)) }]
+    ? [{ key: s3Key, name: s3Key.split("?")[0].split("/").pop() ?? s3Key, kind: mediaKindOf(str(m.meta?.mediaKind)) }]
     : [];
   return {
     id: m.id,
