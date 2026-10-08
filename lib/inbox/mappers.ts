@@ -6,7 +6,10 @@ const IMAGE = /\.(jpe?g|png|webp|gif)$/i;
 const AUDIO = /\.(ogg|oga|mp3|m4a|aac|wav)$/i;
 
 export function attachmentOf(key: string): Attachment {
-  const name = key.split("/").pop() || key;
+  // `key` may be a signed URL ("...jpg?X-Amz-...") rather than a bare S3
+  // key, so the extension check must ignore the query string.
+  const path = key.split("?")[0];
+  const name = path.split("/").pop() || path;
   const kind = IMAGE.test(name) ? "image" : AUDIO.test(name) ? "audio" : "file";
   return { key, name, kind };
 }
