@@ -55,3 +55,26 @@ export const messageTemplateKeys = {
   whatsappDetail: (id: number) => ["whatsapp-templates", id] as const,
   whatsappMeta: ["whatsapp-templates", "meta-status"] as const,
 };
+
+export const driverKeys = {
+  all: ["drivers"] as const,
+  list: (status: string) => ["drivers", "list", status] as const,
+  pending: ["drivers", "pending"] as const,
+  detail: (id: string) => ["drivers", "detail", id] as const,
+  subscription: (id: string) => ["drivers", "subscription", id] as const,
+  devicePermissions: (id: string) => ["drivers", "device-permissions", id] as const,
+  termsStatus: (id: string) => ["drivers", "terms-status", id] as const,
+  vehicleTypes: ["drivers", "vehicle-types"] as const,
+  vehicleMakes: (typeId: string) => ["drivers", "vehicle-makes", typeId] as const,
+  vehicleModels: (typeId: string, makeId: string) => ["drivers", "vehicle-models", typeId, makeId] as const,
+};
+
+export const driverPaymentKeys = {
+  all: ["driver-payments"] as const,
+  platformFees: ["driver-payments", "platform-fees"] as const,
+  platformFeeLedger: (driverId: number, page: number) =>
+    ["driver-payments", "platform-fees", "ledger", driverId, page] as const,
+  promotionBalances: ["driver-payments", "promotion-balances"] as const,
+  withdrawals: (status: string, page: number) => ["driver-payments", "withdrawals", status, page] as const,
+  settings: ["driver-payments", "settings"] as const,
+};

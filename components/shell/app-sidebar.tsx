@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, ClipboardList, History, Inbox, LayoutDashboard, Mail, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
+import { useMe } from "@/lib/hooks/use-desk";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,10 @@ interface NavItem {
   icon: LucideIcon;
   section?: string;
   sectionIcon?: LucideIcon;
+  /** Shown only to an agent holding at least one of these permissions (always shown when omitted). */
+  anyPermission?: string[];
+  /** Active only on exactly this path, not on the pages beneath it. */
+  exact?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -28,6 +33,12 @@ const NAV: NavItem[] = [
   { href: "/sms/history", label: "SMS History", icon: History },
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
   { href: "/email/config", label: "Email Config", icon: Settings2 },
+  { href: "/drivers", label: "Drivers", icon: Car, section: "Drivers", sectionIcon: Car, anyPermission: ["driver.view"], exact: true },
+  { href: "/drivers/pending", label: "Pending Drivers", icon: UserCheck, anyPermission: ["driver.view", "driver.approve"] },
+  { href: "/drivers/add", label: "Add Driver", icon: UserPlus, anyPermission: ["driver.manual-register"] },
+  { href: "/drivers/platform-fees", label: "Platform Fees", icon: Receipt, anyPermission: ["driver-payment.view"] },
+  { href: "/drivers/promotion-balances", label: "Promotion Balances", icon: BadgePercent, anyPermission: ["driver-payment.view"] },
+  { href: "/drivers/discount-payments", label: "Withdrawals", icon: Wallet, anyPermission: ["driver-payment.view"] },
 ];
 
 /** Left navigation: violet gradient rail with the portal brand, nav items and account actions. */
@@ -35,6 +46,21 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
+  // Until the profile loads, gated items stay hidden rather than flash in.
+  const permissions = useMe().data?.permissions ?? [];
+  const visibleNav = NAV.filter((item) => !item.anyPermission || item.anyPermission.some((p) => permissions.includes(p)));
+  // An item belongs to the group opened by the nearest `section` item at or above it. The heading is
+  // shown above the first item of that group that is visible, so hiding the group's first item for
+  // lack of permission doesn't lose the heading.
+  const groupOf = (item: NavItem) => {
+    for (let i = NAV.indexOf(item); i >= 0; i--) if (NAV[i].section) return NAV[i];
+    return undefined;
+  };
+  const headingFor = (item: NavItem, index: number) => {
+    const group = groupOf(item);
+    if (!group) return undefined;
+    return visibleNav.slice(0, index).some((earlier) => groupOf(earlier) === group) ? undefined : group;
+  };
   // Only rendered after AuthGuard has resolved on the client, so reading storage here can't cause a hydration mismatch.
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -87,9 +113,12 @@ export function AppSidebar() {
       )}
 
       <nav className={cn("flex-1 space-y-1 py-2", collapsed ? "px-2.5" : "px-3")} aria-label="Main">
-        {NAV.map((item) => {
-          const { href, label, icon: Icon, section, sectionIcon: SectionIcon } = item;
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+        {visibleNav.map((item, index) => {
+          const { href, label, icon: Icon, exact } = item;
+          const heading = headingFor(item, index);
+          const section = heading?.section;
+          const SectionIcon = heading?.sectionIcon;
+          const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
           const badge = href === "/inbox" ? needsContact.data : undefined;
           return (
             <div key={href}>
