@@ -1,4 +1,5 @@
-export type DriverStatus = "pending" | "approved" | "rejected" | "suspended" | "deleted";
+// "incomplete": a signup that was started but never submitted (e.g. WhatsApp "Drive").
+export type DriverStatus = "incomplete" | "pending" | "approved" | "rejected" | "suspended" | "deleted";
 
 export type VehicleLookup = { id: number; name: string };
 
