@@ -71,4 +71,13 @@ describe("applyClientFilters", () => {
     expect(ids(applyClientFilters(withBotOnly, filters({ status: "completed" }), 5))).toEqual(["a", "b", "bot:94779999999"]);
     expect(ids(applyClientFilters(withBotOnly, filters({ status: "pending" }), 5))).toEqual(["a", "b", "bot:94779999999"]);
   });
+
+  it("on the needs-contact tab, only shows a bot-only row that is itself flagged needsContact", () => {
+    const withBotOnly = [
+      ...list,
+      conv({ id: "bot:waiting", ticketNumber: "", status: "bot_only", needsContact: true }),
+      conv({ id: "bot:idle", ticketNumber: "", status: "bot_only", needsContact: false }),
+    ];
+    expect(ids(applyClientFilters(withBotOnly, filters({ status: "needs_contact" }), 5))).toEqual(["a", "b", "bot:waiting"]);
+  });
 });
