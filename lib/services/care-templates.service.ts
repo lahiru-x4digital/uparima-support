@@ -1,7 +1,9 @@
-import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
+import { apiDelete, apiGet, apiGetPage, apiPost, apiPut } from "@/lib/api";
+import type { TemplateListParams } from "@/types/template-list";
 import type { CareTemplate, CareTemplateInput } from "@/types/care-template";
 
-export const listCareTemplates = () => apiGet<CareTemplate[]>("/support-desk/care-templates");
+export const listCareTemplates = (params: TemplateListParams) =>
+  apiGetPage<CareTemplate>("/support-desk/care-templates", { params: { ...params, q: params.q || undefined } });
 export const getCareTemplate = (id: number) => apiGet<CareTemplate>(`/support-desk/care-templates/${id}`);
 export const createCareTemplate = (body: CareTemplateInput) =>
   apiPost<CareTemplate>("/support-desk/care-templates", body);

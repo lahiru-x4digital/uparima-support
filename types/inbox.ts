@@ -7,7 +7,7 @@ export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email
 export type ConversationStatus = TicketStatus | "bot_only";
 export type Priority = TicketPriority;
 /** Which Uparima product a conversation is about (derived from the ticket category). */
-export type Product = "riders" | "ads" | "hire" | "mart";
+export type Product = "riders" | "drivers" | "ads" | "hire" | "mart";
 export type CustomerRole = "rider" | "driver";
 export type MessageDirection = "inbound" | "outbound";
 /**

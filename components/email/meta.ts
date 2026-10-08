@@ -9,6 +9,7 @@ export const PROVIDER_META: Record<EmailProvider, { label: string; blurb: string
 /** Which product the mailbox's tickets belong to. */
 export const CATEGORY_OPTIONS: { value: EmailCategory; label: string }[] = [
   { value: "riders", label: "Riders" },
+  { value: "drivers", label: "Drivers" },
   { value: "ads", label: "Ads" },
   { value: "hire", label: "Hire" },
 ];

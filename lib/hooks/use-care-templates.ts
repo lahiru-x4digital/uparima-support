@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -12,11 +12,17 @@ import {
   updateCareTemplate,
 } from "@/lib/services/care-templates.service";
 import type { CareTemplateInput } from "@/types/care-template";
+import type { TemplateListParams } from "@/types/template-list";
 import { careTemplateKeys } from "./query-keys";
 
-export function useCareTemplates() {
+export function useCareTemplates(params: TemplateListParams) {
   const { user } = useAuth();
-  return useQuery({ queryKey: careTemplateKeys.all, queryFn: listCareTemplates, enabled: !!user });
+  return useQuery({
+    queryKey: careTemplateKeys.list(params),
+    queryFn: () => listCareTemplates(params),
+    enabled: !!user,
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useCareTemplate(id: number | null) {
