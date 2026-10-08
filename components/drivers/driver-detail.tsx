@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Eye, History, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,7 @@ export function DriverDetail({ id }: { id: string }) {
   const canDelete = useCan("driver.delete");
   const canRemoveDoc = useCan("driver.document-remove");
   const canSeeFees = useCan("driver-payment.view");
+  const canSeeRides = useCan("ride.view");
 
   const { data, isLoading, error } = useDriverDetail(id);
   const approve = useApproveDriver();
@@ -145,6 +146,11 @@ export function DriverDetail({ id }: { id: string }) {
           {canUpdate && (
             <Link href={`/drivers/${id}/edit`} className={buttonVariants({ size: "sm", variant: "outline" })}>
               <Pencil /> Edit
+            </Link>
+          )}
+          {canSeeRides && (
+            <Link href={`/rides?driverId=${id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+              <History /> Ride history
             </Link>
           )}
           {showAiValidate && (

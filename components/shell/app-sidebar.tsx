@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, Siren, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
+import { useSos } from "@/components/sos/sos-provider";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,8 @@ const NAV: NavItem[] = [
   { href: "/drivers/platform-fees", label: "Platform Fees", icon: Receipt, anyPermission: ["driver-payment.view"] },
   { href: "/drivers/promotion-balances", label: "Promotion Balances", icon: BadgePercent, anyPermission: ["driver-payment.view"] },
   { href: "/drivers/discount-payments", label: "Withdrawals", icon: Wallet, anyPermission: ["driver-payment.view"] },
+  { href: "/rides", label: "Ride History", icon: Route, section: "Rides", sectionIcon: Car, anyPermission: ["ride.view"] },
+  { href: "/sos", label: "SOS Alerts", icon: Siren, anyPermission: ["sos.view"] },
 ];
 
 /** Left navigation: violet gradient rail with the portal brand, nav items and account actions. */
@@ -46,6 +49,8 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
+  // Open + acknowledged SOS alerts: the number the SOS item carries.
+  const activeSos = useSos().activeAlerts.length;
   // Until the profile loads, gated items stay hidden rather than flash in.
   const permissions = useMe().data?.permissions ?? [];
   const visibleNav = NAV.filter((item) => !item.anyPermission || item.anyPermission.some((p) => permissions.includes(p)));
@@ -119,7 +124,7 @@ export function AppSidebar() {
           const section = heading?.section;
           const SectionIcon = heading?.sectionIcon;
           const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-          const badge = href === "/inbox" ? needsContact.data : undefined;
+          const badge = href === "/inbox" ? needsContact.data : href === "/sos" ? activeSos : undefined;
           return (
             <div key={href}>
               {section && (collapsed

@@ -78,3 +78,16 @@ export const driverPaymentKeys = {
   withdrawals: (status: string, page: number) => ["driver-payments", "withdrawals", status, page] as const,
   settings: ["driver-payments", "settings"] as const,
 };
+
+export const rideHistoryKeys = {
+  list: (p: unknown) => ["rides", "list", p] as const,
+  path: (id: string) => ["rides", "path", id] as const,
+  stadiaKey: ["rides", "stadia-key"] as const,
+};
+
+export const sosKeys = {
+  all: ["sos"] as const,
+  active: ["sos", "active"] as const,
+  list: (status: string, page: number) => ["sos", "list", status, page] as const,
+  detail: (id: string) => ["sos", "detail", id] as const,
+};
