@@ -16,3 +16,9 @@ export const deleteWhatsappTemplate = (id: number) => apiDelete(`${BASE}/${id}`)
 export const submitWhatsappTemplate = (id: number) => apiPost<WhatsappTemplate>(`${BASE}/${id}/submit`);
 /** Pull the latest review status of every template from Meta. */
 export const syncWhatsappTemplates = () => apiPost<{ updated: number }>(`${BASE}/sync`);
+
+/** Sends an approved template to a WhatsApp number; `ticketId` also records it on that ticket. */
+export const sendWhatsappTemplate = (
+  id: number,
+  body: { phone: string; params: string[]; headerParam?: string; ticketId?: string },
+) => apiPost<{ sent: boolean; text: string }>(`${BASE}/${id}/send`, body);

@@ -11,12 +11,13 @@ import {
   getWhatsappTemplate,
   listWhatsappTemplates,
   submitWhatsappTemplate,
+  sendWhatsappTemplate,
   syncWhatsappTemplates,
   updateWhatsappTemplate,
 } from "@/lib/services/whatsapp-templates.service";
 import type { WhatsappTemplateInput } from "@/types/message-template";
 import type { TemplateListParams } from "@/types/template-list";
-import { messageTemplateKeys } from "./query-keys";
+import { botChatKeys, messageTemplateKeys, ticketKeys } from "./query-keys";
 
 export function useWhatsappTemplates(params: TemplateListParams) {
   const { user } = useAuth();
@@ -83,6 +84,20 @@ export function useDeleteWhatsappTemplate() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: messageTemplateKeys.whatsapp });
       toast.success("WhatsApp template deleted");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+}
+
+/** Sends an approved template from the inbox, then refreshes the open thread. */
+export function useSendWhatsappTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number } & Parameters<typeof sendWhatsappTemplate>[1]) => sendWhatsappTemplate(id, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ticketKeys.all });
+      void qc.invalidateQueries({ queryKey: botChatKeys.all });
+      toast.success("WhatsApp template sent");
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });

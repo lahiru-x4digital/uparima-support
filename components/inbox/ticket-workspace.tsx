@@ -182,6 +182,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             onToggleContext={() => setContextOpen((o) => !o)}
             onStatusChange={(status) => status !== "bot_only" && updateStatus.mutate(status)}
             onSend={send}
+            onSendEmailTemplate={(templateId, text) => reply.mutateAsync({ message: text, files: [], emailTemplateId: templateId })}
             onMarkContacted={() => markContacted.mutate()}
           />
         )}

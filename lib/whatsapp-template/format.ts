@@ -24,3 +24,8 @@ export function previewHtml(text: string, examples: string[]): string {
   out = out.replace(/~(?!\s)([^~\n]+?)~/g, "<s>$1</s>");
   return out.replace(/\n/g, "<br>");
 }
+
+/** {{1}}, {{2}} … replaced by `values` (1-based); missing ones are left as-is. */
+export function fillVars(text: string, values: string[]): string {
+  return text.replace(/\{\{\s*(\d+)\s*\}\}/g, (m, n: string) => values[Number(n) - 1]?.trim() || m);
+}

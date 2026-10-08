@@ -15,9 +15,11 @@ export const listTickets = (params: TicketListParams) =>
 export const getTicket = (id: string) => apiGet<TicketDetail>(`/support-desk/tickets/${id}`);
 
 /** Multipart: `message` plus any number of `files`. */
-export function replyToTicket(id: string, message: string, files: File[] = []) {
+/** `emailTemplateId` (email tickets): sends that designed email instead of plain text. */
+export function replyToTicket(id: string, message: string, files: File[] = [], emailTemplateId?: number) {
   const form = new FormData();
   form.append("message", message);
+  if (emailTemplateId) form.append("emailTemplateId", String(emailTemplateId));
   for (const file of files) form.append("files", file);
   return apiPost<TicketReply>(`/support-desk/tickets/${id}/replies`, form, {
     // Let the browser set the multipart boundary.

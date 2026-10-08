@@ -17,7 +17,7 @@ import { useEmailTemplate, useSaveEmailTemplate } from "@/lib/hooks/use-email-te
 import type { EmailBlock, EmailBlockType, EmailDesign, EmailFont, EmailSettings, EmailTemplate, TemplateProduct } from "@/types/message-template";
 import { PRODUCT_OPTIONS } from "../meta-products";
 import { BLOCK_META, BlockCard } from "./block-card";
-import { EmailPreview } from "./email-preview";
+import { EmailPreview } from "@/components/template-preview/email-preview";
 
 const FONTS: { value: EmailFont; label: string }[] = [
   { value: "sans", label: "Arial (clean)" },
