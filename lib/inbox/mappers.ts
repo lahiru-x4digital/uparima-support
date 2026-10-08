@@ -163,8 +163,11 @@ export function detailToConversation(
   const customerName =
     row?.submitterName ??
     (submitter?.kind === "driver" ? submitter.name : submitter?.kind === "hire_tenant" ? submitter.tenantName : null) ??
+    row?.submitterPhone ??
     ticket.reporterPhone ??
+    row?.reporterPhone ??
     ticket.reporterEmail ??
+    row?.reporterEmail ??
     "Unknown caller";
   const phone =
     row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
