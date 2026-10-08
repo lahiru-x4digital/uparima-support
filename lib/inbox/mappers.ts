@@ -26,6 +26,9 @@ export function channelOf(t: Pick<Ticket, "channel" | "loggedByUserId" | "submit
  * driver is "drivers" and one filed by anyone else is "riders".
  */
 export function productOf(category: string | null | undefined, submitterType?: Ticket["submitterType"]): Product | null {
+  // The apps send ads / jobs as the submitter type, so that wins over the category key.
+  if (submitterType === "ads") return "ads";
+  if (submitterType === "jobs") return "hire";
   const c = (category ?? "").toLowerCase();
   if (!c) return null;
   if (/hire|job/.test(c)) return "hire";

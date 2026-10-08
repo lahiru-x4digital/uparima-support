@@ -360,6 +360,9 @@ describe("productOf", () => {
     expect(productOf("uparima_jobs")).toBe("hire");
     expect(productOf("hire")).toBe("hire");
     expect(productOf("uparima_mart")).toBe("mart");
+    expect(productOf("uparima_mart", "ads")).toBe("ads");
+    expect(productOf("uparima_mart", "jobs")).toBe("hire");
+    expect(productOf("uparima_rides", "rider")).toBe("riders");
     expect(productOf("")).toBeNull();
     expect(productOf("something_else")).toBeNull();
   });

@@ -2,7 +2,7 @@
 
 export type TicketStatus = "pending" | "in_review" | "completed";
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
-export type SubmitterType = "user" | "driver" | "hire_tenant";
+export type SubmitterType = "user" | "rider" | "ads" | "jobs" | "driver" | "hire_tenant";
 /** Where a ticket came from: the apps/portal, or the WhatsApp bot. */
 export type TicketChannel = "app" | "whatsapp";
 export type ContactPreference = "call" | "message";
