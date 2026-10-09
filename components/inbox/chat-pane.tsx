@@ -16,6 +16,7 @@ interface Props {
   canReply: boolean;
   canUpdate: boolean;
   markingContacted: boolean;
+  convertingToTicket: boolean;
   onRetry: () => void;
   onBack: () => void;
   onToggleContext: () => void;
@@ -24,11 +25,12 @@ interface Props {
   /** Email tickets: send a designed email template as the reply. */
   onSendEmailTemplate: (templateId: number, text: string) => Promise<unknown>;
   onMarkContacted: () => void;
+  onConvertToTicket: () => void;
 }
 
 export function ChatPane({
-  conversation, loading, error, contextOpen, canReply, canUpdate, markingContacted,
-  onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted,
+  conversation, loading, error, contextOpen, canReply, canUpdate, markingContacted, convertingToTicket,
+  onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket,
 }: Props) {
   if (!conversation) {
     return (
@@ -40,8 +42,8 @@ export function ChatPane({
   }
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ChatHeader conversation={conversation} contextOpen={contextOpen} canUpdate={canUpdate} onBack={onBack}
-        onToggleContext={onToggleContext} onStatusChange={onStatusChange} />
+      <ChatHeader conversation={conversation} contextOpen={contextOpen} canUpdate={canUpdate} converting={convertingToTicket}
+        onBack={onBack} onToggleContext={onToggleContext} onStatusChange={onStatusChange} onConvertToTicket={onConvertToTicket} />
       {conversation.channel === "whatsapp" && (
         <HandoffBanner conversation={conversation} canUpdate={canUpdate} marking={markingContacted} onMarkContacted={onMarkContacted} />
       )}

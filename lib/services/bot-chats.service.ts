@@ -1,5 +1,5 @@
 import { apiGet, apiGetPage, apiPost } from "@/lib/api";
-import type { BotChatReplyResult, BotChatRow, BotChatThread } from "@/types/bot-chat";
+import type { BotChatConvertResult, BotChatReplyResult, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
 export const listBotChats = (params: { page: number; perPage: number; search?: string }) =>
   apiGetPage<BotChatRow>("/support-desk/bot-chats", { params });
@@ -16,3 +16,9 @@ export const getBotChat = (phone: string, sessionId: string | null, limit = 200)
  * WhatsApp. Rejects with 403 once the 23.5h reply window has closed. */
 export const replyToBotChat = (phone: string, message: string) =>
   apiPost<BotChatReplyResult>(`/support-desk/bot-chats/${phone}/replies`, { message });
+
+/** Manually marks a live WhatsApp conversation as a ticket, with no reply
+ * sent — for when staff want to track it even though the bot never
+ * escalated it to a hand-off. */
+export const convertBotChatToTicket = (phone: string) =>
+  apiPost<BotChatConvertResult>(`/support-desk/bot-chats/${phone}/convert`, {});

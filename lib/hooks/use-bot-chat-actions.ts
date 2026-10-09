@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
-import { replyToBotChat } from "@/lib/services/bot-chats.service";
+import { convertBotChatToTicket, replyToBotChat } from "@/lib/services/bot-chats.service";
 import { botChatKeys, ticketKeys } from "./query-keys";
 
 /** Replies to a WhatsApp conversation that has no ticket yet (or whose
@@ -21,6 +21,24 @@ export function useReplyToBotChat(phone: string) {
     },
     onError: (error) => {
       toast.error(`Reply not sent: ${getErrorMessage(error)}`);
+    },
+  });
+}
+
+/** Manually marks a live WhatsApp conversation as a ticket, without sending
+ * a reply — for when staff want to track it even though the bot never
+ * escalated it. */
+export function useConvertBotChatToTicket(phone: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => convertBotChatToTicket(phone),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: botChatKeys.all });
+      void qc.invalidateQueries({ queryKey: ticketKeys.lists() });
+      void qc.invalidateQueries({ queryKey: ["tickets", "count"] });
+    },
+    onError: (error) => {
+      toast.error(`Could not create ticket: ${getErrorMessage(error)}`);
     },
   });
 }

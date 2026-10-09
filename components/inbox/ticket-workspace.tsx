@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Loader2, Mail } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
+import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
@@ -108,6 +108,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const ticketId = isBotActive ? "" : (activeId ?? "");
   const reply = useReply(ticketId);
   const replyToBot = useReplyToBotChat(activePhone ?? "");
+  const convertToTicket = useConvertBotChatToTicket(activePhone ?? "");
   const updateStatus = useUpdateStatus(ticketId);
   const updatePriority = useUpdatePriority(ticketId);
   const assign = useAssign(ticketId);
@@ -181,6 +182,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             canReply={canReplyPerm}
             canUpdate={canUpdate}
             markingContacted={markContacted.isPending}
+            convertingToTicket={convertToTicket.isPending}
             onRetry={() => (isBotActive ? void botThread.refetch() : void detail.refetch())}
             onBack={() => setMobilePane("list")}
             onToggleContext={() => setContextOpen((o) => !o)}
@@ -188,6 +190,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             onSend={send}
             onSendEmailTemplate={(templateId, text) => reply.mutateAsync({ message: text, files: [], emailTemplateId: templateId })}
             onMarkContacted={() => markContacted.mutate()}
+            onConvertToTicket={() => isBotActive && void convertToTicket.mutateAsync()}
           />
         )}
       </main>
