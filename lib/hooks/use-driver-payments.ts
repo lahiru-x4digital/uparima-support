@@ -8,6 +8,9 @@ import {
   adjustPlatformFeeBalance,
   adjustPromotionBalance,
   approveDiscountWithdrawal,
+  approvePlanPayment,
+  listPlanPayments,
+  rejectPlanPayment,
   getDiscountSettings,
   listDiscountWithdrawals,
   listPlatformFeeBalances,
@@ -16,7 +19,7 @@ import {
   rejectDiscountWithdrawal,
   updateDiscountSettings,
 } from "@/lib/services/driver-payments.service";
-import type { DiscountWithdrawalStatus } from "@/types/driver-payment";
+import type { DiscountWithdrawalStatus, PlanPaymentStatus } from "@/types/driver-payment";
 import { driverPaymentKeys } from "./query-keys";
 
 export function usePlatformFeeBalances() {
@@ -56,6 +59,27 @@ export function useDiscountWithdrawals(status: DiscountWithdrawalStatus | undefi
   });
 }
 
+export function usePlanPayments(status: PlanPaymentStatus | undefined, page: number) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: driverPaymentKeys.planPayments(status ?? "all", page),
+    queryFn: () => listPlanPayments(status, page),
+    enabled: !!user,
+  });
+}
+
+/** How many plan payments are waiting for review — the number on the sidebar item. */
+export function usePlanPaymentsWaiting(enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: driverPaymentKeys.planPaymentsWaiting,
+    // One row is enough: only the total is used.
+    queryFn: () => listPlanPayments("under_review", 1, 1).then((r) => r.meta.total),
+    enabled: !!user && enabled,
+    refetchInterval: 60_000,
+  });
+}
+
 export function useDiscountSettings() {
   const { user } = useAuth();
   return useQuery({
@@ -92,6 +116,15 @@ export const useAdjustPromotionBalance = () =>
   usePaymentMutation(
     ({ driverId, amountLkr, reason }: AdjustVars) => adjustPromotionBalance(driverId, amountLkr, reason),
     "Promotion balance adjusted",
+  );
+
+export const useApprovePlanPayment = () =>
+  usePaymentMutation((id: number) => approvePlanPayment(id), "Payment approved — the driver's plan has started");
+
+export const useRejectPlanPayment = () =>
+  usePaymentMutation(
+    ({ id, reason }: { id: number; reason: string }) => rejectPlanPayment(id, reason),
+    "Payment rejected",
   );
 
 export const useApproveWithdrawal = () =>

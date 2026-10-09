@@ -6,6 +6,8 @@ import type {
   DiscountWithdrawalAdminRow,
   DiscountWithdrawalRow,
   DiscountWithdrawalStatus,
+  PlanPaymentRow,
+  PlanPaymentStatus,
   DriverBalanceRow,
   DriverPlatformFeeBalances,
   DriverPromotionBalances,
@@ -83,6 +85,23 @@ export const approveDiscountWithdrawal = (id: number, slipS3Key?: string) =>
 
 export const rejectDiscountWithdrawal = (id: number, reason: string) =>
   apiPost<{ message: string }>(`${BASE}/discount-withdrawals/${id}/reject`, { reason });
+
+// ── Plan payments by bank transfer ──────────────────────────────────────────
+// Reading needs driver-payment.view; deciding needs driver-payment.plan-payment-review.
+
+export const listPlanPayments = (
+  status: PlanPaymentStatus | undefined,
+  page: number,
+  perPage = 20,
+): Promise<Paginated<PlanPaymentRow>> =>
+  apiGetPage<PlanPaymentRow>(`${BASE}/plan-payments`, { params: { status, page, perPage } });
+
+/** Starts the driver's plan. The backend refuses a payment someone has already decided. */
+export const approvePlanPayment = (id: number) =>
+  apiPost<{ message: string }>(`${BASE}/plan-payments/${id}/approve`);
+
+export const rejectPlanPayment = (id: number, reason: string) =>
+  apiPost<{ message: string }>(`${BASE}/plan-payments/${id}/reject`, { reason });
 
 // ── Withdrawal minimum ──────────────────────────────────────────────────────
 

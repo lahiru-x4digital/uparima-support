@@ -79,6 +79,8 @@ export const driverPaymentKeys = {
     ["driver-payments", "platform-fees", "ledger", driverId, page] as const,
   promotionBalances: ["driver-payments", "promotion-balances"] as const,
   withdrawals: (status: string, page: number) => ["driver-payments", "withdrawals", status, page] as const,
+  planPayments: (status: string, page: number) => ["driver-payments", "plan-payments", status, page] as const,
+  planPaymentsWaiting: ["driver-payments", "plan-payments", "waiting"] as const,
   settings: ["driver-payments", "settings"] as const,
 };
 

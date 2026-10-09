@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
 import { useSos } from "@/components/sos/sos-provider";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
+import { usePlanPaymentsWaiting } from "@/lib/hooks/use-driver-payments";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "support_sidebar_collapsed";
@@ -40,6 +41,7 @@ const NAV: NavItem[] = [
   { href: "/drivers/platform-fees", label: "Platform Fees", icon: Receipt, anyPermission: ["driver-payment.view"] },
   { href: "/drivers/promotion-balances", label: "Promotion Balances", icon: BadgePercent, anyPermission: ["driver-payment.view"] },
   { href: "/drivers/discount-payments", label: "Withdrawals", icon: Wallet, anyPermission: ["driver-payment.view"] },
+  { href: "/drivers/plan-payments", label: "Plan Payments", icon: Landmark, anyPermission: ["driver-payment.view"] },
   { href: "/rides", label: "Ride History", icon: Route, section: "Rides", sectionIcon: Car, anyPermission: ["ride.view"] },
   { href: "/reviews", label: "Reviews & Ratings", icon: Star, section: "Reviews & Ratings", sectionIcon: Star, anyPermission: ["rating.view"] },
   { href: "/sos", label: "SOS Alerts", icon: Siren, anyPermission: ["sos.view"] },
@@ -55,6 +57,8 @@ export function AppSidebar() {
   // Until the profile loads, gated items stay hidden rather than flash in.
   const permissions = useMe().data?.permissions ?? [];
   const visibleNav = NAV.filter((item) => !item.anyPermission || item.anyPermission.some((p) => permissions.includes(p)));
+  // Bank-transfer plan payments waiting for someone to check the slip.
+  const planPaymentsWaiting = usePlanPaymentsWaiting(permissions.includes("driver-payment.view"));
   // An item belongs to the group opened by the nearest `section` item at or above it. The heading is
   // shown above the first item of that group that is visible, so hiding the group's first item for
   // lack of permission doesn't lose the heading.
@@ -140,7 +144,11 @@ export function AppSidebar() {
           const section = heading?.section;
           const SectionIcon = heading?.sectionIcon;
           const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-          const badge = href === "/inbox" ? needsContact.data : href === "/sos" ? activeSos : undefined;
+          const badge =
+            href === "/inbox" ? needsContact.data
+            : href === "/sos" ? activeSos
+            : href === "/drivers/plan-payments" ? planPaymentsWaiting.data
+            : undefined;
           return (
             <div key={href}>
               {section && (collapsed

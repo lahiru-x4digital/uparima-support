@@ -92,6 +92,33 @@ export interface DiscountSettings {
   withdrawalMinimumLkr: number;
 }
 
+export type PlanPaymentStatus = "under_review" | "approved" | "rejected";
+
+// A driver's bank-transfer payment for a plan, sent from the app with the slip.
+// Staff check the slip and approve (which starts the plan) or reject it.
+export interface PlanPaymentRow {
+  id: number;
+  driverId: number;
+  driverName: string | null;
+  driverPhone: string | null;
+  planName: string | null;
+  // The whole transfer: the plan price plus platformFeeLkr.
+  amountLkr: number | string;
+  // Platform fees the driver owed when they submitted, included in amountLkr —
+  // cleared from their balance when the payment is approved.
+  platformFeeLkr: number | string;
+  // When the plan starts if the driver still has one running at approval time.
+  // Null on payments from before plans could be chosen in the app.
+  applyMode: "now" | "after_current" | null;
+  // Short-lived link to the slip.
+  receiptUrl: string | null;
+  // What the slip is, as checked by the backend at upload; null on older uploads.
+  receiptContentType: string | null;
+  status: PlanPaymentStatus;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
 export type DiscountWithdrawalStatus = "pending" | "approved" | "rejected";
 
 // The driver's current active bank account, shown for reference before
