@@ -32,7 +32,11 @@ const REASON_MAX = 500;
 const startsLabel = (row: PlanPaymentRow) =>
   row.applyMode === "now" ? "On approval" : row.applyMode === "after_current" ? "After current plan" : "—";
 
-const isImage = (row: PlanPaymentRow) => row.receiptContentType?.startsWith("image/") ?? false;
+// Older payments have no recorded type, so fall back on the file's extension.
+const isPdf = (row: PlanPaymentRow) =>
+  row.receiptContentType
+    ? row.receiptContentType === "application/pdf"
+    : /\.pdf$/i.test((row.receiptUrl ?? "").split("?")[0]);
 
 /**
  * Bank-transfer payments drivers submit from the app for a plan: check the slip against the bank
@@ -52,6 +56,7 @@ export function PlanPaymentsView() {
 
   const [approving, setApproving] = useState<PlanPaymentRow | null>(null);
   const [rejecting, setRejecting] = useState<PlanPaymentRow | null>(null);
+  const [viewing, setViewing] = useState<PlanPaymentRow | null>(null);
   const [reason, setReason] = useState("");
 
   // The queue is paged by the backend, so search narrows the page that is showing.
@@ -156,7 +161,13 @@ export function PlanPaymentsView() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{startsLabel(r)}</TableCell>
                   <TableCell>
-                    <SlipLink row={r} />
+                    {r.receiptUrl ? (
+                      <button type="button" className="text-xs text-primary underline" onClick={() => setViewing(r)}>
+                        {isPdf(r) ? "View PDF" : "View slip"}
+                      </button>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <TonePill tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</TonePill>
@@ -201,16 +212,8 @@ export function PlanPaymentsView() {
         {approving && (
           <div className="space-y-4 p-0.5">
             <Summary row={approving} />
-            {isImage(approving) && approving.receiptUrl && (
-              // The slip itself, so the amount can be read without leaving the dialog.
-              // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed link, not a site asset
-              <img
-                src={approving.receiptUrl}
-                alt="Payment slip"
-                referrerPolicy="no-referrer"
-                className="max-h-80 w-full rounded-lg border object-contain"
-              />
-            )}
+            {/* The slip itself, so the amount can be read without leaving the dialog. */}
+            <SlipPreview key={approving.id} row={approving} />
             <p className="text-sm text-muted-foreground">
               Approve only after the bank statement shows {formatLkr(approving.amountLkr)} from this driver. Approving
               starts their plan{Number(approving.platformFeeLkr) > 0 ? " and clears the platform fees included" : ""};
@@ -235,6 +238,7 @@ export function PlanPaymentsView() {
         {rejecting && (
           <div className="space-y-4 p-0.5">
             <Summary row={rejecting} />
+            <SlipPreview key={rejecting.id} row={rejecting} />
             <Field label="Reason" hint="The driver sees this, so say what to fix — for example, the amount doesn't match.">
               <Textarea
                 value={reason}
@@ -261,17 +265,69 @@ export function PlanPaymentsView() {
           </div>
         )}
       </Modal>
+
+      <Modal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title={viewing ? `Payment slip — ${driverLabel(viewing.driverName, viewing.driverId)}` : undefined}
+        className="sm:max-w-3xl"
+      >
+        {viewing && (
+          <div className="space-y-4 p-0.5">
+            <SlipPreview key={viewing.id} row={viewing} large />
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setViewing(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </PageShell>
   );
 }
 
-function SlipLink({ row }: { row: PlanPaymentRow }) {
-  if (!row.receiptUrl) return <span className="text-muted-foreground">—</span>;
+/** The slip, shown on the page: a photo as an image, a PDF in a frame. */
+function SlipPreview({ row, large = false }: { row: PlanPaymentRow; large?: boolean }) {
+  // The signed link behind the slip only lasts half an hour.
+  const [failed, setFailed] = useState(false);
+  if (!row.receiptUrl) return null;
+  if (failed) {
+    return (
+      <p className="rounded-lg border p-3 text-sm text-muted-foreground">
+        The slip couldn&apos;t be loaded. Its link lasts 30 minutes — reload the page and try again.
+      </p>
+    );
+  }
+  if (isPdf(row)) {
+    return (
+      <div className="space-y-1.5">
+        <iframe
+          src={row.receiptUrl}
+          title="Payment slip"
+          referrerPolicy="no-referrer"
+          className={`w-full rounded-lg border ${large ? "h-[70vh]" : "h-80"}`}
+        />
+        <p className="text-xs text-muted-foreground">
+          PDF not showing here?{" "}
+          {/* noopener + noreferrer: no way back into this page, and no hint of where it came from. */}
+          <a href={row.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            Open it separately
+          </a>
+          .
+        </p>
+      </div>
+    );
+  }
   return (
-    // noopener + noreferrer: the slip opens with no way back into this page, and no hint of where it came from.
-    <a href={row.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">
-      {row.receiptContentType === "application/pdf" ? "Open PDF" : "View slip"}
-    </a>
+    // eslint-disable-next-line @next/next/no-img-element -- a short-lived signed link, not a site asset
+    <img
+      src={row.receiptUrl}
+      alt="Payment slip"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className={`w-full rounded-lg border object-contain ${large ? "max-h-[70vh]" : "max-h-80"}`}
+    />
   );
 }
 
@@ -289,10 +345,6 @@ function Summary({ row }: { row: PlanPaymentRow }) {
       <dd className="font-semibold">{formatLkr(row.amountLkr)}</dd>
       <dt className="text-muted-foreground">Starts</dt>
       <dd>{startsLabel(row)}</dd>
-      <dt className="text-muted-foreground">Slip</dt>
-      <dd>
-        <SlipLink row={row} />
-      </dd>
     </dl>
   );
 }
