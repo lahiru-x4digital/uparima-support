@@ -82,7 +82,7 @@ export function DriverDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-5xl flex-col gap-3 overflow-hidden">
+      <DialogContent className="flex max-h-[92vh] w-[96vw] max-w-7xl flex-col gap-3 overflow-hidden sm:max-w-7xl">
         {!canView ? (
           <NoAccess what="driver details" />
         ) : isLoading ? (
