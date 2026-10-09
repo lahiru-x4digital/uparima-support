@@ -74,3 +74,9 @@ export interface BotChatReplyResult {
   ticketId: string;
   ticketNumber: string;
 }
+
+/** `POST /support-desk/bot-chats/:phone/convert` */
+export interface BotChatConvertResult {
+  ticketId: string;
+  ticketNumber: string;
+}
