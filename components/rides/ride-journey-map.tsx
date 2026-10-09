@@ -57,7 +57,12 @@ export default function RideJourneyMap({
       scrollWheelZoom
       className="h-full w-full rounded-lg"
     >
-      <TileLayer key={tiles.url} url={tiles.url} attribution={tiles.attribution} />
+      <TileLayer
+        key={tiles.url}
+        url={tiles.url}
+        attribution={tiles.attribution}
+        referrerPolicy={tiles.referrerPolicy}
+      />
 
       {lines.map(
         (l, i) =>

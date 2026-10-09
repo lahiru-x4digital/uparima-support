@@ -124,6 +124,11 @@ export function formatSeconds(total: number) {
 export const MAP_TILES = {
   url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-};
+  // OpenStreetMap answers 403 "Access blocked" to a website that doesn't say who it is (the Referer
+  // header), and this site is served with `Referrer-Policy: same-origin`, which hides it from other
+  // hosts. Set on the tile images themselves, this sends our origin (never the page path) to the
+  // tile server only.
+  referrerPolicy: "strict-origin-when-cross-origin",
+} as const;
 
 export const mapsViewUrl = (lat: number | string, lng: number | string) => `https://www.google.com/maps?q=${lat},${lng}`;
