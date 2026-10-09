@@ -67,7 +67,7 @@ export function ChatPane({
         ) : conversation.channel === "whatsapp" && !conversation.canReply ? (
           // Outside the 24-hour window only an approved template can reach the customer.
           <div className="flex flex-wrap items-center justify-center gap-3 border-t p-3 text-center text-xs text-muted-foreground">
-            <span>The customer&apos;s last WhatsApp message was over 23.5 hours ago — free text can&apos;t be sent, but an approved template can.</span>
+            <span>The customer&apos;s last WhatsApp message was over 23 hours 58 minutes ago — free text can&apos;t be sent, but an approved template can.</span>
             <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} sendOnly label="Send a template" />
           </div>
         ) : (
