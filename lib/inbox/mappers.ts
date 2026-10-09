@@ -1,12 +1,19 @@
 import type { Attachment, Channel, Product, Conversation, CustomerRole, Message } from "@/types/inbox";
+import { stableSignedUrl } from "./stable-url";
 import type { Staff, Ticket, TicketDetail, TicketReply, TicketRow } from "@/types/ticket";
 import type { BotChatMessage, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
 const IMAGE = /\.(jpe?g|png|webp|gif)$/i;
 const AUDIO = /\.(ogg|oga|mp3|m4a|aac|wav)$/i;
 
-export function attachmentOf(key: string): Attachment {
-  const name = key.split("/").pop() || key;
+export function attachmentOf(rawKey: string): Attachment {
+  // `key` may be a signed URL ("...jpg?X-Amz-...") rather than a bare S3
+  // key, so the extension check must ignore the query string. The backend
+  // re-signs it on every fetch; keep one link per file so a polled
+  // conversation does not reload its pictures (see stable-url.ts).
+  const key = stableSignedUrl(rawKey);
+  const path = key.split("?")[0];
+  const name = path.split("/").pop() || path;
   const kind = IMAGE.test(name) ? "image" : AUDIO.test(name) ? "audio" : "file";
   return { key, name, kind };
 }
@@ -152,22 +159,31 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
   };
 }
 
-/** The full ticket: the first message followed by every reply, oldest first. */
+/** The full ticket: for a WhatsApp hand-off whose linked session is known,
+ * the actual bot conversation (mirroring WhatsApp itself) followed by staff
+ * replies; otherwise the ticket's own stored first message plus replies, as
+ * before. */
 export function detailToConversation(
   detail: TicketDetail,
   row: TicketRow | undefined,
   staff: Staff[],
   now: Date = new Date(),
 ): Conversation {
-  const { ticket, replies, submitter, canReply } = detail;
+  const { ticket, replies, submitter, canReply, whatsappSession } = detail;
   const customerName =
     row?.submitterName ??
     (submitter?.kind === "driver" ? submitter.name : submitter?.kind === "hire_tenant" ? submitter.tenantName : null) ??
+    row?.submitterPhone ??
     ticket.reporterPhone ??
+    row?.reporterPhone ??
     ticket.reporterEmail ??
+    row?.reporterEmail ??
     "Unknown caller";
   const phone =
     row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
+  const leadMessages = whatsappSession?.length
+    ? whatsappSession.map((m) => botMessage(m, customerName))
+    : [firstMessage(ticket, customerName, now)];
   return {
     ...base(ticket, staff, now, canReply),
     customerName,
@@ -175,7 +191,7 @@ export function detailToConversation(
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
     submitter,
     messages: [
-      firstMessage(ticket, customerName, now),
+      ...leadMessages,
       ...[...replies]
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         .map((r) => replyMessage(r, customerName, staff, now)),
@@ -242,9 +258,10 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
   // seconds after the message itself); absent for older messages or a still
   // in-flight/failed capture, in which case the bubble falls back to its
   // icon+text rendering (see MessageBubble's KindLine "media" case).
-  const s3Key = str(m.meta?.s3Key);
+  const rawS3Key = str(m.meta?.s3Key);
+  const s3Key = rawS3Key ? stableSignedUrl(rawS3Key) : rawS3Key;
   const attachments: Attachment[] = s3Key
-    ? [{ key: s3Key, name: s3Key.split("/").pop() ?? s3Key, kind: mediaKindOf(str(m.meta?.mediaKind)) }]
+    ? [{ key: s3Key, name: s3Key.split("?")[0].split("/").pop() ?? s3Key, kind: mediaKindOf(str(m.meta?.mediaKind)) }]
     : [];
   return {
     id: m.id,

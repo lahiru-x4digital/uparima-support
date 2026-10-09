@@ -1,0 +1,24 @@
+/* Small always-visible marker tags on the ride journey map (Pickup / Stop N /
+   Destination). Strips Leaflet's default tooltip box so only the coloured
+   pill shows. */
+.leaflet-tooltip.journey-label {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  pointer-events: none;
+}
+.leaflet-tooltip.journey-label::before {
+  display: none;
+}
+.journey-label span {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}

@@ -1,5 +1,7 @@
 /** Backend DTOs for `/support-desk/*`. Dates arrive as ISO strings. */
 
+import type { BotChatMessage } from "./bot-chat";
+
 export type TicketStatus = "pending" | "in_review" | "completed";
 export type TicketPriority = "low" | "normal" | "high" | "urgent";
 export type SubmitterType = "user" | "rider" | "ads" | "jobs" | "driver" | "hire_tenant";
@@ -77,6 +79,12 @@ export interface TicketDetail {
    * window from the customer's last message). Always true for non-WhatsApp
    * tickets, which deliver in-app instead. */
   canReply: boolean;
+  /** For a whatsapp-channel ticket: the actual bot conversation (prompts,
+   * taps, photos, voice notes) that led to this hand-off, so the thread
+   * mirrors WhatsApp itself instead of just the ticket's stored message.
+   * Null for a non-WhatsApp ticket, or a WhatsApp ticket old enough to
+   * predate sessions. */
+  whatsappSession: BotChatMessage[] | null;
 }
 
 export interface PageMeta {
