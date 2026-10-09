@@ -286,7 +286,10 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
  * yet, as a list-row-shaped synthetic `Conversation` (id
  * `bot:<phone>:<sessionId>`). */
 export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()): Conversation {
-  const customerName = row.name ?? `+${row.phone}`;
+  const customerName =
+    (row.submitter?.kind === "driver" ? row.submitter.name : row.submitter?.kind === "hire_tenant" ? row.submitter.tenantName : null) ??
+    row.name ??
+    `+${row.phone}`;
   return {
     id: botChatId(row.phone, row.sessionId),
     ticketNumber: "",
@@ -313,7 +316,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     slaDueAt: null,
     canReply: true,
     isCurrentSession: row.isCurrentSession,
-    submitter: null,
+    submitter: row.submitter,
     messages: [],
     attachments: [],
     previousTickets: [],
@@ -331,7 +334,14 @@ export function botChatThreadToConversation(
   thread: BotChatThread,
   now: Date = new Date(),
 ): Conversation {
-  const customerName = thread.contact.name ?? `+${phone}`;
+  const customerName =
+    (thread.contact.submitter?.kind === "driver"
+      ? thread.contact.submitter.name
+      : thread.contact.submitter?.kind === "hire_tenant"
+        ? thread.contact.submitter.tenantName
+        : null) ??
+    thread.contact.name ??
+    `+${phone}`;
   return {
     id: botChatId(phone, sessionId),
     ticketNumber: "",
@@ -358,7 +368,7 @@ export function botChatThreadToConversation(
     slaDueAt: null,
     canReply: thread.canReply,
     isCurrentSession: thread.isCurrentSession,
-    submitter: null,
+    submitter: thread.contact.submitter,
     messages: thread.messages.map((m) => botMessage(m, customerName)),
     attachments: [],
     previousTickets: [],

@@ -1,11 +1,13 @@
 "use client";
 
-import { AlertTriangle, Bike, Car, Mail, Paperclip, Phone, Star, X } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Bike, Car, ExternalLink, Mail, Paperclip, Phone, Star, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
 import { useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
@@ -53,7 +55,13 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 /** Compact driver stats: status (flagged visibly when suspended/rejected),
  * rating/rides as one secondary line, and a balance line that only appears
  * when there's actually something owed — most drivers have none. */
-function DriverStats({ submitter }: { submitter: Extract<Conversation["submitter"], { kind: "driver" }> }) {
+function DriverStats({
+  submitter,
+  onViewDriver,
+}: {
+  submitter: Extract<Conversation["submitter"], { kind: "driver" }>;
+  onViewDriver: () => void;
+}) {
   const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
   const owed = submitter.platformFeeOwedLkr > 0;
   const credit = submitter.creditBalance > 0;
@@ -77,6 +85,9 @@ function DriverStats({ submitter }: { submitter: Extract<Conversation["submitter
           {owed ? `Owes LKR ${Math.round(submitter.platformFeeOwedLkr).toLocaleString()}` : `Credit: LKR ${Math.round(submitter.creditBalance).toLocaleString()}`}
         </p>
       )}
+      <Button size="sm" variant="outline" className="mt-1 w-fit" onClick={onViewDriver}>
+        <ExternalLink className="size-3.5" /> View / edit driver
+      </Button>
     </div>
   );
 }
@@ -159,6 +170,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
     ...staff.map((s) => ({ value: String(s.id), label: s.name ?? `Staff #${s.id}` })),
   ];
   const assignedValue = c.assignedToUserId == null ? UNASSIGNED : String(c.assignedToUserId);
+  const [driverDialogOpen, setDriverDialogOpen] = useState(false);
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col border-l bg-background">
@@ -188,7 +200,9 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             {c.submitter?.kind === "hire_tenant" && <span className="text-muted-foreground">Business: {c.submitter.tenantName}</span>}
           </div>
 
-          {c.submitter?.kind === "driver" && <DriverStats submitter={c.submitter} />}
+          {c.submitter?.kind === "driver" && (
+            <DriverStats submitter={c.submitter} onViewDriver={() => setDriverDialogOpen(true)} />
+          )}
 
           {c.rideId && <RideCard rideId={c.rideId} />}
 
@@ -241,6 +255,14 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           )}
         </div>
       </ScrollArea>
+
+      {c.submitter?.kind === "driver" && (
+        <DriverDetailsDialog
+          driverId={String(c.submitter.driverId)}
+          open={driverDialogOpen}
+          onClose={() => setDriverDialogOpen(false)}
+        />
+      )}
     </aside>
   );
 }

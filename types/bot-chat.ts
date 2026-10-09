@@ -1,3 +1,5 @@
+import type { Submitter } from "./ticket";
+
 /** One session of a WhatsApp conversation with the bot (list row). A session
  * ends when a flow completes (ticket created, registration submitted, ride
  * cancelled/rated) or after 23h59m of inactivity; `sessionId` is `null` for
@@ -8,6 +10,9 @@ export interface BotChatRow {
   name: string | null;
   language: string | null;
   userId: number | null;
+  /** The driver/hire-tenant behind this phone, resolved the same way a
+   * ticket's submitter is — null when the phone isn't a known account. */
+  submitter: Submitter;
   state: string;
   sessionId: string | null;
   /** Whether this is the phone's *current* session — a reply can only be
@@ -42,6 +47,8 @@ export interface BotChatThread {
     name: string | null;
     language: string | null;
     userId: number | null;
+    /** The driver/hire-tenant behind this phone — see BotChatRow.submitter. */
+    submitter: Submitter;
     state: string;
     /** The phone's *current* session — may differ from the session being
      * viewed (see BotChatRow.sessionId on the row this thread came from). */
