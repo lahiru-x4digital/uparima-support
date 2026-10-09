@@ -63,8 +63,15 @@ function DriverStats({
   onViewDriver: () => void;
 }) {
   const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
-  const owed = submitter.platformFeeOwedLkr > 0;
-  const credit = submitter.creditBalance > 0;
+  // platformFeeOwedLkr/creditBalance/averageRating are Postgres `decimal`/`int` columns that
+  // TypeORM can return as strings — coerce before formatting so a string value never crashes
+  // `.toFixed`/`.toLocaleString`.
+  const platformFeeOwedLkr = Number(submitter.platformFeeOwedLkr);
+  const creditBalance = Number(submitter.creditBalance);
+  const averageRating = Number(submitter.averageRating);
+  const totalRides = Number(submitter.totalRides);
+  const owed = platformFeeOwedLkr > 0;
+  const credit = creditBalance > 0;
   return (
     <div className="flex flex-col gap-1.5 text-sm">
       <div className="flex items-center gap-2">
@@ -78,11 +85,11 @@ function DriverStats({
         )}
       </div>
       <p className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Star className="size-3.5 fill-current text-amber-500" /> {submitter.averageRating.toFixed(1)} · {submitter.totalRides.toLocaleString()} rides
+        <Star className="size-3.5 fill-current text-amber-500" /> {averageRating.toFixed(1)} · {totalRides.toLocaleString()} rides
       </p>
       {(owed || credit) && (
         <p className={cn("text-xs", owed ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
-          {owed ? `Owes LKR ${Math.round(submitter.platformFeeOwedLkr).toLocaleString()}` : `Credit: LKR ${Math.round(submitter.creditBalance).toLocaleString()}`}
+          {owed ? `Owes LKR ${Math.round(platformFeeOwedLkr).toLocaleString()}` : `Credit: LKR ${Math.round(creditBalance).toLocaleString()}`}
         </p>
       )}
       <Button size="sm" variant="outline" className="mt-1 w-fit" onClick={onViewDriver}>
