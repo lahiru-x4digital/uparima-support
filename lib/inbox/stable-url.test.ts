@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { forgetSignedUrls, stableSignedUrl } from "./stable-url";
 import { attachmentOf } from "./mappers";
 
@@ -48,7 +48,13 @@ describe("stableSignedUrl", () => {
 });
 
 describe("attachmentOf", () => {
-  beforeEach(() => forgetSignedUrls());
+  // attachmentOf reads the real clock, so pin it to when these links were signed.
+  beforeEach(() => {
+    forgetSignedUrls();
+    vi.useFakeTimers();
+    vi.setSystemTime(at("2026-10-08T17:00:05Z"));
+  });
+  afterEach(() => vi.useRealTimers());
 
   it("gives a re-signed attachment the same key, so the open conversation does not reload its picture", () => {
     const first = attachmentOf(signed(FILE, "20261008T170000Z", "aaa"));

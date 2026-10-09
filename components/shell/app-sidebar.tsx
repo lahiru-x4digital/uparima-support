@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, Siren, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
@@ -175,6 +175,20 @@ export function AppSidebar() {
 
       <div className={cn("flex shrink-0 items-center gap-1 border-t border-sidebar-foreground/15 px-3 py-3", collapsed ? "flex-col pb-14" : "justify-between")}>
         <ThemeToggle />
+        <Link
+          href="/account/security"
+          aria-label="Security"
+          title="Security"
+          aria-current={pathname.startsWith("/account/security") ? "page" : undefined}
+          className={cn(
+            "inline-flex size-9 items-center justify-center rounded-lg transition-colors hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground",
+            pathname.startsWith("/account/security")
+              ? "bg-sidebar-foreground/20 text-sidebar-foreground ring-1 ring-sidebar-foreground/20"
+              : "text-sidebar-foreground/80",
+          )}
+        >
+          <ShieldCheck className="size-4" />
+        </Link>
         <button
           type="button"
           onClick={() => void logout()}

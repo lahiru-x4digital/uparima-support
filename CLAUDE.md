@@ -3,8 +3,12 @@
 # uparima-support — architecture & conventions
 
 Support Portal for the Uparima backend (`uparima-backend`). Next.js (App Router) + TypeScript (strict) + Tailwind 4 +
-shadcn/ui. Same backend and admin auth as the classified dashboard; support accounts sign in **without** the 2FA
-code step (see "Admin login 2FA" in the root CLAUDE.md). Import alias: `@/*` → project root.
+shadcn/ui. Same backend and staff auth as the classified dashboard. Import alias: `@/*` → project root.
+
+Sign-in is email + password, then — for an account with two-factor sign-in on — a 6-digit code emailed by the
+backend (`AdminTwoFactorService` in `uparima-backend`; applies to support, admin and super admin accounts). It is
+switched on per account by an admin (dashboard → Staff Management) or by the account holder (`/account/security`);
+only an admin can switch it off. The flow's pure rules live in `lib/auth-flow.ts`, the screens in `components/auth/`.
 
 ## Folder structure
 

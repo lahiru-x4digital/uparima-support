@@ -15,6 +15,8 @@ export const deskKeys = {
   staff: ["desk", "staff"] as const,
 };
 
+export const accountKeys = { twoFactor: ["account", "two-factor"] as const };
+
 export const rideKeys = { detail: (id: string) => ["ride", id] as const };
 
 export const careTemplateKeys = {

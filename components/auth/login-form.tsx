@@ -1,58 +1,108 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getErrorMessage } from "@/lib/api";
+import { Loader2, MailCheck } from "lucide-react";
+import { AuthAlert } from "@/components/auth/auth-alert";
+import { activate, CodeForm, type ActiveChallenge } from "@/components/auth/code-form";
+import { CredentialsForm } from "@/components/auth/credentials-form";
 import { useAuth } from "@/lib/auth-context";
+import { safeNextPath, signInNotice, type SignInValues } from "@/lib/auth-flow";
+import * as authService from "@/lib/services/auth.service";
 
-export function LoginForm() {
-  const { login } = useAuth();
+/**
+ * The sign-in screen: email and password, then — for an account with two-factor sign-in on —
+ * the code that was emailed. `next` and `reason` come from the address bar (see lib/auth-flow.ts).
+ */
+export function LoginForm({ next, reason }: { next?: string; reason?: string }) {
+  const { user, loading, login, verifyLoginCode } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const destination = safeNextPath(next);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await login(email, password);
-      router.replace("/inbox");
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
+  const [email, setEmail] = useState("");
+  const [challenge, setChallenge] = useState<ActiveChallenge | null>(null);
+  // Shown above the password form: why you're here, or why the code step sent you back.
+  const [notice, setNotice] = useState<{ tone: "info" | "error"; text: string } | null>(() => {
+    const text = signInNotice(reason);
+    return text ? { tone: "info", text } : null;
+  });
+
+  // One place decides where a signed-in agent goes — whether they just signed in or already were.
+  useEffect(() => {
+    if (!loading && user) router.replace(destination);
+  }, [loading, user, router, destination]);
+
+  async function signIn(values: SignInValues) {
+    setNotice(null);
+    setEmail(values.email);
+    const pending = await login(values.email, values.password);
+    if (pending) setChallenge(activate(pending));
+  }
+
+  function backToPassword(message?: string) {
+    setChallenge(null);
+    setNotice(message ? { tone: "error", text: message } : null);
+  }
+
+  if (user) {
+    return (
+      <div role="status" className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Opening the support desk…
+      </div>
+    );
+  }
+
+  if (challenge) {
+    return (
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-col gap-3">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <MailCheck className="size-5" aria-hidden />
+          </span>
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-heading text-2xl font-bold">
+              {challenge.emailSent === false ? "Enter your sign-in code" : "Check your email"}
+            </h1>
+            {challenge.emailSent === false ? (
+              <p className="text-sm text-muted-foreground">
+                Your account needs a 6-digit code to finish signing in.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                We sent a 6-digit code to <span className="font-medium text-foreground">{challenge.emailHint}</span>.
+                Enter it to finish signing in.
+              </p>
+            )}
+          </div>
+        </header>
+        {challenge.emailSent === false && (
+          <AuthAlert>
+            We couldn&apos;t email your code to {challenge.emailHint}. Ask a super admin for it — they can see it in
+            the admin dashboard under Sign-in Codes.
+          </AuthAlert>
+        )}
+        <CodeForm
+          challenge={challenge}
+          submitLabel="Verify and sign in"
+          busyLabel="Verifying…"
+          restartLabel="Use a different account"
+          onVerify={(code) => verifyLoginCode(challenge.challengeId, code)}
+          onResend={async () => setChallenge(activate(await authService.resendLoginCode(challenge.challengeId)))}
+          onRestart={backToPassword}
+        />
+      </div>
+    );
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Uparima Support</CardTitle>
-        <CardDescription>Sign in with your staff account.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" required value={email}
-              onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" autoComplete="current-password" required minLength={8}
-              value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={submitting}>{submitting ? "Signing in…" : "Sign in"}</Button>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-1.5">
+        <h1 className="font-heading text-2xl font-bold">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">Sign in with your Uparima staff account.</p>
+      </header>
+      {notice && <AuthAlert tone={notice.tone}>{notice.text}</AuthAlert>}
+      <CredentialsForm initialEmail={email} onSubmit={signIn} />
+    </div>
   );
 }

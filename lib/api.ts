@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import { clearAuth, getRefreshToken, getSavedUser, getToken, saveAuth } from "@/lib/auth";
+import { loginPath, type SignInReason } from "@/lib/auth-flow";
 import { env } from "@/lib/env";
 import type { AuthTokens } from "@/types/auth";
 import type { PageMeta, Paginated } from "@/types/ticket";
@@ -19,10 +20,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const redirectToLogin = () => {
+/** The session can't continue: forget it and go to the sign-in page, which says why and comes back here after. */
+const redirectToLogin = (reason: SignInReason) => {
   clearAuth();
-  if (typeof window !== "undefined") window.location.href = "/login";
+  if (typeof window === "undefined" || window.location.pathname === "/login") return;
+  window.location.href = loginPath(reason, window.location.pathname + window.location.search);
 };
+
+/**
+ * The sign-in endpoints answer 401 for a wrong password or a wrong emailed code. That is the
+ * answer to show, not an expired session — refreshing and reloading would wipe the form and its
+ * error (and replay a wrong code, using up one of its few attempts).
+ */
+const isSignInCall = (url?: string) => !!url && /^\/auth\/(login|refresh)(\/|$)/.test(url);
 
 let isRefreshing = false;
 let refreshQueue: Array<(token: string) => void> = [];
@@ -37,20 +47,20 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as (typeof error.config & { _retried?: boolean }) | undefined;
 
-    // Admin token without the 2FA step is refused by the backend — sign in again.
+    // A staff token that didn't come from a full password sign-in is refused by the backend — sign in again.
     const code = (error.response?.data as { error?: { code?: string } } | undefined)?.error?.code;
     if (error.response?.status === 403 && code === "TWO_FACTOR_REQUIRED") {
-      redirectToLogin();
+      redirectToLogin("verify");
       return Promise.reject(error);
     }
 
-    if (error.response?.status !== 401 || !original || original._retried) {
+    if (error.response?.status !== 401 || !original || original._retried || isSignInCall(original.url)) {
       return Promise.reject(error);
     }
 
     const refreshToken = getRefreshToken();
     if (!refreshToken) {
-      redirectToLogin();
+      redirectToLogin("expired");
       return Promise.reject(error);
     }
 
@@ -76,7 +86,7 @@ api.interceptors.response.use(
       original.headers.Authorization = `Bearer ${data.data.accessToken}`;
       return api(original);
     } catch {
-      redirectToLogin();
+      redirectToLogin("expired");
       return Promise.reject(error);
     } finally {
       isRefreshing = false;
