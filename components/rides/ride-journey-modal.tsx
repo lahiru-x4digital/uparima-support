@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { LatLngTuple } from "leaflet";
 import { Modal } from "@/components/shared/modal";
 import { getErrorMessage } from "@/lib/api";
-import { useRidePath, useStadiaKey } from "@/lib/hooks/use-rides";
+import { useRidePath } from "@/lib/hooks/use-rides";
 import {
   JOURNEY_COLORS,
   OUTAGE_LABEL,
@@ -115,7 +115,6 @@ function sideLines(
 export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; onClose: () => void }) {
   // Remount per ride (key on the caller side) so the toggles below start fresh.
   const { data, error } = useRidePath(rideId);
-  const stadiaKey = useStadiaKey().data ?? null;
   const [snapped, setSnapped] = useState(true);
   const [side, setSide] = useState<Side>("both");
 
@@ -325,7 +324,6 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
               }
               stops={showDriver ? findStops(data.tripLeg) : []}
               outageMarkers={[...(driver?.markers ?? []), ...(rider?.markers ?? [])]}
-              stadiaKey={stadiaKey}
             />
           </div>
 

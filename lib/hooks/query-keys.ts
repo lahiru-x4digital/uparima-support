@@ -84,7 +84,6 @@ export const driverPaymentKeys = {
 export const rideHistoryKeys = {
   list: (p: unknown) => ["rides", "list", p] as const,
   path: (id: string) => ["rides", "path", id] as const,
-  stadiaKey: ["rides", "stadia-key"] as const,
 };
 
 export const sosKeys = {

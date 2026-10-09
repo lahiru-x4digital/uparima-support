@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
-import { getRidePath, getStadiaKey, listRides } from "@/lib/services/rides.service";
+import { getRidePath, listRides } from "@/lib/services/rides.service";
 import type { RideListParams } from "@/types/ride";
 import { rideHistoryKeys } from "./query-keys";
 
@@ -28,18 +28,6 @@ export function useRidePath(rideId: string | null) {
     queryFn: () => getRidePath(rideId as string),
     enabled: !!user && !!rideId,
     staleTime: 0,
-    retry: false,
-  });
-}
-
-/** The map-tile key, fetched once per page load (the backend throttles it). Null → OpenStreetMap. */
-export function useStadiaKey() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: rideHistoryKeys.stadiaKey,
-    queryFn: () => getStadiaKey().catch(() => null),
-    enabled: !!user,
-    staleTime: Infinity,
     retry: false,
   });
 }

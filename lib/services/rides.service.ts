@@ -14,11 +14,3 @@ export async function listRides(params: RideListParams): Promise<RidesPage> {
 
 /** The recorded journey of one ride (read live while the ride is in progress). */
 export const getRidePath = (rideId: string) => apiGet<RidePath>(`/support-desk/rides/${rideId}/path`);
-
-/**
- * The map-tile key. It lives on the backend, behind the rides map-config route (any signed-in
- * account, throttled to a few calls a minute — so fetch it once). Null → the map uses plain
- * OpenStreetMap tiles.
- */
-export const getStadiaKey = () =>
-  apiGet<{ stadiaApiKey: string }>("/rides/riders/map-config").then((r) => r.stadiaApiKey || null);

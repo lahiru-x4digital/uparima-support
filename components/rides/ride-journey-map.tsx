@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import "./ride-journey-map.css";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip } from "react-leaflet";
 import type { LatLngBoundsExpression, LatLngTuple } from "leaflet";
-import { JOURNEY_COLORS, formatSeconds, tilesFor, type JourneyStop } from "@/lib/ride-journey";
+import { JOURNEY_COLORS, MAP_TILES, formatSeconds, type JourneyStop } from "@/lib/ride-journey";
 
 // `label` is the small always-visible tag ("Pickup", "Stop 1", "Destination"); `detail` (the
 // address) opens in a popup on click.
@@ -34,7 +34,6 @@ export default function RideJourneyMap({
   quotedMarkers,
   stops,
   outageMarkers,
-  stadiaKey,
 }: {
   lines: JourneyLine[];
   tripStart?: LatLngTuple;
@@ -42,9 +41,8 @@ export default function RideJourneyMap({
   quotedMarkers: JourneyMarker[];
   stops: JourneyStop[];
   outageMarkers: OutageMarker[];
-  stadiaKey: string | null;
 }) {
-  const tiles = tilesFor(stadiaKey);
+  const tiles = MAP_TILES;
   const all: LatLngTuple[] = [
     ...lines.flatMap((l) => l.positions),
     ...quotedMarkers.map((m) => [m.lat, m.lng] as LatLngTuple),

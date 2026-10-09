@@ -117,18 +117,13 @@ export function formatSeconds(total: number) {
   return `${sec}s`;
 }
 
-/** Same Stadia "osm_bright" style the rider app uses when the backend has a key; OSM otherwise. */
-export function tilesFor(stadiaKey: string | null) {
-  return stadiaKey
-    ? {
-        url: `https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png?api_key=${stadiaKey}`,
-        attribution:
-          '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }
-    : {
-        url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      };
-}
+/**
+ * Plain OpenStreetMap tiles: free, no key. Fine for an internal portal's volume. (The rider app's
+ * live-tracking map uses Stadia with a backend key; the portal used to share that key and its quota.)
+ */
+export const MAP_TILES = {
+  url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+};
 
 export const mapsViewUrl = (lat: number | string, lng: number | string) => `https://www.google.com/maps?q=${lat},${lng}`;
