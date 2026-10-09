@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
@@ -41,6 +41,7 @@ const NAV: NavItem[] = [
   { href: "/drivers/promotion-balances", label: "Promotion Balances", icon: BadgePercent, anyPermission: ["driver-payment.view"] },
   { href: "/drivers/discount-payments", label: "Withdrawals", icon: Wallet, anyPermission: ["driver-payment.view"] },
   { href: "/rides", label: "Ride History", icon: Route, section: "Rides", sectionIcon: Car, anyPermission: ["ride.view"] },
+  { href: "/reviews", label: "Reviews & Ratings", icon: Star, section: "Reviews & Ratings", sectionIcon: Star, anyPermission: ["rating.view"] },
   { href: "/sos", label: "SOS Alerts", icon: Siren, anyPermission: ["sos.view"] },
 ];
 
