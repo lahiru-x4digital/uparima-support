@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/lib/api";
 import { useCan } from "@/lib/hooks/use-desk";
 import { useDriverDetail, useUpdateDriver } from "@/lib/hooks/use-drivers";
 import { driverToFormValues, type DriverFormFiles, type DriverFormValues } from "@/types/driver";
+import { changedDriverFields } from "@/lib/driver-form-rules";
 import { DriverForm } from "./driver-form";
 
 /** Edit a driver's details and replace their documents. */
@@ -20,7 +21,10 @@ export function DriverEdit({ id }: { id: string }) {
   if (!canUpdate) return <NoAccess what="editing drivers" />;
 
   async function handleSubmit(values: DriverFormValues, files: DriverFormFiles) {
-    await update.mutateAsync({ id, values, files });
+    if (!data) return;
+    // Only what this edit changed — see changedDriverFields.
+    const initial = driverToFormValues(data.driver, data.bankAccount);
+    await update.mutateAsync({ id, values: changedDriverFields(initial, values), files });
     router.push(back);
   }
 

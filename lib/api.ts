@@ -98,8 +98,14 @@ api.interceptors.response.use(
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as
-      | { error?: { message?: string }; message?: string }
+      | { error?: { message?: string; errors?: unknown }; message?: string }
       | undefined;
+    // A refused form comes back as "Validation failed" plus the actual reasons in `errors` —
+    // show the reasons, they say what to fix.
+    const reasons = Array.isArray(data?.error?.errors)
+      ? data.error.errors.filter((r): r is string => typeof r === "string")
+      : [];
+    if (reasons.length) return reasons.join(" · ");
     return data?.error?.message ?? data?.message ?? error.message;
   }
   if (error instanceof Error) return error.message;

@@ -154,7 +154,8 @@ export const useCreateDriver = () =>
 
 export const useUpdateDriver = () =>
   useDriverMutation(
-    ({ id, values, files }: { id: string; values: DriverFormValues; files: DriverFormFiles }) =>
+    // Only the fields an edit changed — see changedDriverFields.
+    ({ id, values, files }: { id: string; values: Partial<DriverFormValues>; files: DriverFormFiles }) =>
       updateDriver(id, values, files),
     "Driver updated",
   );

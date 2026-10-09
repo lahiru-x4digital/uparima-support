@@ -10,6 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/shared/modal";
 import { getErrorMessage } from "@/lib/api";
+import { licenseNumberProblem, normalizeLicenseNumber } from "@/lib/driver-form-rules";
 import { useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
 import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "@/lib/sri-lanka-locations";
 import { extractDriverDocument, extractDriverProfilePicture } from "@/lib/services/drivers.service";
@@ -323,7 +324,14 @@ export function DriverForm({
 
   // Confirming a document's extracted fields overwrites unconditionally.
   function applyExtractedFields(fields: Partial<DriverFormValues>) {
-    setValues((p) => ({ ...p, ...fields }));
+    setValues((p) => ({
+      ...p,
+      ...fields,
+      // Read off a photo, so tidy it the same way as a typed one.
+      ...(fields.licenseNumber !== undefined
+        ? { licenseNumber: normalizeLicenseNumber(fields.licenseNumber, p.isTemporaryLicense) }
+        : {}),
+    }));
   }
 
   const current = STEPS[step];
@@ -339,11 +347,29 @@ export function DriverForm({
     !bankStarted || [values.bankName, values.bankAccountName, values.bankAccountNumber].every((v) => v.trim() !== "");
   const hadBankAccount = mode === "edit" && (initialValues?.bankAccountNumber ?? "") !== "";
 
+  // The licence number is only judged when this edit touched it (or its kind). One already on
+  // file in an older format is left alone — and not sent — so it can't block an unrelated save.
+  const licenseTouched =
+    mode === "create" ||
+    values.licenseNumber !== initialValues?.licenseNumber ||
+    values.isTemporaryLicense !== initialValues?.isTemporaryLicense;
+  const licenseProblem = licenseTouched
+    ? licenseNumberProblem(values.licenseNumber, values.isTemporaryLicense)
+    : null;
+
   const stepValid =
-    current.fields.every((f) => String(values[f] ?? "").trim() !== "") && (current.key !== "ownership" || bankValid);
+    current.fields.every((f) => String(values[f] ?? "").trim() !== "") &&
+    (current.key !== "ownership" || bankValid) &&
+    (current.key !== "license" || !licenseProblem);
   const allValid = STEPS.every((s) => s.fields.every((f) => String(values[f] ?? "").trim() !== "")) && bankValid;
 
   async function submit() {
+    // Steps can be opened in any order, so the last one can be reached without passing this check.
+    if (licenseProblem) {
+      setError(licenseProblem);
+      setStep(STEPS.findIndex((s) => s.key === "license"));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -671,7 +697,10 @@ export function DriverForm({
                 <Input
                   placeholder={values.isTemporaryLicense ? "C328761" : "B1234567"}
                   value={values.licenseNumber}
-                  onChange={(e) => set("licenseNumber", e.target.value)}
+                  onChange={(e) =>
+                    set("licenseNumber", normalizeLicenseNumber(e.target.value, values.isTemporaryLicense))
+                  }
+                  aria-invalid={!!licenseProblem || undefined}
                 />
               </Field>
               <Field label={values.isTemporaryLicense ? "Valid Until *" : "Expiry Date *"}>
@@ -681,6 +710,7 @@ export function DriverForm({
                   onChange={(e) => set("licenseExpiryDate", e.target.value)}
                 />
               </Field>
+              {licenseProblem && <p className="text-sm text-destructive sm:col-span-2">{licenseProblem}</p>}
             </div>
           )}
 
