@@ -99,6 +99,11 @@ describe("detailToConversation", () => {
         phone: "94771234567",
         status: "approved",
         vehicleRegistrationNumber: "CAB-1234",
+        suspensionReason: null,
+        averageRating: 4.8,
+        totalRides: 120,
+        creditBalance: 0,
+        platformFeeOwedLkr: 0,
       },
       replies: [
         { id: "r2", ticketId: "t1", authorId: 9, isStaffReply: false, message: "Thanks", attachments: null, createdAt: "2026-10-06T11:50:00Z" },
@@ -106,6 +111,7 @@ describe("detailToConversation", () => {
       ],
       canReply: true,
       whatsappSession: null,
+      previousTickets: [],
     };
     const c = detailToConversation(detail, r, staff, NOW);
     expect(c.messages.map((m) => m.id)).toEqual(["t1:first", "r1", "r2"]);
@@ -125,6 +131,11 @@ describe("detailToConversation", () => {
         phone: "94771234567",
         status: "approved",
         vehicleRegistrationNumber: "CAB-1234",
+        suspensionReason: null,
+        averageRating: 4.8,
+        totalRides: 120,
+        creditBalance: 0,
+        platformFeeOwedLkr: 0,
       },
       replies: [
         { id: "r1", ticketId: "t1", authorId: 5, isStaffReply: true, message: "Calling you", attachments: null, createdAt: "2026-10-06T11:40:00Z" },
@@ -134,6 +145,7 @@ describe("detailToConversation", () => {
         { id: "1", direction: "out", kind: "buttons", body: "What would you like to do?", meta: { options: ["Talk to a person"] }, createdAt: "2026-10-06T11:00:00Z" },
         { id: "2", direction: "in", kind: "tap", body: "Talk to a person", meta: { id: "sup:topic:person" }, createdAt: "2026-10-06T11:01:00Z" },
       ],
+      previousTickets: [],
     };
     const c = detailToConversation(detail, r, staff, NOW);
     expect(c.messages.map((m) => m.id)).toEqual(["1", "2", "r1"]);

@@ -1,4 +1,4 @@
-import type { ContactPreference, Submitter, TicketPriority, TicketStatus } from "@/types/ticket";
+import type { ContactPreference, PreviousTicketSummary, Submitter, TicketPriority, TicketStatus } from "@/types/ticket";
 
 /** Where the customer reached us from (derived from the ticket, see lib/inbox/mappers.ts). */
 export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email";
@@ -96,6 +96,13 @@ export interface Conversation {
   isCurrentSession: boolean;
   submitter: Submitter;
   messages: Message[];
+  /** The ticket's own first-message attachments (separate from per-message
+   * attachments in `messages`, since the panel shows this as a ticket-level
+   * fact, not part of the thread). */
+  attachments: Attachment[];
+  /** This customer's other tickets, newest first; empty when none or when
+   * there's no ticket detail yet (a list row / bot-only conversation). */
+  previousTickets: PreviousTicketSummary[];
 }
 
 export interface ConversationFilters {

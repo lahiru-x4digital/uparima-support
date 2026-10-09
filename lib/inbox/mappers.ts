@@ -90,7 +90,7 @@ function base(
   staff: Staff[],
   now: Date,
   canReply = true,
-): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages"> {
+): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages" | "attachments" | "previousTickets"> {
   return {
     id: ticket.id,
     ticketNumber: ticket.ticketNumber,
@@ -153,6 +153,8 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
     email: row.reporterEmail ?? null,
     submitter: null,
     messages: [firstMessage(row, customerName, now)],
+    attachments: (row.attachments ?? []).map(attachmentOf),
+    previousTickets: [],
   };
 }
 
@@ -166,7 +168,7 @@ export function detailToConversation(
   staff: Staff[],
   now: Date = new Date(),
 ): Conversation {
-  const { ticket, replies, submitter, canReply, whatsappSession } = detail;
+  const { ticket, replies, submitter, canReply, whatsappSession, previousTickets } = detail;
   const customerName =
     row?.submitterName ??
     (submitter?.kind === "driver" ? submitter.name : submitter?.kind === "hire_tenant" ? submitter.tenantName : null) ??
@@ -193,6 +195,8 @@ export function detailToConversation(
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         .map((r) => replyMessage(r, customerName, staff, now)),
     ],
+    attachments: (ticket.attachments ?? []).map(attachmentOf),
+    previousTickets,
   };
 }
 
@@ -311,6 +315,8 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     isCurrentSession: row.isCurrentSession,
     submitter: null,
     messages: [],
+    attachments: [],
+    previousTickets: [],
   };
 }
 
@@ -354,5 +360,7 @@ export function botChatThreadToConversation(
     isCurrentSession: thread.isCurrentSession,
     submitter: null,
     messages: thread.messages.map((m) => botMessage(m, customerName)),
+    attachments: [],
+    previousTickets: [],
   };
 }

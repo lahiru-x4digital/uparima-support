@@ -201,6 +201,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             onAssign={(userId) => assign.mutate(userId)}
             onPriority={(priority) => updatePriority.mutate(priority)}
             onClose={() => setContextOpen(false)}
+            onOpenTicket={select}
           />
         </div>
       )}

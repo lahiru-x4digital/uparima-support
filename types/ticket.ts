@@ -63,6 +63,11 @@ export interface DriverSubmitter {
   phone: string | null;
   status: string;
   vehicleRegistrationNumber: string | null;
+  suspensionReason: string | null;
+  averageRating: number;
+  totalRides: number;
+  creditBalance: number;
+  platformFeeOwedLkr: number;
 }
 
 export interface HireTenantSubmitter {
@@ -87,6 +92,18 @@ export interface TicketDetail {
    * Null for a non-WhatsApp ticket, or a WhatsApp ticket old enough to
    * predate sessions. */
   whatsappSession: BotChatMessage[] | null;
+  /** This customer's other tickets, newest first (empty for an
+   * agent-logged ticket with no matched account). */
+  previousTickets: PreviousTicketSummary[];
+}
+
+/** One row of a customer's ticket history, for the desk's context panel. */
+export interface PreviousTicketSummary {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  status: TicketStatus;
+  createdAt: string;
 }
 
 export interface PageMeta {

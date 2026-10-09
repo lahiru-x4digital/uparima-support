@@ -1,20 +1,25 @@
 "use client";
 
-import { Bike, Car, Mail, Phone, X } from "lucide-react";
+import { AlertTriangle, Bike, Car, Mail, Paperclip, Phone, Star, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
-import { cn } from "@/lib/utils";
-import type { Conversation, Priority } from "@/types/inbox";
-import type { Staff } from "@/types/ticket";
-import { PRIORITIES, initials, languageLabel, topicLabel } from "./meta";
+import { assetUrl, cn } from "@/lib/utils";
+import type { Attachment, Conversation, Priority } from "@/types/inbox";
+import type { PreviousTicketSummary, Staff } from "@/types/ticket";
+import { CHANNELS, PRIORITIES, initials, languageLabel, topicLabel } from "./meta";
 import { OptionSelect } from "./option-select";
 
 const PRIORITY_OPTIONS = (Object.keys(PRIORITIES) as Priority[]).map((p) => ({ value: p, label: PRIORITIES[p].label }));
 const UNASSIGNED = "__none__";
+
+/** Driver account states that need a visible flag in the panel — the agent
+ * is likely on this ticket precisely because the driver is blocked. */
+const FLAGGED_DRIVER_STATUSES = new Set(["suspended", "rejected"]);
 
 interface Props {
   conversation: Conversation;
@@ -23,6 +28,8 @@ interface Props {
   onAssign: (userId: number) => void;
   onPriority: (priority: Priority) => void;
   onClose: () => void;
+  /** Opens another of this customer's tickets (from the History section). */
+  onOpenTicket?: (ticketId: string) => void;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -39,6 +46,84 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="flex items-start justify-between gap-3 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="text-right font-medium">{value}</span>
+    </div>
+  );
+}
+
+/** Compact driver stats: status (flagged visibly when suspended/rejected),
+ * rating/rides as one secondary line, and a balance line that only appears
+ * when there's actually something owed — most drivers have none. */
+function DriverStats({ submitter }: { submitter: Extract<Conversation["submitter"], { kind: "driver" }> }) {
+  const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
+  const owed = submitter.platformFeeOwedLkr > 0;
+  const credit = submitter.creditBalance > 0;
+  return (
+    <div className="flex flex-col gap-1.5 text-sm">
+      <div className="flex items-center gap-2">
+        <Badge variant={flagged ? "destructive" : "secondary"} className="capitalize">
+          {submitter.status}
+        </Badge>
+        {flagged && submitter.suspensionReason && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground" title={submitter.suspensionReason}>
+            <AlertTriangle className="size-3.5 text-destructive" /> {submitter.suspensionReason.replace(/_/g, " ")}
+          </span>
+        )}
+      </div>
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        <Star className="size-3.5 fill-current text-amber-500" /> {submitter.averageRating.toFixed(1)} · {submitter.totalRides.toLocaleString()} rides
+      </p>
+      {(owed || credit) && (
+        <p className={cn("text-xs", owed ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+          {owed ? `Owes LKR ${Math.round(submitter.platformFeeOwedLkr).toLocaleString()}` : `Credit: LKR ${Math.round(submitter.creditBalance).toLocaleString()}`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TicketAttachments({ items }: { items: Attachment[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium text-muted-foreground">Attachments</span>
+      <div className="flex flex-col gap-1">
+        {items.map((a) => (
+          <a
+            key={a.key}
+            href={assetUrl(a.key)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 text-sm text-primary underline underline-offset-2"
+          >
+            <Paperclip className="size-3.5 shrink-0" /> <span className="truncate">{a.name}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HistoryList({ items, onOpen }: { items: PreviousTicketSummary[]; onOpen?: (id: string) => void }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium text-muted-foreground">History</span>
+      <div className="flex flex-col gap-1">
+        {items.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onOpen?.(t.id)}
+            className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 text-left text-xs hover:bg-muted"
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className={cn("size-1.5 shrink-0 rounded-full", t.status === "completed" ? "bg-muted-foreground" : "bg-amber-500")} />
+              <span className="truncate font-medium">{t.subject}</span>
+            </span>
+            <span className="shrink-0 text-muted-foreground">{formatTime(t.createdAt)}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -64,7 +149,7 @@ function RideCard({ rideId }: { rideId: string }) {
   );
 }
 
-export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose }: Props) {
+export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose, onOpenTicket }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
   const sla = slaState(c.slaDueAt);
   const topic = topicLabel(c.topic);
@@ -103,13 +188,18 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             {c.submitter?.kind === "hire_tenant" && <span className="text-muted-foreground">Business: {c.submitter.tenantName}</span>}
           </div>
 
+          {c.submitter?.kind === "driver" && <DriverStats submitter={c.submitter} />}
+
           {c.rideId && <RideCard rideId={c.rideId} />}
+
+          <TicketAttachments items={c.attachments} />
 
           <Separator />
 
           <div className="flex flex-col gap-2">
             <Row label="Ticket" value={c.ticketNumber || "—"} />
             <Row label="Opened" value={formatTime(c.createdAt)} />
+            <Row label="Channel" value={CHANNELS[c.channel].label} />
             {topic && <Row label="Topic" value={topic} />}
             {language && <Row label="Language" value={language} />}
             {c.contactPreference && <Row label="Wants" value={c.contactPreference === "message" ? "A message" : "A call"} />}
@@ -141,6 +231,13 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             </Field>
           ) : (
             <p className="text-xs text-muted-foreground">No ticket yet — reply to start one.</p>
+          )}
+
+          {c.previousTickets.length > 0 && (
+            <>
+              <Separator />
+              <HistoryList items={c.previousTickets} onOpen={onOpenTicket} />
+            </>
           )}
         </div>
       </ScrollArea>
