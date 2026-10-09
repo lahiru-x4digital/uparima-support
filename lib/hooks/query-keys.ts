@@ -1,6 +1,7 @@
 import type { TemplateListParams } from "@/types/template-list";
 import type { TicketListParams } from "@/types/ticket";
 import type { SmsHistoryParams } from "@/types/sms";
+import type { RatingListParams } from "@/types/rating";
 
 export const ticketKeys = {
   all: ["tickets"] as const,
@@ -84,6 +85,12 @@ export const driverPaymentKeys = {
 export const rideHistoryKeys = {
   list: (p: unknown) => ["rides", "list", p] as const,
   path: (id: string) => ["rides", "path", id] as const,
+};
+
+export const ratingKeys = {
+  all: ["ratings"] as const,
+  list: (params: RatingListParams) => ["ratings", "list", params] as const,
+  detail: (id: number | string) => ["ratings", "detail", id] as const,
 };
 
 export const sosKeys = {
