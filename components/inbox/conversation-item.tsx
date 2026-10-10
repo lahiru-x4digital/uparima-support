@@ -39,7 +39,9 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
             <span className="text-xs leading-none font-bold">!</span>
           </span>
         ) : c.unread ? (
-          <span className="absolute -top-1 -left-1 size-3 rounded-full bg-blue-600 ring-2 ring-background" aria-hidden />
+          <span className="absolute -top-1 -left-1 flex h-4 items-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-background">
+            NEW
+          </span>
         ) : null}
         <span className={cn("absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-background", channel.className)}>
           <ChannelIcon className="size-3" />
