@@ -2,7 +2,6 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Channel, ConversationFilters } from "@/types/inbox";
 import { CHANNELS } from "./meta";
 import { OptionSelect } from "./option-select";
@@ -22,16 +21,16 @@ const CHANNEL_OPTIONS: { value: Channel | "all"; label: string }[] = [
 ];
 
 const ASSIGNEE_OPTIONS: { value: ConversationFilters["assignee"]; label: string }[] = [
-  { value: "all", label: "Everyone" },
+  { value: "all", label: "All" },
   { value: "mine", label: "Assigned to me" },
   { value: "unassigned", label: "Unassigned" },
 ];
 
 export function FilterBar({ filters, needsContactCount, onChange, hideChannel }: Props) {
-  const tabs: { value: ConversationFilters["status"]; label: string }[] = [
+  const statusOptions: { value: ConversationFilters["status"]; label: string }[] = [
     { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
     { value: "incomplete_driver", label: "Incomplete" },
-    { value: "all", label: "All" },
+    { value: "all", label: "Everyone" },
     { value: "pending", label: "Pending" },
     { value: "in_review", label: "In review" },
     { value: "completed", label: "Done" },
@@ -48,16 +47,9 @@ export function FilterBar({ filters, needsContactCount, onChange, hideChannel }:
           className="pl-8"
         />
       </div>
-      <Tabs value={filters.status} onValueChange={(v) => onChange({ status: v as ConversationFilters["status"] })}>
-        <TabsList className="w-full">
-          {tabs.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} className="px-1.5 text-xs">
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      <div className={hideChannel ? "grid gap-2" : "grid grid-cols-2 gap-2"}>
+      <div className={hideChannel ? "grid grid-cols-2 gap-2" : "grid grid-cols-3 gap-2"}>
+        <OptionSelect label="Status" value={filters.status} options={statusOptions}
+          onChange={(status) => onChange({ status })} className="w-full" />
         {!hideChannel && <OptionSelect label="Channel" value={filters.channel} options={CHANNEL_OPTIONS}
           onChange={(channel) => onChange({ channel })} className="w-full" />}
         <OptionSelect label="Assignee" value={filters.assignee} options={ASSIGNEE_OPTIONS}
