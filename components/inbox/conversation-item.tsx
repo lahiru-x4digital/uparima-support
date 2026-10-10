@@ -46,7 +46,10 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className={cn("truncate text-sm", c.needsContact ? "font-semibold" : "font-medium")}>{c.customerName}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            {c.unread && <span className="size-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden />}
+            <span className={cn("truncate text-sm", c.needsContact || c.unread ? "font-semibold" : "font-medium")}>{c.customerName}</span>
+          </span>
           <span className="shrink-0 text-xs text-muted-foreground">{c.lastAt}</span>
         </div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">{topic ? `${topic} · ${c.preview}` : c.preview}</p>

@@ -44,6 +44,9 @@ export interface Ticket {
 export interface TicketRow extends Ticket {
   submitterName: string | null;
   submitterPhone: string | null;
+  /** True when this ticket has activity newer than the current staff
+   * member's last-seen pointer for it (or they've never opened it). */
+  unseen: boolean;
 }
 
 export interface TicketReply {

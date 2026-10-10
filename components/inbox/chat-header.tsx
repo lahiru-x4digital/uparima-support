@@ -35,9 +35,20 @@ export function ChatHeader({
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onBack} aria-label="Back to conversations">
         <ArrowLeft />
       </Button>
-      <Avatar>
-        <AvatarFallback>{initials(c.customerName)}</AvatarFallback>
-      </Avatar>
+      <div className="relative">
+        <Avatar>
+          <AvatarFallback>{initials(c.customerName)}</AvatarFallback>
+        </Avatar>
+        {c.needsContact ? (
+          <span className="absolute -top-1 -left-1 flex size-5 items-center justify-center rounded-full bg-destructive text-white ring-2 ring-background">
+            <span className="text-xs leading-none font-bold">!</span>
+          </span>
+        ) : c.unread ? (
+          <span className="absolute -top-1 -left-1 flex h-4 items-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-background">
+            NEW
+          </span>
+        ) : null}
+      </div>
       <div className="min-w-0 flex-1">
         <h2 className="truncate text-sm font-semibold">{c.customerName}</h2>
         <p className="truncate text-xs text-muted-foreground">

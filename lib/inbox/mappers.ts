@@ -90,7 +90,7 @@ function base(
   staff: Staff[],
   now: Date,
   canReply = true,
-): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages" | "attachments" | "previousTickets"> {
+): Omit<Conversation, "customerName" | "phone" | "email" | "submitter" | "messages" | "attachments" | "previousTickets" | "unread"> {
   return {
     id: ticket.id,
     ticketNumber: ticket.ticketNumber,
@@ -148,6 +148,7 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
   const customerName = row.submitterName ?? row.submitterPhone ?? row.reporterPhone ?? row.reporterEmail ?? "Unknown caller";
   return {
     ...base(row, staff, now),
+    unread: row.unseen,
     customerName,
     phone: row.submitterPhone ?? row.reporterPhone ?? "—",
     email: row.reporterEmail ?? null,
@@ -185,6 +186,9 @@ export function detailToConversation(
     : [firstMessage(ticket, customerName, now)];
   return {
     ...base(ticket, staff, now, canReply),
+    // Fetching detail is what marks a ticket seen server-side, so the
+    // conversation being viewed is never shown as unread.
+    unread: false,
     customerName,
     phone,
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
@@ -301,6 +305,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     product: null,
     status: "bot_only",
     priority: null,
+    unread: false,
     assignedToUserId: null,
     assignedTo: null,
     lastAt: formatTime(row.lastAt, now),
@@ -353,6 +358,7 @@ export function botChatThreadToConversation(
     product: null,
     status: "bot_only",
     priority: null,
+    unread: false,
     assignedToUserId: null,
     assignedTo: null,
     lastAt: thread.messages.length ? formatTime(thread.messages[thread.messages.length - 1].createdAt, now) : "",

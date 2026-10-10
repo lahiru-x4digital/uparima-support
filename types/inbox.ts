@@ -79,6 +79,9 @@ export interface Conversation {
   /** First line of the customer's message, for the list. */
   preview: string;
   rideId: string | null;
+  /** True when this conversation has activity the current staff member
+   * hasn't seen yet. Always false once its detail has been opened. */
+  unread: boolean;
   /** WhatsApp hand-off fields. */
   needsContact: boolean;
   contactPreference: ContactPreference | null;

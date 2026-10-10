@@ -45,6 +45,7 @@ const row = (over: Partial<TicketRow> = {}): TicketRow => ({
   updatedAt: "2026-10-06T11:30:00Z",
   submitterName: "Kamal Perera",
   submitterPhone: "94771234567",
+  unseen: false,
   ...over,
 });
 

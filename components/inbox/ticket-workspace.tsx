@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -8,6 +9,7 @@ import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bo
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
+import { ticketKeys } from "@/lib/hooks/query-keys";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters } from "@/lib/inbox/filters";
 import {
@@ -91,6 +93,14 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
 
   const detail = useTicketDetail(isBotActive ? null : activeId);
   const botThread = useBotChatThread(activePhone, activeSessionId);
+
+  const queryClient = useQueryClient();
+  // Opening a ticket's detail marks it seen for this staff member on the
+  // backend; refresh the list so its unread dot clears without waiting for
+  // the next poll.
+  useEffect(() => {
+    if (detail.data) queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
+  }, [detail.data, queryClient]);
 
   const active = useMemo((): Conversation | null => {
     if (!activeId) return null;
