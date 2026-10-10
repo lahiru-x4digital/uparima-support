@@ -305,7 +305,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     product: null,
     status: "bot_only",
     priority: null,
-    unread: false,
+    unread: row.unseen,
     assignedToUserId: null,
     assignedTo: null,
     lastAt: formatTime(row.lastAt, now),
@@ -358,6 +358,8 @@ export function botChatThreadToConversation(
     product: null,
     status: "bot_only",
     priority: null,
+    // Fetching the thread is what marks it seen server-side (see
+    // SupportDeskBotChatsService.thread's upsertSeen call).
     unread: false,
     assignedToUserId: null,
     assignedTo: null,

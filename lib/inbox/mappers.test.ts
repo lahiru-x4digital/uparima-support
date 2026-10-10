@@ -185,6 +185,7 @@ describe("botChatRowToConversation", () => {
       lastKind: "text",
       lastBody: "hi",
       needsContact: false,
+      unseen: false,
     };
     const c = botChatRowToConversation(row, NOW);
     expect(c.id).toBe("bot:94771234567:s1");
@@ -210,6 +211,7 @@ describe("botChatRowToConversation", () => {
       lastKind: "text",
       lastBody: "How can I help?",
       needsContact: false,
+      unseen: false,
     };
     const c = botChatRowToConversation(row, NOW);
     expect(c.customerName).toBe("+94771234567");
@@ -232,6 +234,7 @@ describe("botChatRowToConversation", () => {
       lastKind: "text",
       lastBody: "help",
       needsContact: true,
+      unseen: false,
     };
     expect(botChatRowToConversation(row, NOW).needsContact).toBe(true);
   });

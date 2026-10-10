@@ -27,6 +27,9 @@ export interface BotChatRow {
    * customer's side asking the bot for help and having an open ticket are
    * the same need. */
   needsContact: boolean;
+  /** True when no staff member has opened this session since its last
+   * message — shared across staff, same as a ticket's own unread flag. */
+  unseen: boolean;
 }
 
 export interface BotChatMessage {

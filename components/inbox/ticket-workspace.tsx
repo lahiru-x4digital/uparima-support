@@ -9,7 +9,7 @@ import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bo
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
-import { ticketKeys } from "@/lib/hooks/query-keys";
+import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters } from "@/lib/inbox/filters";
 import {
@@ -101,6 +101,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   useEffect(() => {
     if (detail.data) queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
   }, [detail.data, queryClient]);
+  // Same for a bot-only (ticketless) WhatsApp thread.
+  useEffect(() => {
+    if (botThread.data) queryClient.invalidateQueries({ queryKey: botChatKeys.all });
+  }, [botThread.data, queryClient]);
 
   const active = useMemo((): Conversation | null => {
     if (!activeId) return null;
