@@ -44,6 +44,9 @@ export interface Ticket {
 export interface TicketRow extends Ticket {
   submitterName: string | null;
   submitterPhone: string | null;
+  /** The linked driver's `DriverStatus` (e.g. "incomplete", "approved"),
+   * null when the submitter isn't a driver or has no driver record. */
+  submitterDriverStatus: string | null;
   /** True when this ticket has activity newer than the current staff
    * member's last-seen pointer for it (or they've never opened it). */
   unseen: boolean;
@@ -130,6 +133,8 @@ export interface TicketListParams {
   channel?: TicketChannel;
   /** Only tickets imported from email. */
   source?: "email";
+  /** Driver's profile registration was never finished (DriverStatus "incomplete"). */
+  incompleteDriver?: boolean;
 }
 
 export interface Staff {

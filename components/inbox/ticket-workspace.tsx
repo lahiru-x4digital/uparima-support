@@ -66,7 +66,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
 
   const list = useTicketList(filters);
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
-  const botList = useBotChatList(view === "bot" ? filters.search.trim() : "");
+  const botList = useBotChatList(
+    view === "bot" ? filters.search.trim() : "",
+    view === "bot" && filters.status === "incomplete_driver",
+  );
 
   const rows = useMemo(() => flattenRows(list.data), [list.data]);
   const botRows = useMemo(() => botList.data?.pages.flatMap((p) => p.data) ?? [], [botList.data]);

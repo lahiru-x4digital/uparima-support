@@ -98,6 +98,7 @@ function base(
     channel: channelOf(ticket),
     product: productOf(ticket.category, ticket.submitterType),
     status: ticket.status,
+    incompleteDriver: false,
     priority: ticket.priority,
     assignedToUserId: ticket.assignedToUserId,
     assignedTo: staffName(staff, ticket.assignedToUserId),
@@ -149,6 +150,7 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
   return {
     ...base(row, staff, now),
     unread: row.unseen,
+    incompleteDriver: row.submitterDriverStatus === "incomplete",
     customerName,
     phone: row.submitterPhone ?? row.reporterPhone ?? "—",
     email: row.reporterEmail ?? null,
@@ -189,6 +191,7 @@ export function detailToConversation(
     // Fetching detail is what marks a ticket seen server-side, so the
     // conversation being viewed is never shown as unread.
     unread: false,
+    incompleteDriver: submitter?.kind === "driver" && submitter.status === "incomplete",
     customerName,
     phone,
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
@@ -304,6 +307,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     channel: "whatsapp",
     product: null,
     status: "bot_only",
+    incompleteDriver: row.submitter?.kind === "driver" && row.submitter.status === "incomplete",
     priority: null,
     unread: row.unseen,
     assignedToUserId: null,
@@ -357,6 +361,7 @@ export function botChatThreadToConversation(
     channel: "whatsapp",
     product: null,
     status: "bot_only",
+    incompleteDriver: thread.contact.submitter?.kind === "driver" && thread.contact.submitter.status === "incomplete",
     priority: null,
     // Fetching the thread is what marks it seen server-side (see
     // SupportDeskBotChatsService.thread's upsertSeen call).

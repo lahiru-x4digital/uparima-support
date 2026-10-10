@@ -68,6 +68,9 @@ export interface Conversation {
   /** Null when the category does not say (e.g. a WhatsApp chat with no ticket yet). */
   product: Product | null;
   status: ConversationStatus;
+  /** True when the submitter is a driver whose registration was never
+   * finished (DriverStatus "incomplete") — drives the "Incomplete" tab. */
+  incompleteDriver: boolean;
   /** null for a bot-only conversation, which has no ticket to prioritise. */
   priority: Priority | null;
   assignedToUserId: number | null;
@@ -110,8 +113,9 @@ export interface Conversation {
 
 export interface ConversationFilters {
   search: string;
-  /** "needs_contact" is the WhatsApp hand-off queue, not a ticket status. */
-  status: ConversationStatus | "needs_contact" | "all";
+  /** "needs_contact" is the WhatsApp hand-off queue; "incomplete_driver" is
+   * the submitter's driver profile status, not a ticket status either. */
+  status: ConversationStatus | "needs_contact" | "incomplete_driver" | "all";
   channel: Channel | "all";
   assignee: "all" | "mine" | "unassigned";
 }

@@ -12,6 +12,8 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
     params.needsContact = true;
     // "bot_only" is a synthetic, client-only status for ticketless WhatsApp
     // conversations — the ticket list endpoint knows nothing about it.
+  } else if (filters.status === "incomplete_driver") {
+    params.incompleteDriver = true;
   } else if (filters.status !== "all" && filters.status !== "bot_only") {
     params.status = filters.status;
   }
@@ -36,6 +38,11 @@ export function applyClientFilters(
   const q = filters.search.trim().toLowerCase();
   return conversations.filter((c) => {
     if (filters.status === "needs_contact" && c.status === "bot_only" && !c.needsContact) return false;
+    // Ticket rows are already server-filtered to incompleteDriver=true for
+    // this tab (see toListParams), but bot rows bypass that server filter
+    // entirely (list() only applies it when wired in — see useBotChatList),
+    // so re-check it here against what the row itself carries.
+    if (filters.status === "incomplete_driver" && c.status === "bot_only" && !c.incompleteDriver) return false;
     if (filters.channel !== "all" && c.channel !== filters.channel) return false;
     if (filters.assignee === "mine" && (meId == null || c.assignedToUserId !== meId)) return false;
     if (filters.assignee === "unassigned" && c.assignedToUserId !== null) return false;

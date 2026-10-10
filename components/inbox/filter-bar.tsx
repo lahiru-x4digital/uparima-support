@@ -30,6 +30,7 @@ const ASSIGNEE_OPTIONS: { value: ConversationFilters["assignee"]; label: string 
 export function FilterBar({ filters, needsContactCount, onChange, hideChannel }: Props) {
   const tabs: { value: ConversationFilters["status"]; label: string }[] = [
     { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
+    { value: "incomplete_driver", label: "Incomplete" },
     { value: "all", label: "All" },
     { value: "pending", label: "Pending" },
     { value: "in_review", label: "In review" },
