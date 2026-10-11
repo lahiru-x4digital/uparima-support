@@ -34,11 +34,15 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
         <Avatar size="lg">
           <AvatarFallback>{initials(c.customerName)}</AvatarFallback>
         </Avatar>
-        {c.needsContact && (
+        {c.needsContact ? (
           <span className="absolute -top-1 -left-1 flex size-5 items-center justify-center rounded-full bg-destructive text-white ring-2 ring-background">
             <span className="text-xs leading-none font-bold">!</span>
           </span>
-        )}
+        ) : c.unread ? (
+          <span className="absolute -top-1 -left-1 flex h-4 items-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-background">
+            NEW
+          </span>
+        ) : null}
         <span className={cn("absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-background", channel.className)}>
           <ChannelIcon className="size-3" />
         </span>
@@ -46,7 +50,7 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className={cn("truncate text-sm", c.needsContact ? "font-semibold" : "font-medium")}>{c.customerName}</span>
+          <span className={cn("truncate text-sm", c.needsContact || c.unread ? "font-semibold" : "font-medium")}>{c.customerName}</span>
           <span className="shrink-0 text-xs text-muted-foreground">{c.lastAt}</span>
         </div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">{topic ? `${topic} · ${c.preview}` : c.preview}</p>

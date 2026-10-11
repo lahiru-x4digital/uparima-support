@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import type { Conversation, ConversationStatus } from "@/types/inbox";
 import { ChatHeader } from "./chat-header";
 import { Composer } from "./composer";
-import { HandoffBanner } from "./handoff-banner";
+// Hidden for now — see the commented-out usage below.
+// import { HandoffBanner } from "./handoff-banner";
 import { MessageList } from "./message-list";
 import { TemplatePicker } from "./template-picker/template-picker";
 
@@ -44,9 +45,11 @@ export function ChatPane({
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatHeader conversation={conversation} contextOpen={contextOpen} canUpdate={canUpdate} converting={convertingToTicket}
         onBack={onBack} onToggleContext={onToggleContext} onStatusChange={onStatusChange} onConvertToTicket={onConvertToTicket} />
+      {/* Hidden for now — see HandoffBanner.
       {conversation.channel === "whatsapp" && (
         <HandoffBanner conversation={conversation} canUpdate={canUpdate} marking={markingContacted} onMarkContacted={onMarkContacted} />
       )}
+      */}
       {error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
           <AlertCircle className="size-8 text-destructive" />

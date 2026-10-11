@@ -45,6 +45,8 @@ const row = (over: Partial<TicketRow> = {}): TicketRow => ({
   updatedAt: "2026-10-06T11:30:00Z",
   submitterName: "Kamal Perera",
   submitterPhone: "94771234567",
+  submitterDriverStatus: null,
+  unseen: false,
   ...over,
 });
 
@@ -184,6 +186,7 @@ describe("botChatRowToConversation", () => {
       lastKind: "text",
       lastBody: "hi",
       needsContact: false,
+      unseen: false,
     };
     const c = botChatRowToConversation(row, NOW);
     expect(c.id).toBe("bot:94771234567:s1");
@@ -209,6 +212,7 @@ describe("botChatRowToConversation", () => {
       lastKind: "text",
       lastBody: "How can I help?",
       needsContact: false,
+      unseen: false,
     };
     const c = botChatRowToConversation(row, NOW);
     expect(c.customerName).toBe("+94771234567");
@@ -231,6 +235,7 @@ describe("botChatRowToConversation", () => {
       lastKind: "text",
       lastBody: "help",
       needsContact: true,
+      unseen: false,
     };
     expect(botChatRowToConversation(row, NOW).needsContact).toBe(true);
   });

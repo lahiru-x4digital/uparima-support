@@ -28,7 +28,7 @@ export const careTemplateKeys = {
 
 export const botChatKeys = {
   all: ["bot-chats"] as const,
-  list: (search: string) => ["bot-chats", "list", search] as const,
+  list: (search: string, incompleteDriver?: boolean) => ["bot-chats", "list", search, !!incompleteDriver] as const,
   thread: (phone: string, sessionId: string | null) =>
     ["bot-chats", "thread", phone, sessionId ?? "legacy"] as const,
 };

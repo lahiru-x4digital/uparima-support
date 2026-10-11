@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { AlertCircle, Inbox, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,6 +39,23 @@ function Skeleton() {
 export function ConversationList({
   conversations, activeId, loading, error, hasMore, loadingMore, filtered, onSelect, onRetry, onLoadMore,
 }: Props) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Auto-load the next page once the sentinel after the last row scrolls
+  // into view, instead of waiting for a manual "Load more" click.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) onLoadMore();
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, onLoadMore]);
+
   if (loading) return <Skeleton />;
 
   if (error) {
@@ -66,10 +84,8 @@ export function ConversationList({
         <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onSelect={() => onSelect(c.id)} />
       ))}
       {hasMore && (
-        <div className="p-3">
-          <Button variant="outline" size="sm" className="w-full" onClick={onLoadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="animate-spin" /> : null} Load more
-          </Button>
+        <div ref={sentinelRef} className="flex justify-center p-3">
+          {loadingMore && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
         </div>
       )}
     </ScrollArea>

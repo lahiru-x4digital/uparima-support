@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Bike, Car, ExternalLink, Mail, Paperclip, Phone, Star, X } from "lucide-react";
+import { AlertTriangle, Bike, Car, ExternalLink, Mail, Paperclip, Phone, Star, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { DriverCreateDialog } from "@/components/drivers/driver-create-dialog";
 import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
 import { useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
+import { EMPTY_DRIVER_FORM } from "@/types/driver";
 import type { Attachment, Conversation, Priority } from "@/types/inbox";
 import type { PreviousTicketSummary, Staff } from "@/types/ticket";
 import { CHANNELS, PRIORITIES, initials, languageLabel, topicLabel } from "./meta";
@@ -32,6 +34,16 @@ interface Props {
   onClose: () => void;
   /** Opens another of this customer's tickets (from the History section). */
   onOpenTicket?: (ticketId: string) => void;
+}
+
+/** A conversation only ever carries one display name — split it for the
+ * registration form's separate first/last name fields. "Unknown caller" and
+ * phone-only placeholders aren't real names, so they're left blank rather
+ * than prefilled as someone's first name. */
+function splitName(customerName: string): { firstName: string; lastName: string } {
+  if (customerName === "Unknown caller" || customerName.startsWith("+")) return { firstName: "", lastName: "" };
+  const [firstName = "", ...rest] = customerName.trim().split(/\s+/);
+  return { firstName, lastName: rest.join(" ") };
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -178,6 +190,11 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
   ];
   const assignedValue = c.assignedToUserId == null ? UNASSIGNED : String(c.assignedToUserId);
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
+  const [createDriverOpen, setCreateDriverOpen] = useState(false);
+  // A driver created from a ticket with no existing driver record — shown
+  // in the detail dialog right after registration, by id (not c.submitter,
+  // which still reflects the conversation's stale pre-registration state).
+  const [newDriverId, setNewDriverId] = useState<number | null>(null);
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col border-l bg-background">
@@ -207,9 +224,13 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             {c.submitter?.kind === "hire_tenant" && <span className="text-muted-foreground">Business: {c.submitter.tenantName}</span>}
           </div>
 
-          {c.submitter?.kind === "driver" && (
+          {c.submitter?.kind === "driver" ? (
             <DriverStats submitter={c.submitter} onViewDriver={() => setDriverDialogOpen(true)} />
-          )}
+          ) : c.submitter?.kind !== "hire_tenant" ? (
+            <Button size="sm" variant="outline" className="w-fit" onClick={() => setCreateDriverOpen(true)}>
+              <UserPlus className="size-3.5" /> Register as driver
+            </Button>
+          ) : null}
 
           {c.rideId && <RideCard rideId={c.rideId} />}
 
@@ -268,6 +289,26 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           driverId={String(c.submitter.driverId)}
           open={driverDialogOpen}
           onClose={() => setDriverDialogOpen(false)}
+        />
+      )}
+
+      {createDriverOpen && (
+        <DriverCreateDialog
+          open={createDriverOpen}
+          initialValues={{ ...EMPTY_DRIVER_FORM, ...splitName(c.customerName), phone: c.phone }}
+          onClose={() => setCreateDriverOpen(false)}
+          onCreated={(driverId) => {
+            setCreateDriverOpen(false);
+            setNewDriverId(driverId);
+          }}
+        />
+      )}
+
+      {newDriverId != null && (
+        <DriverDetailsDialog
+          driverId={String(newDriverId)}
+          open={newDriverId != null}
+          onClose={() => setNewDriverId(null)}
         />
       )}
     </aside>

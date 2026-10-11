@@ -1,7 +1,7 @@
 import { apiGet, apiGetPage, apiPost } from "@/lib/api";
 import type { BotChatConvertResult, BotChatReplyResult, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
-export const listBotChats = (params: { page: number; perPage: number; search?: string }) =>
+export const listBotChats = (params: { page: number; perPage: number; search?: string; incompleteDriver?: boolean }) =>
   apiGetPage<BotChatRow>("/support-desk/bot-chats", { params });
 
 /** The newest `limit` messages of one session, oldest first. `sessionId` null
