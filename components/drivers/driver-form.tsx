@@ -10,8 +10,9 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/shared/modal";
 import { getErrorMessage } from "@/lib/api";
+import { cityOptions } from "@/lib/driver-cities";
 import { licenseNumberProblem, normalizeLicenseNumber } from "@/lib/driver-form-rules";
-import { useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
+import { useDistrictCities, useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
 import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "@/lib/sri-lanka-locations";
 import { extractDriverDocument, extractDriverProfilePicture } from "@/lib/services/drivers.service";
 import { DOC_FIELD_SPECS } from "@/lib/vehicle-doc-field-specs";
@@ -313,6 +314,9 @@ export function DriverForm({
     () => (values.province ? (SRI_LANKA_DISTRICTS_BY_PROVINCE[values.province] ?? []) : []),
     [values.province],
   );
+  // The chosen district's cities — the list the driver app registers with.
+  const cityList = useDistrictCities(values.province, values.district);
+  const cities = cityList.data ?? [];
 
   function set<K extends keyof DriverFormValues>(key: K, val: DriverFormValues[K]) {
     setValues((p) => ({ ...p, [key]: val }));
@@ -567,6 +571,7 @@ export function DriverForm({
                   onChange={(e) => {
                     set("province", e.target.value);
                     set("district", "");
+                    set("city", "");
                   }}
                 >
                   <option value="">Select province…</option>
@@ -580,7 +585,10 @@ export function DriverForm({
               <Field label="District *">
                 <NativeSelect
                   value={values.district}
-                  onChange={(e) => set("district", e.target.value)}
+                  onChange={(e) => {
+                    set("district", e.target.value);
+                    set("city", "");
+                  }}
                   disabled={!values.province}
                 >
                   <option value="">Select district…</option>
@@ -592,7 +600,37 @@ export function DriverForm({
                 </NativeSelect>
               </Field>
               <Field label="City *">
-                <Input value={values.city} onChange={(e) => set("city", e.target.value)} />
+                {cityList.isSuccess && cities.length === 0 ? (
+                  // Nothing listed for this district, so there is nothing to pick from.
+                  <Input
+                    value={values.city}
+                    onChange={(e) => set("city", e.target.value)}
+                    placeholder="No cities are listed for this district — type it"
+                  />
+                ) : (
+                  <NativeSelect
+                    value={values.city}
+                    onChange={(e) => set("city", e.target.value)}
+                    disabled={!values.district || cityList.isLoading}
+                  >
+                    <option value="">
+                      {!values.district ? "Select district first…" : cityList.isLoading ? "Loading cities…" : "Select city…"}
+                    </option>
+                    {cityOptions(cities, values.city).map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                )}
+                {cityList.isError && (
+                  <p className="text-xs text-destructive">
+                    The cities for this district couldn&apos;t be loaded.{" "}
+                    <button type="button" className="underline" onClick={() => cityList.refetch()}>
+                      Try again
+                    </button>
+                  </p>
+                )}
               </Field>
               <Field label="Email Address (Optional)">
                 <Input type="email" value={values.email} onChange={(e) => set("email", e.target.value)} />

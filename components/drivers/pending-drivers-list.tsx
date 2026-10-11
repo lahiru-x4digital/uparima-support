@@ -15,6 +15,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBox } from "@/components/shared/search-box";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
+import { signupReadyForReview } from "@/lib/driver-review";
 import { useCan } from "@/lib/hooks/use-desk";
 import { useClientPagination } from "@/lib/hooks/use-client-pagination";
 import { useApproveDriver, usePendingDrivers, useRejectDriver } from "@/lib/hooks/use-drivers";
@@ -34,13 +35,15 @@ type Kind = (typeof KINDS)[number];
 const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "—");
 const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "—";
 
+const awaitingDecision = (d: Driver) => d.status === "pending" || signupReadyForReview(d);
+
 const matchesSearch = (d: Driver, term: string) =>
   [String(d.id), d.firstName, d.lastName, d.vehicleRegistrationNumber].filter(Boolean).join(" ").toLowerCase().includes(term);
 
 /**
  * The driver review queue: applications waiting for a decision (look at the documents, then
  * approve or reject) and signups that were started but never submitted (incomplete — nothing to
- * decide yet, but worth chasing).
+ * decide yet, but worth chasing). A signup staff have since filled in is decided on like a pending one.
  */
 export function PendingDriversList() {
   const canView = useCan("driver.view");
@@ -192,9 +195,9 @@ export function PendingDriversList() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5">
                         <Link href={`/drivers/${d.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                          {d.status === "pending" ? "View docs" : "View"}
+                          {awaitingDecision(d) ? "View docs" : "View"}
                         </Link>
-                        {canApprove && d.status === "pending" && (
+                        {canApprove && awaitingDecision(d) && (
                           <>
                             <Button size="sm" disabled={approve.isPending} onClick={() => approve.mutate(d.id)}>
                               <CheckCircle /> Approve

@@ -11,6 +11,7 @@ import { Modal } from "@/components/shared/modal";
 import { NoAccess, PageShell } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
+import { canAiValidateDriver, canApproveApplication, signupGaps } from "@/lib/driver-review";
 import { useCan } from "@/lib/hooks/use-desk";
 import {
   useApproveDriver,
@@ -82,12 +83,11 @@ export function DriverDetail({ id }: { id: string }) {
   // Also offered for a rejected driver (after a correction a pass approves them), an approved
   // driver still carrying a flagged review (a pass clears the flag so they can go online again), or
   // an incomplete application (where it fills a blank license number from the license photo) — see
-  // RidesAdminService.validateDriverWithAi.
-  const showAiValidate =
-    canAiValidate &&
-    (driver.status === "pending" ||
-      driver.status === "rejected" ||
-      (driver.status === "approved" && (driver.reviewValid === false || driver.missingDocuments.length > 0)));
+  // RidesAdminService.validateDriverWithAi. A signup staff have finished filling in counts as pending
+  // (lib/driver-review).
+  const showAiValidate = canAiValidate && canAiValidateDriver(driver);
+  // What an unfinished signup still needs; null for any other driver.
+  const gaps = signupGaps(driver);
 
   function runAiValidate() {
     setAiResult(null);
@@ -124,7 +124,7 @@ export function DriverDetail({ id }: { id: string }) {
               <Sparkles /> {validate.isPending ? "Validating…" : "AI Validate"}
             </Button>
           )}
-          {canApprove && (driver.status === "pending" || driver.status === "rejected") && (
+          {canApprove && canApproveApplication(driver) && (
             <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
               Approve
             </Button>
@@ -165,15 +165,53 @@ export function DriverDetail({ id }: { id: string }) {
         </>
       }
     >
-      {driver.missingDocuments.length > 0 && (
+{/* An unfinished signup: say exactly what keeps it out of review, so nobody has to guess why
+          there is no Approve button. */}
+      {gaps && gaps.length > 0 && (
+        <Card className="ring-amber-400/60">
+          <CardHeader>
+            <CardTitle className="text-amber-700 dark:text-amber-400">Signup Not Finished</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm">Still needed: {gaps.join(", ")}.</p>
+            <p className="text-sm text-muted-foreground">
+              Once these are filled in and saved, the driver moves to Pending and can be approved or checked with AI
+              Validate.
+            </p>
+            {canUpdate && (
+              <Link href={`/drivers/${id}/edit`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                <Pencil /> Complete details
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {gaps && gaps.length === 0 && (
+        <Card className="ring-emerald-500/40">
+          <CardHeader>
+            <CardTitle className="text-emerald-700 dark:text-emerald-400">Ready For Review</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">
+              Every required detail of this signup is filled in. Check the documents, then Approve it or run AI
+              Validate.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Shown once the required details are in — until then the card above already lists what is missing. */}
+      {driver.missingDocuments.length > 0 && !(gaps && gaps.length > 0) && (
         <Card className="ring-amber-400/60">
           <CardHeader>
             <CardTitle className="text-amber-700 dark:text-amber-400">Incomplete Application</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm">
-              Missing: {driver.missingDocuments.join(", ")}. This driver registered (or was resubmitted) while
-              &ldquo;Bypass Document Validation&rdquo; was on. Confirm the missing item(s) before approving.
+              Missing: {driver.missingDocuments.join(", ")}. This happens when a driver registers (or resubmits) while
+              &ldquo;Bypass Document Validation&rdquo; is on, or when staff complete a signup without it. Confirm the
+              missing item(s) before approving.
             </p>
           </CardContent>
         </Card>

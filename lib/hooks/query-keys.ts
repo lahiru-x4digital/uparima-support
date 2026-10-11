@@ -68,6 +68,7 @@ export const driverKeys = {
   devicePermissions: (id: string) => ["drivers", "device-permissions", id] as const,
   termsStatus: (id: string) => ["drivers", "terms-status", id] as const,
   vehicleTypes: ["drivers", "vehicle-types"] as const,
+  districtCities: (province: string, district: string) => ["drivers", "district-cities", province, district] as const,
   vehicleMakes: (typeId: string) => ["drivers", "vehicle-makes", typeId] as const,
   vehicleModels: (typeId: string, makeId: string) => ["drivers", "vehicle-models", typeId, makeId] as const,
 };
