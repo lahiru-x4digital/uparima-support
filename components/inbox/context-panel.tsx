@@ -29,7 +29,7 @@ interface Props {
   conversation: Conversation;
   staff: Staff[];
   canUpdate: boolean;
-  onAssign: (userId: number) => void;
+  onAssign: (userId: number) => void | Promise<void>;
   onPriority: (priority: Priority) => void;
   onClose: () => void;
   /** Opens another of this customer's tickets (from the History section). */
@@ -251,18 +251,14 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
 
           <Separator />
 
-          {c.ticketNumber ? (
-            <Field label="Assigned to">
-              {canUpdate ? (
-                <OptionSelect label="Assignee" className="w-full" value={assignedValue} options={assignOptions}
-                  onChange={(v) => v !== UNASSIGNED && onAssign(Number(v))} />
-              ) : (
-                <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
-              )}
-            </Field>
-          ) : (
-            <p className="text-xs text-muted-foreground">Assignment is available once a ticket exists.</p>
-          )}
+          <Field label="Assigned to">
+            {canUpdate ? (
+              <OptionSelect label="Assignee" className="w-full" value={assignedValue} options={assignOptions}
+                onChange={(v) => v !== UNASSIGNED && onAssign(Number(v))} />
+            ) : (
+              <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
+            )}
+          </Field>
           {c.priority ? (
             <Field label="Priority">
               {canUpdate ? (

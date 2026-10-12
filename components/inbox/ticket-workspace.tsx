@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail } from "lucide-react";
 import { getErrorMessage } from "@/lib/api";
+import { assignTicket } from "@/lib/services/tickets.service";
 import { useAuth } from "@/lib/auth-context";
 import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
@@ -223,7 +224,16 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             conversation={active}
             staff={staff}
             canUpdate={canUpdate}
-            onAssign={(userId) => assign.mutate(userId)}
+            onAssign={async (userId) => {
+              if (isBotActive) {
+                const { ticketId: newTicketId } = await convertToTicket.mutateAsync();
+                await assignTicket(newTicketId, userId);
+                void queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
+                select(newTicketId);
+              } else {
+                assign.mutate(userId);
+              }
+            }}
             onPriority={(priority) => updatePriority.mutate(priority)}
             onClose={() => setContextOpen(false)}
             onOpenTicket={select}
