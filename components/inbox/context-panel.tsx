@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Bike, Car, ExternalLink, Mail, Paperclip, Phone, Star, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Bike, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { DriverCreateDialog } from "@/components/drivers/driver-create-dialog";
 import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
-import { useRide } from "@/lib/hooks/use-desk";
+import { DriverLocationDialog } from "@/components/drivers/driver-location-dialog";
+import { useCan, useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
 import { EMPTY_DRIVER_FORM } from "@/types/driver";
 import type { Attachment, Conversation, Priority } from "@/types/inbox";
 import type { PreviousTicketSummary, Staff } from "@/types/ticket";
-import { CHANNELS, PRIORITIES, initials, languageLabel, topicLabel } from "./meta";
+import {
+  AUTO_CLOSE_REASONS,
+  CHANNELS,
+  ONBOARDING_CATEGORY,
+  ONBOARDING_REASONS,
+  PRIORITIES,
+  QUEUED_REASONS,
+  initials,
+  languageLabel,
+  topicLabel,
+} from "./meta";
 import { OptionSelect } from "./option-select";
 
 const PRIORITY_OPTIONS = (Object.keys(PRIORITIES) as Priority[]).map((p) => ({ value: p, label: PRIORITIES[p].label }));
@@ -70,9 +81,12 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function DriverStats({
   submitter,
   onViewDriver,
+  onEditLocation,
 }: {
   submitter: Extract<Conversation["submitter"], { kind: "driver" }>;
   onViewDriver: () => void;
+  /** Omitted when the agent may not edit drivers. */
+  onEditLocation?: () => void;
 }) {
   const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
   // platformFeeOwedLkr/creditBalance/averageRating are Postgres `decimal`/`int` columns that
@@ -104,9 +118,16 @@ function DriverStats({
           {owed ? `Owes LKR ${Math.round(platformFeeOwedLkr).toLocaleString()}` : `Credit: LKR ${Math.round(creditBalance).toLocaleString()}`}
         </p>
       )}
-      <Button size="sm" variant="outline" className="mt-1 w-fit" onClick={onViewDriver}>
-        <ExternalLink className="size-3.5" /> View / edit driver
-      </Button>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        <Button size="sm" variant="outline" className="w-fit" onClick={onViewDriver}>
+          <ExternalLink className="size-3.5" /> View / edit driver
+        </Button>
+        {onEditLocation && (
+          <Button size="sm" variant="outline" className="w-fit" onClick={onEditLocation}>
+            <MapPin className="size-3.5" /> Change location
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -179,6 +200,28 @@ function RideCard({ rideId }: { rideId: string }) {
   );
 }
 
+/** How the current assignee was chosen, or why nobody has it yet. */
+function AssignmentNote({ conversation: c }: { conversation: Conversation }) {
+  const r = c.routing;
+  if (!r) return null;
+  if (c.assignedToUserId == null) {
+    if (r.status !== "queued") return null;
+    return (
+      <p className={cn("text-xs", r.queuedReason === "no_qualified_agent" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+        Waiting in the queue: {QUEUED_REASONS[r.queuedReason ?? ""] ?? "no matching agent yet"}.
+      </p>
+    );
+  }
+  if (!r.assignmentMethod) return null;
+  const when = r.assignedAt ? ` · ${formatTime(r.assignedAt)}` : "";
+  return (
+    <p className="text-xs text-muted-foreground">
+      {r.assignmentMethod === "auto" ? "Auto-assigned" : "Assigned by staff"}{when}
+      {r.outOfShift && <span className="text-amber-700 dark:text-amber-300"> · outside their shift</span>}
+    </p>
+  );
+}
+
 export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose, onOpenTicket }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
   const sla = slaState(c.slaDueAt);
@@ -190,6 +233,8 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
   ];
   const assignedValue = c.assignedToUserId == null ? UNASSIGNED : String(c.assignedToUserId);
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const canEditDriver = useCan("driver.update");
   const [createDriverOpen, setCreateDriverOpen] = useState(false);
   // A driver created from a ticket with no existing driver record — shown
   // in the detail dialog right after registration, by id (not c.submitter,
@@ -225,7 +270,11 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           </div>
 
           {c.submitter?.kind === "driver" ? (
-            <DriverStats submitter={c.submitter} onViewDriver={() => setDriverDialogOpen(true)} />
+            <DriverStats
+              submitter={c.submitter}
+              onViewDriver={() => setDriverDialogOpen(true)}
+              onEditLocation={canEditDriver ? () => setLocationDialogOpen(true) : undefined}
+            />
           ) : c.submitter?.kind !== "hire_tenant" ? (
             <Button size="sm" variant="outline" className="w-fit" onClick={() => setCreateDriverOpen(true)}>
               <UserPlus className="size-3.5" /> Register as driver
@@ -245,7 +294,17 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             {topic && <Row label="Topic" value={topic} />}
             {language && <Row label="Language" value={language} />}
             {c.contactPreference && <Row label="Wants" value={c.contactPreference === "message" ? "A message" : "A call"} />}
-            {sla && <Row label="Response" value={<span className={cn(sla.overdue && "text-red-600 dark:text-red-400")}>{sla.label}</span>} />}
+            {sla && (
+              <Row label="Response" value={
+                <span title="Counted in desk opening hours only" className={cn(sla.overdue && "text-red-600 dark:text-red-400")}>{sla.label}</span>
+              } />
+            )}
+            {c.routing?.category === ONBOARDING_CATEGORY && (
+              <Row label="Onboarding" value={ONBOARDING_REASONS[c.routing.onboardingReason ?? ""] ?? "Driver onboarding"} />
+            )}
+            {c.routing?.autoClosed && (
+              <Row label="Closed" value={AUTO_CLOSE_REASONS[c.routing.autoCloseReason ?? ""] ?? "Automatically"} />
+            )}
             {c.contactedAt && <Row label="Contacted" value={formatTime(c.contactedAt)} />}
           </div>
 
@@ -258,6 +317,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             ) : (
               <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
             )}
+            <AssignmentNote conversation={c} />
           </Field>
           {c.priority ? (
             <Field label="Priority">
@@ -285,6 +345,13 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           driverId={String(c.submitter.driverId)}
           open={driverDialogOpen}
           onClose={() => setDriverDialogOpen(false)}
+        />
+      )}
+      {c.submitter?.kind === "driver" && locationDialogOpen && (
+        <DriverLocationDialog
+          driverId={String(c.submitter.driverId)}
+          open={locationDialogOpen}
+          onClose={() => setLocationDialogOpen(false)}
         />
       )}
 

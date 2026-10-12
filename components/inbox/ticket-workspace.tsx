@@ -22,6 +22,7 @@ import {
   rowToConversation,
 } from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
+import { OPEN_TICKET_EVENT } from "@/components/realtime/desk-realtime-provider";
 import { cn } from "@/lib/utils";
 import type { Channel, Conversation, ConversationFilters } from "@/types/inbox";
 import { ChatPane } from "./chat-pane";
@@ -30,6 +31,9 @@ import { ConversationList } from "./conversation-list";
 import { FilterBar } from "./filter-bar";
 
 const NO_STAFF: never[] = [];
+
+const ticketFromUrl = () =>
+  typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("ticket");
 
 /** Which conversations the list shows: tickets and live bot chats together, or one kind. */
 export type WorkspaceView = "all" | "tickets" | "bot";
@@ -55,9 +59,11 @@ interface Props {
 export function TicketWorkspace({ filters: given, onFiltersChange, view = "all", lockedChannel, onOpenMailbox }: Props) {
   const { user } = useAuth();
   const filters = useMemo(() => (lockedChannel ? { ...given, channel: lockedChannel } : given), [given, lockedChannel]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // Rendered only on the client (behind AuthGuard), so the URL is readable here: an
+  // assignment toast on another page links to `/inbox?ticket=<id>`.
+  const [activeId, setActiveId] = useState<string | null>(ticketFromUrl);
   const [contextOpen, setContextOpen] = useState(true);
-  const [mobilePane, setMobilePane] = useState<"list" | "chat">("list");
+  const [mobilePane, setMobilePane] = useState<"list" | "chat">(() => (ticketFromUrl() ? "chat" : "list"));
 
   const { data: me } = useMe();
   const { data: staffData } = useStaff();
@@ -90,9 +96,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     return [...ticketConversations, ...allBotConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [lockedChannel, view, ticketConversations, allBotConversations]);
 
+  // Bot-only chats have no assignee, so the Assignee filter doesn't apply on the Bot chats tab.
   const visible = useMemo(
-    () => applyClientFilters(merged, filters, me?.id ?? user?.id ?? null),
-    [merged, filters, me?.id, user?.id],
+    () => applyClientFilters(merged, view === "bot" ? { ...filters, assignee: "all" } : filters, me?.id ?? user?.id ?? null),
+    [merged, filters, view, me?.id, user?.id],
   );
 
   const activeBotRef = activeId ? botChatRefFromId(activeId) : null;
@@ -143,6 +150,13 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     setMobilePane("chat");
   }
   useSupportAlerts(!!user, select);
+  // An assignment toast while already on this page opens the ticket in place (see DeskRealtimeProvider).
+  useEffect(() => {
+    if (ticketFromUrl()) window.history.replaceState(null, "", window.location.pathname);
+    const onOpen = (e: Event) => select((e as CustomEvent<string>).detail);
+    window.addEventListener(OPEN_TICKET_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_TICKET_EVENT, onOpen);
+  }, []);
 
   const botView = view === "bot" && !lockedChannel;
   const threadLoading = isBotActive ? botThread.isLoading : !!activeId && detail.isLoading;

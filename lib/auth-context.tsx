@@ -7,6 +7,7 @@ import { clearAuth, getRefreshToken, getToken, saveAuth } from "@/lib/auth";
 import { loginPath, type SignInReason } from "@/lib/auth-flow";
 import { decodeUser } from "@/lib/auth-user";
 import * as authService from "@/lib/services/auth.service";
+import { setMyPresence } from "@/lib/services/routing.service";
 import type { AuthTokens, AuthUser, TwoFactorChallenge } from "@/types/auth";
 
 interface AuthState {
@@ -84,6 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Signed-out agents must stop receiving tickets; best effort, never blocks signing out.
+    await setMyPresence("offline").catch(() => undefined);
     try {
       await authService.logout(getRefreshToken());
     } catch {

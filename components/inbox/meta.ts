@@ -50,3 +50,23 @@ export const languageLabel = (code: string | null) => (code ? (LANGUAGES[code] ?
 
 export const initials = (name: string) =>
   name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
+
+/** Why a ticket was filed as driver onboarding. */
+export const ONBOARDING_REASONS: Record<string, string> = {
+  new_number: "New number: never contacted us before",
+  incomplete: "Driver signup not finished",
+  pending: "Driver application waiting for review",
+  signup_started: "Started driver signup in this chat",
+};
+
+/** Why a ticket is still waiting in the routing queue. */
+export const QUEUED_REASONS: Record<string, string> = {
+  no_online_match: "No agent with this language and skill is online",
+  no_qualified_agent: "No agent has this language and skill: ask an admin to add it",
+};
+
+export const AUTO_CLOSE_REASONS: Record<string, string> = {
+  driver_registered: "Closed automatically: the driver finished signing up in the bot",
+};
+
+export const ONBOARDING_CATEGORY = "driver_onboarding";

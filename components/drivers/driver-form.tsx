@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, Eye, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,13 +10,12 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/shared/modal";
 import { getErrorMessage } from "@/lib/api";
-import { cityOptions, formDistrict, formProvince } from "@/lib/driver-cities";
 import { licenseNumberProblem, normalizeLicenseNumber } from "@/lib/driver-form-rules";
-import { useDistrictCities, useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
-import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "@/lib/sri-lanka-locations";
+import { useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
 import { extractDriverDocument, extractDriverProfilePicture } from "@/lib/services/drivers.service";
 import { DOC_FIELD_SPECS } from "@/lib/vehicle-doc-field-specs";
 import { cn } from "@/lib/utils";
+import { DriverLocationFields } from "./driver-location-fields";
 import {
   EMPTY_DRIVER_FORM,
   type DriverDocumentKey,
@@ -310,14 +309,6 @@ export function DriverForm({
   const vehicleMakes = useVehicleMakes(values.vehicleTypeId).data ?? [];
   const vehicleModels = useVehicleModels(values.vehicleTypeId, values.vehicleMakeId).data ?? [];
 
-  const districts = useMemo(
-    () => (values.province ? (SRI_LANKA_DISTRICTS_BY_PROVINCE[formProvince(values.province)] ?? []) : []),
-    [values.province],
-  );
-  // The chosen district's cities — the list the driver app registers with.
-  const cityList = useDistrictCities(values.province, values.district);
-  const cities = cityList.data ?? [];
-
   function set<K extends keyof DriverFormValues>(key: K, val: DriverFormValues[K]) {
     setValues((p) => ({ ...p, [key]: val }));
   }
@@ -565,74 +556,10 @@ export function DriverForm({
               <Field label="Address Line 2 (Optional)">
                 <Input value={values.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} />
               </Field>
-              {/* Shown under the dropdown's own names; what is on record only changes when staff pick. */}
-              <Field label="Province *">
-                <NativeSelect
-                  value={formProvince(values.province)}
-                  onChange={(e) => {
-                    set("province", e.target.value);
-                    set("district", "");
-                    set("city", "");
-                  }}
-                >
-                  <option value="">Select province…</option>
-                  {SRI_LANKA_PROVINCES.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label="District *">
-                <NativeSelect
-                  value={formDistrict(values.district)}
-                  onChange={(e) => {
-                    set("district", e.target.value);
-                    set("city", "");
-                  }}
-                  disabled={!values.province}
-                >
-                  <option value="">Select district…</option>
-                  {districts.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label="City *">
-                {cityList.isSuccess && cities.length === 0 ? (
-                  // Nothing listed for this district, so there is nothing to pick from.
-                  <Input
-                    value={values.city}
-                    onChange={(e) => set("city", e.target.value)}
-                    placeholder="No cities are listed for this district — type it"
-                  />
-                ) : (
-                  <NativeSelect
-                    value={values.city}
-                    onChange={(e) => set("city", e.target.value)}
-                    disabled={!values.district || cityList.isLoading}
-                  >
-                    <option value="">
-                      {!values.district ? "Select district first…" : cityList.isLoading ? "Loading cities…" : "Select city…"}
-                    </option>
-                    {cityOptions(cities, values.city).map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                )}
-                {cityList.isError && (
-                  <p className="text-xs text-destructive">
-                    The cities for this district couldn&apos;t be loaded.{" "}
-                    <button type="button" className="underline" onClick={() => cityList.refetch()}>
-                      Try again
-                    </button>
-                  </p>
-                )}
-              </Field>
+              <DriverLocationFields
+                value={{ province: values.province, district: values.district, city: values.city }}
+                onChange={(patch) => setValues((p) => ({ ...p, ...patch }))}
+              />
               <Field label="Email Address (Optional)">
                 <Input type="email" value={values.email} onChange={(e) => set("email", e.target.value)} />
               </Field>

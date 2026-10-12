@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PresenceSwitcher } from "@/components/shell/presence-switcher";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
 import { useSos } from "@/components/sos/sos-provider";
@@ -33,7 +34,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
   { href: "/templates", label: "Templates", icon: ClipboardList },
-  { href: "/sms", label: "Send SMS", icon: Send, exact: true },
+  // { href: "/sms", label: "Send SMS", icon: Send, exact: true },
   { href: "/sms/bulk", label: "Bulk SMS", icon: MessagesSquare, superAdminOnly: true },
   { href: "/sms/history", label: "SMS History", icon: History },
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
@@ -189,6 +190,9 @@ export function AppSidebar() {
         })}
       </nav>
 
+      <div className="shrink-0 pt-2">
+        <PresenceSwitcher collapsed={collapsed} />
+      </div>
       <div className={cn("flex shrink-0 items-center gap-1 border-t border-sidebar-foreground/15 px-3 py-3", collapsed ? "flex-col pb-14" : "justify-between")}>
         <ThemeToggle />
         <Link
