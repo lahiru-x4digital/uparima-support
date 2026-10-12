@@ -29,6 +29,8 @@ export function InboxShell() {
   const { data: me } = useMe();
   const canSeeEmail = useCan("email-account.view");
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
+  // Tickets no online agent could take yet (wrong language/skill, or nobody online).
+  const queued = useTicketCount("queued", { routingStatus: "queued", unassigned: true });
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -40,6 +42,13 @@ export function InboxShell() {
             <button type="button" onClick={() => { setView("tickets"); setFilters((f) => ({ ...f, status: "needs_contact" })); }}
               className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
               {needsContact.data} waiting for contact
+            </button>
+          )}
+          {!!queued.data && (
+            <button type="button" onClick={() => { setView("tickets"); setFilters((f) => ({ ...f, status: "queued", assignee: "all" })); }}
+              title="No online agent with the right language and skill yet. They are assigned as soon as one comes online."
+              className="rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white">
+              {queued.data} waiting for an agent
             </button>
           )}
         </div>

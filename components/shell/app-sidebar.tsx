@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PresenceSwitcher } from "@/components/shell/presence-switcher";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
 import { useSos } from "@/components/sos/sos-provider";
@@ -182,6 +183,9 @@ export function AppSidebar() {
         })}
       </nav>
 
+      <div className="shrink-0 pt-2">
+        <PresenceSwitcher collapsed={collapsed} />
+      </div>
       <div className={cn("flex shrink-0 items-center gap-1 border-t border-sidebar-foreground/15 px-3 py-3", collapsed ? "flex-col pb-14" : "justify-between")}>
         <ThemeToggle />
         <Link

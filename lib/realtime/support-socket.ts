@@ -6,6 +6,7 @@ import { io } from "socket.io-client";
 import { toast } from "sonner";
 import { ticketKeys } from "@/lib/hooks/query-keys";
 import { getToken } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
 import { env } from "@/lib/env";
 import { topicLabel } from "@/components/inbox/meta";
 import type { HandoffEvent } from "@/types/ticket";
@@ -29,8 +30,11 @@ interface CriticalIncident {
 export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: string) => void) {
   const qc = useQueryClient();
   const openRef = useRef(onOpenTicket);
+  const { user } = useAuth();
+  const meIdRef = useRef<number | null>(user?.id ?? null);
   useEffect(() => {
     openRef.current = onOpenTicket;
+    meIdRef.current = user?.id ?? null;
   });
 
   useEffect(() => {
@@ -55,6 +59,8 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
 
     socket.on("support:handoff", (event: HandoffEvent) => {
       void qc.invalidateQueries({ queryKey: ticketKeys.all });
+      // Already routed to a colleague: theirs to handle, so no toast here.
+      if (event.assignedToUserId != null && event.assignedToUserId !== meIdRef.current) return;
       const who = event.driverName ?? event.phone;
       const topic = topicLabel(event.topic);
       toast.info(`New request from ${who}${topic ? `: ${topic}` : ""}`, {

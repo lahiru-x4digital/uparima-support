@@ -14,11 +14,18 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
     // conversations — the ticket list endpoint knows nothing about it.
   } else if (filters.status === "incomplete_driver") {
     params.incompleteDriver = true;
+  } else if (filters.status === "queued") {
+    // The routing queue: no matching agent was online when it came in.
+    params.routingStatus = "queued";
+    params.unassigned = true;
+  } else if (filters.status === "auto_closed") {
+    params.autoClosed = true;
   } else if (filters.status !== "all" && filters.status !== "bot_only") {
     params.status = filters.status;
   }
-  // "Assigned to me" is applied by the backend so it covers every page, not just the loaded ones.
+  // "Assigned to me" / "Unassigned" are applied by the backend so they cover every page.
   if (filters.assignee === "mine" && meId != null) params.assignedToUserId = meId;
+  if (filters.assignee === "unassigned") params.unassigned = true;
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
   if (filters.channel === "email") params.source = "email";
   return params;
@@ -45,6 +52,8 @@ export function applyClientFilters(
     // entirely (list() only applies it when wired in — see useBotChatList),
     // so re-check it here against what the row itself carries.
     if (filters.status === "incomplete_driver" && c.status === "bot_only" && !c.incompleteDriver) return false;
+    // Queue and auto-closed are ticket-only views; a bot-only row has no routing.
+    if ((filters.status === "queued" || filters.status === "auto_closed") && c.status === "bot_only") return false;
     if (filters.channel !== "all" && c.channel !== filters.channel) return false;
     if (filters.assignee === "mine" && (meId == null || c.assignedToUserId !== meId)) return false;
     if (filters.assignee === "unassigned" && c.assignedToUserId !== null) return false;

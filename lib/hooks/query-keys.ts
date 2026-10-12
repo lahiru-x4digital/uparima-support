@@ -14,6 +14,7 @@ export const ticketKeys = {
 export const deskKeys = {
   me: ["desk", "me"] as const,
   staff: ["desk", "staff"] as const,
+  routing: ["desk", "routing"] as const,
 };
 
 export const accountKeys = { twoFactor: ["account", "two-factor"] as const };

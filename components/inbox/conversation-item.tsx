@@ -4,7 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { slaState } from "@/lib/inbox/mappers";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/inbox";
-import { CHANNELS, PRIORITIES, PRODUCTS, STATUSES, initials, topicLabel } from "./meta";
+import {
+  AUTO_CLOSE_REASONS,
+  CHANNELS,
+  ONBOARDING_CATEGORY,
+  ONBOARDING_REASONS,
+  PRIORITIES,
+  PRODUCTS,
+  QUEUED_REASONS,
+  STATUSES,
+  initials,
+  topicLabel,
+} from "./meta";
 
 interface Props {
   conversation: Conversation;
@@ -88,6 +99,33 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen }
             <Badge variant="secondary" className={cn("h-4 px-1.5 text-[10px]", PRIORITIES[c.priority].className)}>
               {PRIORITIES[c.priority].label}
             </Badge>
+          )}
+          {c.routing?.category === ONBOARDING_CATEGORY && (
+            <span title={ONBOARDING_REASONS[c.routing.onboardingReason ?? ""] ?? "Driver onboarding"}
+              className="inline-flex h-4 items-center rounded bg-violet-100 px-1.5 text-[10px] font-medium text-violet-800 dark:bg-violet-500/20 dark:text-violet-200">
+              Onboarding
+            </span>
+          )}
+          {c.routing?.autoClosed && (
+            <span title={AUTO_CLOSE_REASONS[c.routing.autoCloseReason ?? ""] ?? "Closed automatically"}
+              className="inline-flex h-4 items-center rounded bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">
+              Auto-closed
+            </span>
+          )}
+          {c.routing?.status === "queued" && c.assignedToUserId == null && (
+            <span title={QUEUED_REASONS[c.routing.queuedReason ?? ""] ?? "Waiting for an agent"}
+              className={cn("inline-flex h-4 items-center rounded px-1.5 text-[10px] font-medium",
+                c.routing.queuedReason === "no_qualified_agent"
+                  ? "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200"
+                  : "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200")}>
+              Queued
+            </span>
+          )}
+          {c.routing?.outOfShift && c.assignedToUserId != null && c.status !== "completed" && (
+            <span title="Routed to an agent outside their shift because nobody on shift could take it"
+              className="inline-flex h-4 items-center rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
+              Out of shift
+            </span>
           )}
           {sla && (
             <span className={cn("text-xs", sla.overdue ? "font-medium text-red-600 dark:text-red-400" : sla.soon ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground")}>

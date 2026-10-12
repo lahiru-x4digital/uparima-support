@@ -36,9 +36,27 @@ export interface Ticket {
   contactLanguage: string | null;
   contactedAt: string | null;
   contactedByUserId: number | null;
+  /** The WhatsApp bot session this ticket covers (one ticket per session). */
+  whatsappSessionId?: string | null;
+  /** Closed by the system, not staff (e.g. the bot finished a driver signup). */
+  autoClosed?: boolean;
+  autoCloseReason?: string | null;
+  assignedAt?: string | null;
+  assignmentMethod?: AssignmentMethod | null;
+  /** Auto-assigned to an online agent outside their shift (nobody in shift matched). */
+  assignedOutOfShift?: boolean;
+  onboardingReason?: OnboardingReason | null;
+  /** "queued" = waiting for a matching agent to come online. */
+  routingStatus?: RoutingStatus | null;
+  queuedReason?: QueuedReason | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export type AssignmentMethod = "auto" | "manual";
+export type RoutingStatus = "queued" | "assigned";
+export type QueuedReason = "no_online_match" | "no_qualified_agent";
+export type OnboardingReason = "new_number" | "incomplete" | "pending" | "signup_started";
 
 /** A row of `GET /support-desk/tickets`: the ticket plus who wrote in. */
 export interface TicketRow extends Ticket {
@@ -137,6 +155,12 @@ export interface TicketListParams {
   incompleteDriver?: boolean;
   /** Only tickets assigned to this staff user (users.id). */
   assignedToUserId?: number;
+  /** Only tickets nobody owns yet. */
+  unassigned?: boolean;
+  /** Only tickets the system closed (true) or not (false). */
+  autoClosed?: boolean;
+  /** "queued" = the routing queue: waiting for a matching agent. */
+  routingStatus?: RoutingStatus;
 }
 
 export interface Staff {
@@ -182,4 +206,18 @@ export interface HandoffEvent {
   contactPreference: ContactPreference | null;
   language: string | null;
   slaDueAt: string | null;
+  /** Who the ticket is already routed to; null while it waits in the queue. */
+  assignedToUserId?: number | null;
+}
+
+/** Payload of the `support:assigned` socket event, sent only to the assignee. */
+export interface AssignedEvent {
+  ticketId: string;
+  ticketNumber: string;
+  subject: string;
+  category: string;
+  priority: TicketPriority;
+  channel: string;
+  outOfShift: boolean;
+  method: AssignmentMethod;
 }

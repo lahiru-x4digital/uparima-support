@@ -35,6 +35,8 @@ export function FilterBar({ filters, needsContactCount, myOpenCount, onChange, h
     { value: "pending", label: "Pending" },
     { value: "in_review", label: "In review" },
     { value: "completed", label: "Done" },
+    { value: "queued", label: "Waiting for agent" },
+    { value: "auto_closed", label: "Auto-closed" },
   ];
   return (
     <div className="flex flex-col gap-2 border-b p-3">

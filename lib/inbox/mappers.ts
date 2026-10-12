@@ -115,6 +115,17 @@ function base(
     slaDueAt: ticket.slaDueAt,
     canReply,
     isCurrentSession: true,
+    routing: {
+      category: ticket.category,
+      autoClosed: !!ticket.autoClosed,
+      autoCloseReason: ticket.autoCloseReason ?? null,
+      assignedAt: ticket.assignedAt ?? null,
+      assignmentMethod: ticket.assignmentMethod ?? null,
+      outOfShift: !!ticket.assignedOutOfShift,
+      onboardingReason: ticket.onboardingReason ?? null,
+      status: ticket.routingStatus ?? null,
+      queuedReason: ticket.queuedReason ?? null,
+    },
   };
 }
 
@@ -325,6 +336,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     slaDueAt: null,
     canReply: true,
     isCurrentSession: row.isCurrentSession,
+    routing: null,
     submitter: row.submitter,
     messages: [],
     attachments: [],
@@ -381,6 +393,7 @@ export function botChatThreadToConversation(
     slaDueAt: null,
     canReply: thread.canReply,
     isCurrentSession: thread.isCurrentSession,
+    routing: null,
     submitter: thread.contact.submitter,
     messages: thread.messages.map((m) => botMessage(m, customerName)),
     attachments: [],

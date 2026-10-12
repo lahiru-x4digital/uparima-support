@@ -15,7 +15,17 @@ import { assetUrl, cn } from "@/lib/utils";
 import { EMPTY_DRIVER_FORM } from "@/types/driver";
 import type { Attachment, Conversation, Priority } from "@/types/inbox";
 import type { PreviousTicketSummary, Staff } from "@/types/ticket";
-import { CHANNELS, PRIORITIES, initials, languageLabel, topicLabel } from "./meta";
+import {
+  AUTO_CLOSE_REASONS,
+  CHANNELS,
+  ONBOARDING_CATEGORY,
+  ONBOARDING_REASONS,
+  PRIORITIES,
+  QUEUED_REASONS,
+  initials,
+  languageLabel,
+  topicLabel,
+} from "./meta";
 import { OptionSelect } from "./option-select";
 
 const PRIORITY_OPTIONS = (Object.keys(PRIORITIES) as Priority[]).map((p) => ({ value: p, label: PRIORITIES[p].label }));
@@ -179,6 +189,28 @@ function RideCard({ rideId }: { rideId: string }) {
   );
 }
 
+/** How the current assignee was chosen, or why nobody has it yet. */
+function AssignmentNote({ conversation: c }: { conversation: Conversation }) {
+  const r = c.routing;
+  if (!r) return null;
+  if (c.assignedToUserId == null) {
+    if (r.status !== "queued") return null;
+    return (
+      <p className={cn("text-xs", r.queuedReason === "no_qualified_agent" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+        Waiting in the queue: {QUEUED_REASONS[r.queuedReason ?? ""] ?? "no matching agent yet"}.
+      </p>
+    );
+  }
+  if (!r.assignmentMethod) return null;
+  const when = r.assignedAt ? ` · ${formatTime(r.assignedAt)}` : "";
+  return (
+    <p className="text-xs text-muted-foreground">
+      {r.assignmentMethod === "auto" ? "Auto-assigned" : "Assigned by staff"}{when}
+      {r.outOfShift && <span className="text-amber-700 dark:text-amber-300"> · outside their shift</span>}
+    </p>
+  );
+}
+
 export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose, onOpenTicket }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
   const sla = slaState(c.slaDueAt);
@@ -245,7 +277,17 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             {topic && <Row label="Topic" value={topic} />}
             {language && <Row label="Language" value={language} />}
             {c.contactPreference && <Row label="Wants" value={c.contactPreference === "message" ? "A message" : "A call"} />}
-            {sla && <Row label="Response" value={<span className={cn(sla.overdue && "text-red-600 dark:text-red-400")}>{sla.label}</span>} />}
+            {sla && (
+              <Row label="Response" value={
+                <span title="Counted in desk opening hours only" className={cn(sla.overdue && "text-red-600 dark:text-red-400")}>{sla.label}</span>
+              } />
+            )}
+            {c.routing?.category === ONBOARDING_CATEGORY && (
+              <Row label="Onboarding" value={ONBOARDING_REASONS[c.routing.onboardingReason ?? ""] ?? "Driver onboarding"} />
+            )}
+            {c.routing?.autoClosed && (
+              <Row label="Closed" value={AUTO_CLOSE_REASONS[c.routing.autoCloseReason ?? ""] ?? "Automatically"} />
+            )}
             {c.contactedAt && <Row label="Contacted" value={formatTime(c.contactedAt)} />}
           </div>
 
@@ -258,6 +300,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             ) : (
               <p className="text-sm">{c.assignedTo ?? "Unassigned"}</p>
             )}
+            <AssignmentNote conversation={c} />
           </Field>
           {c.priority ? (
             <Field label="Priority">

@@ -1,4 +1,14 @@
-import type { ContactPreference, PreviousTicketSummary, Submitter, TicketPriority, TicketStatus } from "@/types/ticket";
+import type {
+  AssignmentMethod,
+  ContactPreference,
+  OnboardingReason,
+  PreviousTicketSummary,
+  QueuedReason,
+  RoutingStatus,
+  Submitter,
+  TicketPriority,
+  TicketStatus,
+} from "@/types/ticket";
 
 /** Where the customer reached us from (derived from the ticket, see lib/inbox/mappers.ts). */
 export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email";
@@ -109,13 +119,27 @@ export interface Conversation {
   /** This customer's other tickets, newest first; empty when none or when
    * there's no ticket detail yet (a list row / bot-only conversation). */
   previousTickets: PreviousTicketSummary[];
+  /** How the ticket was routed; null for a bot-only conversation (no ticket). */
+  routing: ConversationRouting | null;
+}
+
+export interface ConversationRouting {
+  category: string;
+  autoClosed: boolean;
+  autoCloseReason: string | null;
+  assignedAt: string | null;
+  assignmentMethod: AssignmentMethod | null;
+  outOfShift: boolean;
+  onboardingReason: OnboardingReason | null;
+  status: RoutingStatus | null;
+  queuedReason: QueuedReason | null;
 }
 
 export interface ConversationFilters {
   search: string;
   /** "needs_contact" is the WhatsApp hand-off queue; "incomplete_driver" is
    * the submitter's driver profile status, not a ticket status either. */
-  status: ConversationStatus | "needs_contact" | "incomplete_driver" | "all";
+  status: ConversationStatus | "needs_contact" | "incomplete_driver" | "queued" | "auto_closed" | "all";
   channel: Channel | "all";
   assignee: "all" | "mine" | "unassigned";
 }
