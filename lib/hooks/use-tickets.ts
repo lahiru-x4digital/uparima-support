@@ -13,8 +13,8 @@ const LIST_POLL_MS = 30_000;
 const THREAD_POLL_MS = 5_000;
 
 /** The ticket list for the current tab, loaded page by page. */
-export function useTicketList(filters: ConversationFilters) {
-  const params = toListParams(filters);
+export function useTicketList(filters: ConversationFilters, meId: number | null = null) {
+  const params = toListParams(filters, meId);
   return useInfiniteQuery({
     queryKey: ticketKeys.list(params),
     queryFn: ({ pageParam }) => listTickets({ ...params, page: pageParam, perPage: PER_PAGE }),
@@ -41,8 +41,9 @@ export function useTicketDetail(id: string | null) {
 }
 
 /** Just the total of a filtered list (one-row page), for badges and dashboard cards. */
-export function useTicketCount(name: string, params: TicketListParams) {
+export function useTicketCount(name: string, params: TicketListParams, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ticketKeys.count(`${name}:${JSON.stringify(params)}`),
     queryFn: async () => (await listTickets({ ...params, page: 1, perPage: 1 })).meta.total,
     refetchInterval: LIST_POLL_MS,

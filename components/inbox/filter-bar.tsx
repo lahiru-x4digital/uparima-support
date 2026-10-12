@@ -4,12 +4,14 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Channel, ConversationFilters } from "@/types/inbox";
 import { CHANNELS } from "./meta";
-import { OptionSelect } from "./option-select";
+import { AlertDot, OptionSelect } from "./option-select";
 
 interface Props {
   filters: ConversationFilters;
   /** Number of drivers still waiting for contact, shown on the first tab. */
   needsContactCount: number | undefined;
+  /** Tickets assigned to me that are not done yet (pending + in review). */
+  myOpenCount?: number;
   onChange: (patch: Partial<ConversationFilters>) => void;
   /** The list is pinned to one channel, so don't offer the picker. */
   hideChannel?: boolean;
@@ -20,13 +22,12 @@ const CHANNEL_OPTIONS: { value: Channel | "all"; label: string }[] = [
   ...(Object.keys(CHANNELS) as Channel[]).map((c) => ({ value: c, label: CHANNELS[c].label })),
 ];
 
-const ASSIGNEE_OPTIONS: { value: ConversationFilters["assignee"]; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "mine", label: "Assigned to me" },
-  { value: "unassigned", label: "Unassigned" },
-];
-
-export function FilterBar({ filters, needsContactCount, onChange, hideChannel }: Props) {
+export function FilterBar({ filters, needsContactCount, myOpenCount, onChange, hideChannel }: Props) {
+  const assigneeOptions: { value: ConversationFilters["assignee"]; label: string; alert?: boolean }[] = [
+    { value: "all", label: "All" },
+    { value: "mine", label: "Assigned to me", alert: !!myOpenCount },
+    { value: "unassigned", label: "Unassigned" },
+  ];
   const statusOptions: { value: ConversationFilters["status"]; label: string }[] = [
     { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
     { value: "incomplete_driver", label: "Incomplete" },
@@ -52,8 +53,13 @@ export function FilterBar({ filters, needsContactCount, onChange, hideChannel }:
           onChange={(status) => onChange({ status })} className="w-full" />
         {!hideChannel && <OptionSelect label="Channel" value={filters.channel} options={CHANNEL_OPTIONS}
           onChange={(channel) => onChange({ channel })} className="w-full" />}
-        <OptionSelect label="Assignee" value={filters.assignee} options={ASSIGNEE_OPTIONS}
-          onChange={(assignee) => onChange({ assignee })} className="w-full" />
+        <div className="relative">
+          <OptionSelect label="Assignee" value={filters.assignee} options={assigneeOptions}
+            onChange={(assignee) => onChange({ assignee })} className="w-full" />
+          {!!myOpenCount && filters.assignee !== "mine" && (
+            <AlertDot className="pointer-events-none absolute -top-1.5 -right-1.5 ring-2 ring-background" />
+          )}
+        </div>
       </div>
     </div>
   );

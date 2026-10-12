@@ -64,8 +64,12 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const canUpdate = useCan("support-ticket.update");
   const canSeeEmail = useCan("email-account.view");
 
-  const list = useTicketList(filters);
+  const list = useTicketList(filters, me?.id ?? user?.id ?? null);
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
+  const myId = me?.id ?? user?.id ?? null;
+  const myPending = useTicketCount("mine-pending", { assignedToUserId: myId ?? undefined, status: "pending" }, myId != null);
+  const myInReview = useTicketCount("mine-in-review", { assignedToUserId: myId ?? undefined, status: "in_review" }, myId != null);
+  const myOpenCount = (myPending.data ?? 0) + (myInReview.data ?? 0);
   const botList = useBotChatList(
     view === "bot" ? filters.search.trim() : "",
     view === "bot" && filters.status === "incomplete_driver",
@@ -162,7 +166,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     <div className="flex min-h-0 flex-1">
       <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
         {!botView && (
-          <FilterBar filters={filters} needsContactCount={needsContact.data} hideChannel={!!lockedChannel}
+          <FilterBar filters={filters} needsContactCount={needsContact.data} myOpenCount={myOpenCount} hideChannel={!!lockedChannel}
             onChange={(p) => onFiltersChange({ ...given, ...p })} />
         )}
         {!lockedChannel && filters.channel === "email" && canSeeEmail && onOpenMailbox && (
@@ -181,6 +185,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
           hasMore={!!(botView ? botList.hasNextPage : list.hasNextPage)}
           loadingMore={botView ? botList.isFetchingNextPage : list.isFetchingNextPage}
           filtered={filtered}
+          markOpen={filters.assignee === "mine"}
           onSelect={select}
           onRetry={() => (botView ? void botList.refetch() : void list.refetch())}
           onLoadMore={() => (botView ? void botList.fetchNextPage() : void list.fetchNextPage())}

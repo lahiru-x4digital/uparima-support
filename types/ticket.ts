@@ -135,6 +135,8 @@ export interface TicketListParams {
   source?: "email";
   /** Driver's profile registration was never finished (DriverStatus "incomplete"). */
   incompleteDriver?: boolean;
+  /** Only tickets assigned to this staff user (users.id). */
+  assignedToUserId?: number;
 }
 
 export interface Staff {
