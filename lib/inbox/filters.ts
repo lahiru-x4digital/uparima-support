@@ -4,9 +4,9 @@ import type { TicketListParams } from "@/types/ticket";
 /**
  * The part of the filters the backend can apply: ticket status, the WhatsApp
  * and email channels, and the "needs contact" queue. Everything else (search, other
- * channels, assignee) is applied to the loaded pages in the browser.
+ * channels, "unassigned") is applied to the loaded pages in the browser.
  */
-export function toListParams(filters: ConversationFilters): TicketListParams {
+export function toListParams(filters: ConversationFilters, meId: number | null = null): TicketListParams {
   const params: TicketListParams = {};
   if (filters.status === "needs_contact") {
     params.needsContact = true;
@@ -17,6 +17,8 @@ export function toListParams(filters: ConversationFilters): TicketListParams {
   } else if (filters.status !== "all" && filters.status !== "bot_only") {
     params.status = filters.status;
   }
+  // "Assigned to me" is applied by the backend so it covers every page, not just the loaded ones.
+  if (filters.assignee === "mine" && meId != null) params.assignedToUserId = meId;
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
   if (filters.channel === "email") params.source = "email";
   return params;
