@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { cityOptions, findPlace, loadDistrictCities, placeKey } from "./driver-cities";
+import { cityOptions, findPlace, formDistrict, formProvince, loadDistrictCities, placeKey } from "./driver-cities";
+import { SRI_LANKA_DISTRICTS_BY_PROVINCE } from "./sri-lanka-locations";
+
+describe("showing a stored province and district in the form's dropdowns", () => {
+  it("recognises the names the driver app stores", () => {
+    expect(formProvince("Sabaragamuwa Province")).toBe("Sabaragamuwa");
+    expect(formProvince("North Western Province")).toBe("North Western");
+    expect(formDistrict("Kegalle District")).toBe("Kegalle");
+    expect(formDistrict("Nuwara Eliya District")).toBe("Nuwara Eliya");
+  });
+
+  it("offers that province's districts", () => {
+    expect(SRI_LANKA_DISTRICTS_BY_PROVINCE[formProvince("Sabaragamuwa Province")]).toContain("Kegalle");
+  });
+
+  it("leaves the form's own names, an empty value and an unknown name alone", () => {
+    expect(formProvince("Western")).toBe("Western");
+    expect(formDistrict("Colombo")).toBe("Colombo");
+    expect(formProvince("")).toBe("");
+    expect(formDistrict("Atlantis")).toBe("Atlantis");
+  });
+});
 
 describe("matching the form's names to the location list", () => {
   it("ignores the words Province and District, case, spaces and hyphens", () => {

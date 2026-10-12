@@ -10,7 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/shared/modal";
 import { getErrorMessage } from "@/lib/api";
-import { cityOptions } from "@/lib/driver-cities";
+import { cityOptions, formDistrict, formProvince } from "@/lib/driver-cities";
 import { licenseNumberProblem, normalizeLicenseNumber } from "@/lib/driver-form-rules";
 import { useDistrictCities, useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
 import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "@/lib/sri-lanka-locations";
@@ -311,7 +311,7 @@ export function DriverForm({
   const vehicleModels = useVehicleModels(values.vehicleTypeId, values.vehicleMakeId).data ?? [];
 
   const districts = useMemo(
-    () => (values.province ? (SRI_LANKA_DISTRICTS_BY_PROVINCE[values.province] ?? []) : []),
+    () => (values.province ? (SRI_LANKA_DISTRICTS_BY_PROVINCE[formProvince(values.province)] ?? []) : []),
     [values.province],
   );
   // The chosen district's cities — the list the driver app registers with.
@@ -565,9 +565,10 @@ export function DriverForm({
               <Field label="Address Line 2 (Optional)">
                 <Input value={values.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} />
               </Field>
+              {/* Shown under the dropdown's own names; what is on record only changes when staff pick. */}
               <Field label="Province *">
                 <NativeSelect
-                  value={values.province}
+                  value={formProvince(values.province)}
                   onChange={(e) => {
                     set("province", e.target.value);
                     set("district", "");
@@ -584,7 +585,7 @@ export function DriverForm({
               </Field>
               <Field label="District *">
                 <NativeSelect
-                  value={values.district}
+                  value={formDistrict(values.district)}
                   onChange={(e) => {
                     set("district", e.target.value);
                     set("city", "");

@@ -2,6 +2,8 @@
 // registers with (the backend's public /geo lists), so staff pick from it instead of typing.
 // The admin dashboard (uparima-classified-dashbord/lib/driver-cities.ts) has the same rules.
 
+import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "./sri-lanka-locations";
+
 export type Place = { id: number; name: string };
 
 /**
@@ -16,6 +18,19 @@ export const placeKey = (name: string) =>
 
 export const findPlace = <T extends { name: string }>(places: T[], name: string): T | undefined =>
   name.trim() === "" ? undefined : places.find((p) => placeKey(p.name) === placeKey(name));
+
+/**
+ * A stored province or district under the name the driver form's dropdown offers it by. A driver
+ * who signed up in the app has "Western Province" / "Colombo District" on record, which the
+ * dropdown would otherwise show as nothing picked. A name the form doesn't offer is kept as it is.
+ */
+export const formProvince = (stored: string): string =>
+  SRI_LANKA_PROVINCES.find((p) => placeKey(p) === placeKey(stored)) ?? stored;
+
+export const formDistrict = (stored: string): string =>
+  Object.values(SRI_LANKA_DISTRICTS_BY_PROVINCE)
+    .flat()
+    .find((d) => placeKey(d) === placeKey(stored)) ?? stored;
 
 /**
  * What the city dropdown offers: the district's cities in alphabetical order. A city already on

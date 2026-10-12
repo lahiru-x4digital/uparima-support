@@ -22,6 +22,8 @@ import {
   useSuspendDriver,
   useVehicleTypes,
 } from "@/lib/hooks/use-drivers";
+import { placeKey } from "@/lib/driver-cities";
+import { phoneMatches } from "@/lib/phone-search";
 import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "@/lib/sri-lanka-locations";
 import { cn } from "@/lib/utils";
 import type { Driver } from "@/types/driver";
@@ -46,14 +48,25 @@ const colomboDay = (s: string) => new Date(s).toLocaleDateString("en-CA", { time
 const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "—");
 const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "—";
 
+// A driver who signed up in the app carries the location list's names ("Western Province",
+// "Colombo District"); one added by staff carries the short names this filter offers. So compare
+// what identifies the place, not the text.
+const samePlace = (stored: string | null, picked: string) => !!stored && placeKey(stored) === placeKey(picked);
+
+// A city can be typed by hand, so case and stray spaces vary between drivers.
+const cityName = (city: string) => city.trim().replace(/\s+/g, " ");
+const cityKey = (city: string) => cityName(city).toLowerCase();
+
 // The list endpoint returns every driver matching the status in one response, so search filters
 // that full list rather than a page's worth of rows.
 function matchesSearch(d: Driver, term: string) {
-  return [String(d.id), d.firstName, d.lastName, d.phone, d.email, d.nicNumber, d.vehicleRegistrationNumber]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-    .includes(term);
+  return (
+    [String(d.id), d.firstName, d.lastName, d.phone, d.email, d.nicNumber, d.vehicleRegistrationNumber]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(term) || phoneMatches(d.phone, term)
+  );
 }
 
 /** Every driver, filtered; with permission, add / approve / suspend / restore from the row. */
@@ -84,12 +97,19 @@ export function DriversList() {
 
   const districtOptions = province !== "all" ? (SRI_LANKA_DISTRICTS_BY_PROVINCE[province] ?? []) : [];
   const divisionOptions = useMemo(() => {
-    const cities = drivers
-      .filter((d) => (province === "all" || d.province === province) && (district === "all" || d.district === district))
-      .map((d) => d.city)
-      .filter((c): c is string => !!c);
-    return Array.from(new Set(cities)).sort();
+    const cities = new Map<string, string>();
+    for (const d of drivers) {
+      if (!d.city?.trim()) continue;
+      if (province !== "all" && !samePlace(d.province, province)) continue;
+      if (district !== "all" && !samePlace(d.district, district)) continue;
+      if (!cities.has(cityKey(d.city))) cities.set(cityKey(d.city), cityName(d.city));
+    }
+    return [...cities.values()].sort((a, b) => a.localeCompare(b));
   }, [drivers, province, district]);
+  // The divisions on offer come from the drivers loaded, so one picked under another status tab may
+  // not be among them. The dropdown then reads "All divisions" — don't keep filtering by a choice it
+  // no longer shows.
+  const activeDivision = divisionOptions.find((c) => cityKey(c) === cityKey(division)) ?? "all";
 
   const needle = term.trim().toLowerCase();
   const filtered = drivers.filter((d) => {
@@ -101,19 +121,19 @@ export function DriversList() {
       if (dateFrom && day < dateFrom) return false;
       if (dateTo && day > dateTo) return false;
     }
-    if (province !== "all" && d.province !== province) return false;
-    if (district !== "all" && d.district !== district) return false;
-    if (division !== "all" && d.city !== division) return false;
+    if (province !== "all" && !samePlace(d.province, province)) return false;
+    if (district !== "all" && !samePlace(d.district, district)) return false;
+    if (activeDivision !== "all" && cityKey(d.city ?? "") !== cityKey(activeDivision)) return false;
     return true;
   });
   const { page, setPage, totalPages, total, pageItems } = useClientPagination(
     filtered,
     PAGE_SIZE,
-    `${status}|${needle}|${online}|${vehicleTypeId}|${dateFrom}|${dateTo}|${province}|${district}|${division}`,
+    `${status}|${needle}|${online}|${vehicleTypeId}|${dateFrom}|${dateTo}|${province}|${district}|${activeDivision}`,
   );
 
   const hasFilters =
-    online !== "all" || dateFrom || dateTo || vehicleTypeId !== "all" || province !== "all" || district !== "all" || division !== "all";
+    online !== "all" || dateFrom || dateTo || vehicleTypeId !== "all" || province !== "all" || district !== "all" || activeDivision !== "all";
 
   if (!canView) return <NoAccess what="the drivers list" />;
 
@@ -206,10 +226,10 @@ export function DriversList() {
 
           <NativeSelect
             aria-label="Division"
-            value={division}
+            value={activeDivision}
             onChange={(e) => setDivision(e.target.value)}
             containerClassName={FILTER_SELECT_WIDTH}
-            className={filterSelectClass(division !== "all")}
+            className={filterSelectClass(activeDivision !== "all")}
           >
             <option value="all">All divisions</option>
             {divisionOptions.map((c) => (
