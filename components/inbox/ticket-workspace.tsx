@@ -185,6 +185,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
           hasMore={!!(botView ? botList.hasNextPage : list.hasNextPage)}
           loadingMore={botView ? botList.isFetchingNextPage : list.isFetchingNextPage}
           filtered={filtered}
+          markOpen={filters.assignee === "mine"}
           onSelect={select}
           onRetry={() => (botView ? void botList.refetch() : void list.refetch())}
           onLoadMore={() => (botView ? void botList.fetchNextPage() : void list.fetchNextPage())}

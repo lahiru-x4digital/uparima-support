@@ -10,14 +10,17 @@ interface Props {
   conversation: Conversation;
   active: boolean;
   onSelect: () => void;
+  /** "Assigned to me" is on: mark the ones I still have to finish. */
+  markOpen?: boolean;
 }
 
-export function ConversationItem({ conversation: c, active, onSelect }: Props) {
+export function ConversationItem({ conversation: c, active, onSelect, markOpen }: Props) {
   const channel = CHANNELS[c.channel];
   const ChannelIcon = channel.icon;
   const topic = topicLabel(c.topic);
   // Only a waiting hand-off is urgent on the clock; finished tickets don't need an SLA chip.
   const sla = c.needsContact || c.status !== "completed" ? slaState(c.slaDueAt) : null;
+  const showAlert = c.needsContact || (!!markOpen && c.status !== "completed");
   const PreferenceIcon = c.contactPreference === "message" ? MessageSquare : PhoneCall;
 
   return (
@@ -34,15 +37,23 @@ export function ConversationItem({ conversation: c, active, onSelect }: Props) {
         <Avatar size="lg">
           <AvatarFallback>{initials(c.customerName)}</AvatarFallback>
         </Avatar>
-        {c.needsContact ? (
-          <span className="absolute -top-1 -left-1 flex size-5 items-center justify-center rounded-full bg-destructive text-white ring-2 ring-background">
-            <span className="text-xs leading-none font-bold">!</span>
-          </span>
-        ) : c.unread ? (
-          <span className="absolute -top-1 -left-1 flex h-4 items-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-background">
-            NEW
-          </span>
-        ) : null}
+        {/* One corner for every "look at me" mark: the red "!" (waiting for contact, or assigned to me
+            and not finished) and the blue NEW for a ticket/message nobody has opened yet. */}
+        {(showAlert || c.unread) && (
+          <div className="absolute -top-1 -left-1 flex items-center gap-0.5">
+            {showAlert && (
+              <span title={c.needsContact ? "Waiting for contact" : "Assigned to you and not finished yet"}
+                className="flex size-5 items-center justify-center rounded-full bg-destructive text-white ring-2 ring-background">
+                <span className="text-xs leading-none font-bold">!</span>
+              </span>
+            )}
+            {c.unread && (
+              <span className="flex h-4 items-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-background">
+                NEW
+              </span>
+            )}
+          </div>
+        )}
         <span className={cn("absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full ring-2 ring-background", channel.className)}>
           <ChannelIcon className="size-3" />
         </span>

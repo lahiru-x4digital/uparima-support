@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Channel, ConversationFilters } from "@/types/inbox";
 import { CHANNELS } from "./meta";
-import { OptionSelect } from "./option-select";
+import { AlertDot, OptionSelect } from "./option-select";
 
 interface Props {
   filters: ConversationFilters;
@@ -23,9 +23,9 @@ const CHANNEL_OPTIONS: { value: Channel | "all"; label: string }[] = [
 ];
 
 export function FilterBar({ filters, needsContactCount, myOpenCount, onChange, hideChannel }: Props) {
-  const assigneeOptions: { value: ConversationFilters["assignee"]; label: string }[] = [
+  const assigneeOptions: { value: ConversationFilters["assignee"]; label: string; alert?: boolean }[] = [
     { value: "all", label: "All" },
-    { value: "mine", label: myOpenCount ? `Assigned to me (${myOpenCount})` : "Assigned to me" },
+    { value: "mine", label: "Assigned to me", alert: !!myOpenCount },
     { value: "unassigned", label: "Unassigned" },
   ];
   const statusOptions: { value: ConversationFilters["status"]; label: string }[] = [
@@ -56,11 +56,8 @@ export function FilterBar({ filters, needsContactCount, myOpenCount, onChange, h
         <div className="relative">
           <OptionSelect label="Assignee" value={filters.assignee} options={assigneeOptions}
             onChange={(assignee) => onChange({ assignee })} className="w-full" />
-          {!!myOpenCount && (
-            <span title={`${myOpenCount} unfinished ticket${myOpenCount === 1 ? "" : "s"} assigned to you`}
-              className="pointer-events-none absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-background">
-              !
-            </span>
+          {!!myOpenCount && filters.assignee !== "mine" && (
+            <AlertDot className="pointer-events-none absolute -top-1.5 -right-1.5 ring-2 ring-background" />
           )}
         </div>
       </div>
