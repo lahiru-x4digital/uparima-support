@@ -96,9 +96,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     return [...ticketConversations, ...allBotConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [lockedChannel, view, ticketConversations, allBotConversations]);
 
+  // Bot-only chats have no assignee, so the Assignee filter doesn't apply on the Bot chats tab.
   const visible = useMemo(
-    () => applyClientFilters(merged, filters, me?.id ?? user?.id ?? null),
-    [merged, filters, me?.id, user?.id],
+    () => applyClientFilters(merged, view === "bot" ? { ...filters, assignee: "all" } : filters, me?.id ?? user?.id ?? null),
+    [merged, filters, view, me?.id, user?.id],
   );
 
   const activeBotRef = activeId ? botChatRefFromId(activeId) : null;

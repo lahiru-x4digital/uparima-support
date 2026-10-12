@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import type { ConversationFilters } from "@/types/inbox";
 import { TicketWorkspace } from "./ticket-workspace";
 
-const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "email", assignee: "all" };
+const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "email", assignee: "mine" };
 
 type Mode = "tickets" | "mailbox";
 const IMPORT_DAYS = [

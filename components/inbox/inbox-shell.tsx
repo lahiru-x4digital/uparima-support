@@ -17,7 +17,8 @@ const TABS: { key: InboxView; label: string }[] = [
   { key: "email", label: "Email" },
 ];
 
-const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "all" };
+// Agents start on their own work; "All" is one click away in the Assignee filter.
+const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine" };
 
 /**
  * The support inbox page: a header with the view switch, then the merged conversation workspace
@@ -39,7 +40,7 @@ export function InboxShell() {
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Inbox className="size-4" /></span>
           <span className="font-heading text-base font-bold">Messages</span>
           {!!needsContact.data && (
-            <button type="button" onClick={() => { setView("tickets"); setFilters((f) => ({ ...f, status: "needs_contact" })); }}
+            <button type="button" onClick={() => { setView("tickets"); setFilters((f) => ({ ...f, status: "needs_contact", assignee: "all" })); }}
               className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
               {needsContact.data} waiting for contact
             </button>
