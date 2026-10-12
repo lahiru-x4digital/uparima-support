@@ -1,6 +1,6 @@
 import type { TemplateListParams } from "@/types/template-list";
 import type { TicketListParams } from "@/types/ticket";
-import type { SmsHistoryParams } from "@/types/sms";
+import type { BulkSmsCustomerParams, SmsHistoryParams } from "@/types/sms";
 import type { RatingListParams } from "@/types/rating";
 
 export const ticketKeys = {
@@ -47,6 +47,8 @@ export const mailboxKeys = {
 export const smsKeys = {
   countries: ["sms", "countries"] as const,
   history: (params: SmsHistoryParams) => ["sms", "history", params] as const,
+  bulkCustomers: (params: BulkSmsCustomerParams) => ["sms", "bulk", "customers", params] as const,
+  bulkBatches: ["sms", "bulk", "batches"] as const,
 };
 
 export const messageTemplateKeys = {

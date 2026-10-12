@@ -58,7 +58,11 @@ export function SmsHistoryList() {
                       {new Date(log.createdAt).toLocaleString()}
                     </p>
                   </div>
-                  <Badge variant={log.status === "sent" ? "default" : "destructive"} className="capitalize">
+                  <Badge
+                    // Queued / sending: a bulk message that hasn't gone out yet, not a failure.
+                    variant={log.status === "sent" ? "default" : log.status === "failed" ? "destructive" : "secondary"}
+                    className="capitalize"
+                  >
                     {log.status}
                   </Badge>
                 </li>

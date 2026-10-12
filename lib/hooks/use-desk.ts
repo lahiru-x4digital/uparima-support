@@ -19,6 +19,14 @@ export function useCan(permission: string): boolean {
   return !!data?.permissions.includes(permission);
 }
 
+/**
+ * Whether the signed-in account is a super admin. For the few things no permission grants and
+ * even an admin isn't given (bulk SMS); the backend enforces the same rule.
+ */
+export function useIsSuperAdmin(): boolean {
+  return useAuth().user?.type === "super_admin";
+}
+
 export function useStaff() {
   const { user } = useAuth();
   return useQuery({ queryKey: deskKeys.staff, queryFn: listStaff, enabled: !!user, staleTime: 5 * 60_000 });

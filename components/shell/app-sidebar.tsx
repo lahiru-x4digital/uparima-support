@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, Car, ClipboardList, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth-context";
 import { useMe } from "@/lib/hooks/use-desk";
@@ -23,6 +23,8 @@ interface NavItem {
   sectionIcon?: LucideIcon;
   /** Shown only to an agent holding at least one of these permissions (always shown when omitted). */
   anyPermission?: string[];
+  /** Shown only to a super admin — for what no permission grants (bulk SMS). */
+  superAdminOnly?: boolean;
   /** Active only on exactly this path, not on the pages beneath it. */
   exact?: boolean;
 }
@@ -31,7 +33,8 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
   { href: "/templates", label: "Templates", icon: ClipboardList },
-  { href: "/sms", label: "Send SMS", icon: Send },
+  { href: "/sms", label: "Send SMS", icon: Send, exact: true },
+  { href: "/sms/bulk", label: "Bulk SMS", icon: MessagesSquare, superAdminOnly: true },
   { href: "/sms/history", label: "SMS History", icon: History },
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
   { href: "/email/config", label: "Email Config", icon: Settings2 },
@@ -50,13 +53,17 @@ const NAV: NavItem[] = [
 /** Left navigation: violet gradient rail with the portal brand, nav items and account actions. */
 export function AppSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
   // Open + acknowledged SOS alerts: the number the SOS item carries.
   const activeSos = useSos().activeAlerts.length;
   // Until the profile loads, gated items stay hidden rather than flash in.
   const permissions = useMe().data?.permissions ?? [];
-  const visibleNav = NAV.filter((item) => !item.anyPermission || item.anyPermission.some((p) => permissions.includes(p)));
+  const visibleNav = NAV.filter(
+    (item) =>
+      (!item.superAdminOnly || user?.type === "super_admin") &&
+      (!item.anyPermission || item.anyPermission.some((p) => permissions.includes(p))),
+  );
   // Bank-transfer plan payments waiting for someone to check the slip.
   const planPaymentsWaiting = usePlanPaymentsWaiting(permissions.includes("driver-payment.view"));
   // An item belongs to the group opened by the nearest `section` item at or above it. The heading is
