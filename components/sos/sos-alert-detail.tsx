@@ -15,6 +15,7 @@ import { useAcknowledgeSos, useResolveSos, useSosAlert } from "@/lib/hooks/use-s
 import { durationBetween, elapsedSince, mapsViewUrl, sosCallerName, sosRoleLabel } from "@/lib/sos";
 import { cn } from "@/lib/utils";
 import { SOS_ACTIVE } from "@/types/sos";
+import { SosDriverName } from "./sos-driver-name";
 import { SosStatusBadge } from "./sos-status-badge";
 
 // Same freshness thresholds as the dashboard's Ongoing Rides page.
@@ -31,6 +32,7 @@ export function SosAlertDetail({ id }: { id: string }) {
   const canView = useCan("sos.view");
   const canRespond = useCan("sos.respond");
   const canSeeRide = useCan("ride.view");
+  const canOpenDriver = useCan("driver.view");
 
   const { data: alert, error, isLoading } = useSosAlert(id);
   const acknowledge = useAcknowledgeSos();
@@ -107,7 +109,7 @@ export function SosAlertDetail({ id }: { id: string }) {
             <CardTitle>Rider</CardTitle>
           </CardHeader>
           <CardContent>
-            <PartyBody name={alert.rider_name} phone={alert.rider_phone} raisedSos={alert.triggered_by_role === "rider"} />
+            <PartyBody name={alert.rider_name || "—"} phone={alert.rider_phone} raisedSos={alert.triggered_by_role === "rider"} />
           </CardContent>
         </Card>
 
@@ -116,7 +118,18 @@ export function SosAlertDetail({ id }: { id: string }) {
             <CardTitle>Driver</CardTitle>
           </CardHeader>
           <CardContent>
-            <PartyBody name={alert.driver_name} phone={alert.driver_phone} raisedSos={alert.triggered_by_role === "driver"} />
+            <PartyBody
+              name={
+                <SosDriverName
+                  driverId={alert.driver_id}
+                  name={alert.driver_name}
+                  link={canOpenDriver}
+                  className="hover:text-primary hover:underline"
+                />
+              }
+              phone={alert.driver_phone}
+              raisedSos={alert.triggered_by_role === "driver"}
+            />
             {alert.vehicle_number && (
               <div className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Car className="size-4" />
@@ -274,11 +287,11 @@ export function SosAlertDetail({ id }: { id: string }) {
   );
 }
 
-function PartyBody({ name, phone, raisedSos }: { name: string | null; phone: string | null; raisedSos: boolean }) {
+function PartyBody({ name, phone, raisedSos }: { name: React.ReactNode; phone: string | null; raisedSos: boolean }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-base font-semibold">{name || "—"}</span>
+        <span className="text-base font-semibold">{name}</span>
         {raisedSos && (
           <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/20 dark:text-red-300">
             Raised SOS

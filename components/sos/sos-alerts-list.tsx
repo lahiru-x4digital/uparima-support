@@ -14,6 +14,7 @@ import { useSosList } from "@/lib/hooks/use-sos";
 import { durationBetween, sosCallerName, sosRoleLabel } from "@/lib/sos";
 import { cn } from "@/lib/utils";
 import { SOS_TABS, type SosAlert, type SosTab } from "@/types/sos";
+import { SosDriverName } from "./sos-driver-name";
 import { SosStatusBadge } from "./sos-status-badge";
 import { useSos } from "./sos-provider";
 
@@ -27,6 +28,7 @@ const matches = (a: SosAlert, term: string) =>
 /** SOS alerts: the ones needing someone (live), and the history of resolved / cancelled ones. */
 export function SosAlertsList() {
   const canView = useCan("sos.view");
+  const canOpenDriver = useCan("driver.view");
   const { activeAlerts } = useSos();
   const [tab, setTab] = useState<SosTab>("active");
   const [page, setPage] = useState(1);
@@ -112,7 +114,13 @@ export function SosAlertsList() {
                     <TableCell className="whitespace-nowrap">{new Date(a.created_at).toLocaleString()}</TableCell>
                     <TableCell>
                       <div className="leading-tight">
-                        <div className="font-medium">{sosCallerName(a)}</div>
+                        <div className="font-medium">
+                          {a.triggered_by_role === "driver" ? (
+                            <SosDriverName driverId={a.driver_id} name={sosCallerName(a)} link={canOpenDriver} />
+                          ) : (
+                            sosCallerName(a)
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">{sosRoleLabel(a)}</div>
                       </div>
                     </TableCell>
@@ -124,7 +132,9 @@ export function SosAlertsList() {
                     </TableCell>
                     <TableCell>
                       <div className="leading-tight">
-                        <div>{a.driver_name ?? "—"}</div>
+                        <div>
+                          <SosDriverName driverId={a.driver_id} name={a.driver_name} link={canOpenDriver} />
+                        </div>
                         {a.vehicle_number && <div className="font-mono text-xs text-muted-foreground">{a.vehicle_number}</div>}
                       </div>
                     </TableCell>
