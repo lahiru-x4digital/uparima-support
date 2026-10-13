@@ -78,7 +78,7 @@ export function PresenceSwitcher({ collapsed }: { collapsed: boolean }) {
           </p>
         )}
         {!data.routingEnabled && (
-          <p className="rounded-md bg-sidebar-foreground/10 px-1.5 py-1">Ticket routing is off for your account.</p>
+          <p className="rounded-md bg-sidebar-foreground/10 px-1.5 py-1">You don&apos;t receive tickets automatically yet. Ask an admin to turn it on.</p>
         )}
         {(data.languages.length > 0 || data.skills.length > 0) && (
           <p className="truncate" title={[...data.languages.map((l) => l.toUpperCase()), ...data.skills.map(skillLabel)].join(", ")}>
