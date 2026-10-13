@@ -5,9 +5,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/shared/modal";
 import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
+import { ContextPanel } from "@/components/inbox/context-panel";
 import { DriverForm } from "@/components/drivers/driver-form";
 import { deskKeys, driverKeys, driverNoteKeys } from "@/lib/hooks/query-keys";
 import type { DriverNote } from "@/types/driver-note";
+import type { Conversation } from "@/types/inbox";
 import type { DeskProfile } from "@/types/ticket";
 import type { Driver, DriverDetail } from "@/types/driver";
 
@@ -169,6 +171,79 @@ const NOTES: DriverNote[] = [
   },
 ];
 
+const conversation = (over: Partial<Conversation> & { driver: NonNullable<Extract<Conversation["submitter"], { kind: "driver" }>> }): Conversation => {
+  const { driver, ...rest } = over;
+  return {
+    id: "t-preview",
+    ticketNumber: "TKT-MG7Q2ABC",
+    customerName: driver.name,
+    role: "driver",
+    phone: driver.phone ?? "",
+    email: null,
+    channel: "whatsapp",
+    product: "drivers",
+    status: "pending",
+    incompleteDriver: driver.status === "incomplete",
+    priority: "normal",
+    assignedToUserId: 2,
+    assignedTo: "Sachini Fernando",
+    lastAt: "10:42",
+    createdAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+    subject: "Can't go online",
+    preview: "I can't go online since yesterday",
+    rideId: null,
+    unread: false,
+    needsContact: false,
+    contactPreference: "call",
+    contactedAt: null,
+    topic: null,
+    language: "en",
+    slaDueAt: new Date(Date.now() + 40 * 60_000).toISOString(),
+    canReply: true,
+    isCurrentSession: true,
+    submitter: driver,
+    messages: [],
+    attachments: [],
+    previousTickets: [],
+    routing: null,
+    ...rest,
+  } as Conversation;
+};
+
+const PANEL_SCENARIOS: Record<string, { label: string; conversation: Conversation }> = {
+  approved: {
+    label: "Approved driver, notes, owes fees",
+    conversation: conversation({
+      driver: {
+        kind: "driver", driverId: 1042, name: "Nimal Perera", phone: "+94771234567", status: "approved",
+        vehicleRegistrationNumber: "CAB-1234", suspensionReason: null, averageRating: 4.7, totalRides: 1284,
+        creditBalance: 0, platformFeeOwedLkr: 2350,
+      },
+    }),
+  },
+  suspended: {
+    label: "Suspended driver",
+    conversation: conversation({
+      driver: {
+        kind: "driver", driverId: 3011, name: "Dami Ya", phone: "94786195244", status: "suspended",
+        vehicleRegistrationNumber: "BFA-7801", suspensionReason: "unpaid_platform_fees", averageRating: 3.9, totalRides: 212,
+        creditBalance: 0, platformFeeOwedLkr: 0,
+      },
+      email: "dami@example.com",
+    }),
+  },
+  incomplete: {
+    label: "Unfinished signup (Dami Ya)",
+    conversation: conversation({
+      driver: {
+        kind: "driver", driverId: 2077, name: "Dami Ya", phone: "94786195244", status: "incomplete",
+        vehicleRegistrationNumber: null, suspensionReason: null, averageRating: 0, totalRides: 0,
+        creditBalance: 0, platformFeeOwedLkr: 0,
+      },
+    }),
+  },
+};
+
 export function DriverPreview() {
   const qc = useQueryClient();
   // Seed the cache once, before anything reads it. With nobody signed in the queries never fetch,
@@ -177,6 +252,10 @@ export function DriverPreview() {
     qc.setQueryData(deskKeys.me, ME);
     qc.setQueryData(driverNoteKeys.list("approved"), NOTES);
     qc.setQueryData(driverNoteKeys.list("incomplete"), []);
+    qc.setQueryData(driverNoteKeys.list(1042), NOTES);
+    qc.setQueryData(driverNoteKeys.list(3011), []);
+    qc.setQueryData(driverNoteKeys.list(2077), []);
+    qc.setQueryData(driverKeys.detail("2077"), { ...SCENARIOS.incomplete.detail, driver: { ...SCENARIOS.incomplete.detail.driver, firstName: "Dami", lastName: null } });
     for (const [id, s] of Object.entries(SCENARIOS)) qc.setQueryData(driverKeys.detail(id), s.detail);
     qc.setQueryData(driverKeys.vehicleTypes, [{ id: 1, name: "Car" }, { id: 4, name: "Bike" }]);
     qc.setQueryData(driverKeys.vehicleMakes("1"), [{ id: 2, name: "Toyota" }, { id: 5, name: "Suzuki" }]);
@@ -186,10 +265,11 @@ export function DriverPreview() {
   });
 
   const [openId, setOpenId] = useState<string | null>(null);
+  const [panelId, setPanelId] = useState<keyof typeof PANEL_SCENARIOS>("incomplete");
   const [creating, setCreating] = useState(false);
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-4 p-6">
+    <main className="mx-auto w-full max-w-2xl space-y-6 p-6">
       <h1 className="text-xl font-semibold">Driver UI preview</h1>
       <p className="text-sm text-muted-foreground">
         Dev only, mock data, no sign-in. Saving, approving and AI calls hit no backend and will show an error toast.
@@ -204,6 +284,28 @@ export function DriverPreview() {
           Open create-driver wizard
         </Button>
       </div>
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold">Inbox details panel (320px, as in the inbox)</h2>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(PANEL_SCENARIOS).map(([id, s]) => (
+            <Button key={id} size="sm" variant={panelId === id ? "default" : "outline"} onClick={() => setPanelId(id)}>
+              {s.label}
+            </Button>
+          ))}
+        </div>
+        <div className="h-[760px] w-[320px] overflow-hidden rounded-lg border">
+          <ContextPanel
+            key={panelId}
+            conversation={PANEL_SCENARIOS[panelId].conversation}
+            staff={[{ id: 2, name: "Sachini Fernando" }, { id: 3, name: "Kavindu Silva" }]}
+            canUpdate
+            onAssign={() => {}}
+            onPriority={() => {}}
+            onClose={() => {}}
+          />
+        </div>
+      </section>
 
       {openId && <DriverDetailsDialog driverId={openId} open onClose={() => setOpenId(null)} />}
 
