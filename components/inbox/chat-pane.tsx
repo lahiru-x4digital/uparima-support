@@ -27,11 +27,13 @@ interface Props {
   onSendEmailTemplate: (templateId: number, text: string) => Promise<unknown>;
   onMarkContacted: () => void;
   onConvertToTicket: () => void;
+  /** Opens the details panel at the driver's internal notes. */
+  onOpenNotes?: () => void;
 }
 
 export function ChatPane({
   conversation, loading, error, contextOpen, canReply, canUpdate, markingContacted, convertingToTicket,
-  onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket,
+  onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
 }: Props) {
   if (!conversation) {
     return (
@@ -77,6 +79,7 @@ export function ChatPane({
           </div>
         ) : (
           <Composer onSend={onSend} disabled={conversation.status === "completed" || !!error || loading}
+            onInternalNote={conversation.submitter?.kind === "driver" ? onOpenNotes : undefined}
             renderTemplates={(insert) => (
               <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} onInsertText={insert} />
             )} />

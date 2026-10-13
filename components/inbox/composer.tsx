@@ -25,9 +25,11 @@ interface Props {
   onSend: (text: string, files: File[]) => Promise<unknown>;
   /** Renders the Templates button; `insert` adds text to the reply box (after any existing text). */
   renderTemplates?: (insert: (text: string) => void) => React.ReactNode;
+  /** Opens the details panel's internal notes (drivers only); without it the button explains why it's off. */
+  onInternalNote?: () => void;
 }
 
-export function Composer({ disabled, onSend, renderTemplates }: Props) {
+export function Composer({ disabled, onSend, renderTemplates, onInternalNote }: Props) {
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
@@ -70,12 +72,18 @@ export function Composer({ disabled, onSend, renderTemplates }: Props) {
     <div className="border-t p-3">
       <div className="mb-2 flex items-center gap-1">
         <Button size="xs" variant="secondary">Reply</Button>
-        <Tooltip>
-          <TooltipTrigger render={<span />}>
-            <Button size="xs" variant="ghost" disabled><StickyNote /> Internal note</Button>
-          </TooltipTrigger>
-          <TooltipContent>Internal notes aren&apos;t available yet</TooltipContent>
-        </Tooltip>
+        {onInternalNote ? (
+          <Button size="xs" variant="ghost" onClick={onInternalNote} title="Staff-only note on this driver, in the details panel">
+            <StickyNote /> Internal note
+          </Button>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger render={<span />}>
+              <Button size="xs" variant="ghost" disabled><StickyNote /> Internal note</Button>
+            </TooltipTrigger>
+            <TooltipContent>Internal notes are kept on drivers — this customer isn&apos;t one</TooltipContent>
+          </Tooltip>
+        )}
         {renderTemplates && !disabled && (
           <div className="ml-auto">{renderTemplates((t) => setText((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${t}` : t)))}</div>
         )}

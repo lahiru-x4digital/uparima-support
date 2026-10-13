@@ -63,6 +63,8 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   // assignment toast on another page links to `/inbox?ticket=<id>`.
   const [activeId, setActiveId] = useState<string | null>(ticketFromUrl);
   const [contextOpen, setContextOpen] = useState(true);
+  // Bumped by the composer's "Internal note" button so the panel focuses its notes box.
+  const [focusNotesKey, setFocusNotesKey] = useState(0);
   const [mobilePane, setMobilePane] = useState<"list" | "chat">(() => (ticketFromUrl() ? "chat" : "list"));
 
   const { data: me } = useMe();
@@ -228,6 +230,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             onSend={send}
             onSendEmailTemplate={(templateId, text) => reply.mutateAsync({ message: text, files: [], emailTemplateId: templateId })}
             onMarkContacted={() => markContacted.mutate()}
+            onOpenNotes={() => {
+              setContextOpen(true);
+              setFocusNotesKey((k) => k + 1);
+            }}
             onConvertToTicket={() =>
               isBotActive &&
               void convertToTicket.mutateAsync().then(({ ticketId: newTicketId }) => {
@@ -258,6 +264,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             onPriority={(priority) => updatePriority.mutate(priority)}
             onClose={() => setContextOpen(false)}
             onOpenTicket={select}
+            focusNotesKey={focusNotesKey}
           />
         </div>
       )}

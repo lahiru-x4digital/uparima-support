@@ -12,12 +12,14 @@ import { Kbd } from "@/components/shared/kbd";
 import { Modal } from "@/components/shared/modal";
 import { StatusBadge } from "@/components/shared/status-badge";
 import type { DriverSectionKey } from "@/lib/driver-form-rules";
+import { useDriverNotes } from "@/lib/hooks/use-driver-notes";
 import { formatDriverDate } from "@/lib/driver-review";
 import { cn } from "@/lib/utils";
 import type { DriverDetail, DriverDocumentKey } from "@/types/driver";
 import { DetailList } from "./detail-list";
 import { DocumentPreviewModal } from "./document-preview-modal";
 import { DriverDevicePermissionsCard } from "./driver-device-permissions-card";
+import { DriverNotes } from "./driver-notes";
 import { DriverSubscriptionCard } from "./driver-subscription-card";
 import { DriverTermsCard } from "./driver-terms-card";
 import { ExpiryValue } from "./expiry-value";
@@ -27,6 +29,7 @@ export const DRIVER_TABS = [
   { key: "documents", label: "Documents" },
   { key: "payments", label: "Payments & credit" },
   { key: "account", label: "Account" },
+  { key: "notes", label: "Notes" },
 ] as const;
 export type DriverTab = (typeof DRIVER_TABS)[number]["key"];
 
@@ -118,6 +121,8 @@ export function DriverDetailBody({
   const tab = controlledTab ?? ownTab;
   const setTab = onTabChange ?? setOwnTab;
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  // Counted on the tab, so a colleague's handoff note is noticed without opening it.
+  const noteCount = useDriverNotes(driverId).data?.length ?? 0;
   const [confirmRemove, setConfirmRemove] = useState<{ slot: string; label: string } | null>(null);
 
   const docs = (Object.entries(document_urls) as Array<[DriverDocumentKey, string]>).map(([slot, url]) => ({
@@ -165,6 +170,11 @@ export function DriverDetailBody({
                   )}
                 >
                   {docs.length}
+                </span>
+              )}
+              {t.key === "notes" && noteCount > 0 && (
+                <span className="rounded-full bg-amber-100 px-1.5 text-[10px] leading-4 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                  {noteCount}
                 </span>
               )}
               {onTabChange && <Kbd>{i + 1}</Kbd>}
@@ -338,6 +348,9 @@ export function DriverDetailBody({
             <DriverTermsCard driverId={driverId} />
             <DriverDevicePermissionsCard driverId={driverId} />
           </div>
+        </TabsContent>
+        <TabsContent value="notes" className="max-w-3xl pt-2">
+          <DriverNotes driverId={driverId} />
         </TabsContent>
       </Tabs>
 

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
-import { ticketKeys } from "@/lib/hooks/query-keys";
+import { driverNoteKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { getToken } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
 import { env } from "@/lib/env";
@@ -79,6 +79,11 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
       void qc.invalidateQueries({ queryKey: ticketKeys.all });
     });
 
+    // A colleague added, edited or deleted a note on a driver: refresh that driver's notes.
+    socket.on("support:driver_note", (event: { driverId: number }) => {
+      void qc.invalidateQueries({ queryKey: driverNoteKeys.list(event.driverId) });
+    });
+
     socket.on("incident:critical", (incident: CriticalIncident) => {
       toast.error("Critical safety incident reported", {
         description: incident.description?.slice(0, 140),
@@ -91,6 +96,7 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
       document.removeEventListener("visibilitychange", onVisible);
       socket.off("support:handoff");
       socket.off("support:ticket_updated");
+      socket.off("support:driver_note");
       socket.off("incident:critical");
       socket.disconnect();
       clearBadge();

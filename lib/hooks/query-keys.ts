@@ -76,6 +76,11 @@ export const driverKeys = {
   vehicleModels: (typeId: string, makeId: string) => ["drivers", "vehicle-models", typeId, makeId] as const,
 };
 
+export const driverNoteKeys = {
+  all: ["driver-notes"] as const,
+  list: (driverId: number | string) => ["driver-notes", String(driverId)] as const,
+};
+
 export const driverPaymentKeys = {
   all: ["driver-payments"] as const,
   platformFees: ["driver-payments", "platform-fees"] as const,

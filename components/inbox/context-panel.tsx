@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Bike, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Bike, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { DriverCreateDialog } from "@/components/drivers/driver-create-dialog";
 import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
 import { DriverLocationDialog } from "@/components/drivers/driver-location-dialog";
+import { DriverNotes } from "@/components/drivers/driver-notes";
+import { useDriverNotes } from "@/lib/hooks/use-driver-notes";
 import { useCan, useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
@@ -45,6 +47,8 @@ interface Props {
   onClose: () => void;
   /** Opens another of this customer's tickets (from the History section). */
   onOpenTicket?: (ticketId: string) => void;
+  /** Bumped by the composer's "Internal note" button to focus the notes box. */
+  focusNotesKey?: number;
 }
 
 /** A conversation only ever carries one display name — split it for the
@@ -129,6 +133,24 @@ function DriverStats({
         )}
       </div>
     </div>
+  );
+}
+
+function NotesSection({ driverId, ticketNumber, focusKey }: { driverId: number; ticketNumber: string; focusKey?: number }) {
+  const count = useDriverNotes(driverId).data?.length ?? 0;
+  return (
+    <section aria-labelledby="driver-notes-heading" className="flex flex-col gap-2">
+      <h4 id="driver-notes-heading" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <StickyNote className="size-3.5" /> Internal notes
+        {count > 0 && (
+          <span className="rounded-full bg-amber-100 px-1.5 text-[10px] leading-4 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+            {count}
+          </span>
+        )}
+        <span className="ml-auto font-normal">Staff only</span>
+      </h4>
+      <DriverNotes driverId={driverId} currentTicketNumber={ticketNumber || undefined} compact focusKey={focusKey} />
+    </section>
   );
 }
 
@@ -222,7 +244,7 @@ function AssignmentNote({ conversation: c }: { conversation: Conversation }) {
   );
 }
 
-export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose, onOpenTicket }: Props) {
+export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose, onOpenTicket, focusNotesKey }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
   const sla = slaState(c.slaDueAt);
   const topic = topicLabel(c.topic);
@@ -235,6 +257,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const canEditDriver = useCan("driver.update");
+  const canSeeDriver = useCan("driver.view");
   const [createDriverOpen, setCreateDriverOpen] = useState(false);
   // A driver created from a ticket with no existing driver record — shown
   // in the detail dialog right after registration, by id (not c.submitter,
@@ -329,6 +352,13 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             </Field>
           ) : (
             <p className="text-xs text-muted-foreground">No ticket yet — reply to start one.</p>
+          )}
+
+          {c.submitter?.kind === "driver" && canSeeDriver && (
+            <>
+              <Separator />
+              <NotesSection driverId={c.submitter.driverId} ticketNumber={c.ticketNumber} focusKey={focusNotesKey} />
+            </>
           )}
 
           {c.previousTickets.length > 0 && (
