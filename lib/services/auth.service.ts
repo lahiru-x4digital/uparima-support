@@ -1,8 +1,13 @@
 import { apiGet, apiPost } from "@/lib/api";
 import type { AuthTokens, LoginResult, TwoFactorChallenge, TwoFactorStatus } from "@/types/auth";
 
+/**
+ * `portal: "staff"` asks for the staff account. Staff and customers are separate accounts on the
+ * backend and may share an email; without it the same email + a customer's password would sign in
+ * that customer.
+ */
 export const login = (email: string, password: string) =>
-  apiPost<LoginResult>("/auth/login", { email, password });
+  apiPost<LoginResult>("/auth/login", { email, password, portal: "staff" });
 
 /** Second step of a sign-in for an account with two-factor on: the emailed code for tokens. */
 export const verifyLoginCode = (challengeId: string, code: string) =>
