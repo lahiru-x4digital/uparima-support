@@ -1,6 +1,7 @@
 import type { Attachment, Channel, Product, Conversation, CustomerRole, Message } from "@/types/inbox";
 import { stableSignedUrl } from "./stable-url";
 import type { Staff, Ticket, TicketDetail, TicketReply, TicketRow } from "@/types/ticket";
+import { isToOnboard } from "./onboarding";
 import type { BotChatMessage, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
 const IMAGE = /\.(jpe?g|png|webp|gif)$/i;
@@ -99,6 +100,7 @@ function base(
     product: productOf(ticket.category, ticket.submitterType),
     status: ticket.status,
     incompleteDriver: false,
+    toOnboard: false,
     priority: ticket.priority,
     assignedToUserId: ticket.assignedToUserId,
     assignedTo: staffName(staff, ticket.assignedToUserId),
@@ -162,6 +164,7 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
     ...base(row, staff, now),
     unread: row.unseen,
     incompleteDriver: row.submitterDriverStatus === "incomplete",
+    toOnboard: isToOnboard(row.submitterDriverStatus, row.userId == null && !!row.reporterPhone),
     customerName,
     phone: row.submitterPhone ?? row.reporterPhone ?? "—",
     email: row.reporterEmail ?? null,
@@ -203,6 +206,10 @@ export function detailToConversation(
     // conversation being viewed is never shown as unread.
     unread: false,
     incompleteDriver: submitter?.kind === "driver" && submitter.status === "incomplete",
+    toOnboard: isToOnboard(
+      submitter?.kind === "driver" ? submitter.status : null,
+      submitter === null && ticket.userId == null && !!ticket.reporterPhone,
+    ),
     customerName,
     phone,
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
@@ -319,6 +326,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     product: null,
     status: "bot_only",
     incompleteDriver: row.submitter?.kind === "driver" && row.submitter.status === "incomplete",
+    toOnboard: isToOnboard(row.submitter?.kind === "driver" ? row.submitter.status : null, row.submitter === null && row.userId == null),
     priority: null,
     unread: row.unseen,
     assignedToUserId: null,
@@ -374,6 +382,10 @@ export function botChatThreadToConversation(
     product: null,
     status: "bot_only",
     incompleteDriver: thread.contact.submitter?.kind === "driver" && thread.contact.submitter.status === "incomplete",
+    toOnboard: isToOnboard(
+      thread.contact.submitter?.kind === "driver" ? thread.contact.submitter.status : null,
+      thread.contact.submitter === null && thread.contact.userId == null,
+    ),
     priority: null,
     // Fetching the thread is what marks it seen server-side (see
     // SupportDeskBotChatsService.thread's upsertSeen call).

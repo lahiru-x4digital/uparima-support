@@ -29,6 +29,7 @@ export function FilterBar({ filters, needsContactCount, myOpenCount, onChange, h
     { value: "unassigned", label: "Unassigned" },
   ];
   const statusOptions: { value: ConversationFilters["status"]; label: string }[] = [
+    { value: "to_onboard", label: "To onboard" },
     { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
     { value: "incomplete_driver", label: "Incomplete" },
     { value: "all", label: "Everyone" },

@@ -83,6 +83,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const botList = useBotChatList(
     view === "bot" ? filters.search.trim() : "",
     view === "bot" && filters.status === "incomplete_driver",
+    view === "bot" && filters.status === "to_onboard",
   );
 
   const rows = useMemo(() => flattenRows(list.data), [list.data]);

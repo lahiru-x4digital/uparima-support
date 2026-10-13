@@ -17,8 +17,9 @@ const TABS: { key: InboxView; label: string }[] = [
   { key: "email", label: "Email" },
 ];
 
-// Agents start on their own work; "All" is one click away in the Assignee filter.
-const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine" };
+// Agents start on their own work, on the chats that still need onboarding; "Everyone" in the Status
+// filter and "All" in the Assignee filter are one click away.
+const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "mine" };
 
 /**
  * The support inbox page: a header with the view switch, then the merged conversation workspace

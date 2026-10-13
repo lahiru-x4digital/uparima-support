@@ -153,6 +153,8 @@ export interface TicketListParams {
   source?: "email";
   /** Driver's profile registration was never finished (DriverStatus "incomplete"). */
   incompleteDriver?: boolean;
+  /** The sender is a driver still onboarding, or a number we have no record of. */
+  toOnboard?: boolean;
   /** Only tickets assigned to this staff user (users.id). */
   assignedToUserId?: number;
   /** Only tickets nobody owns yet. */
