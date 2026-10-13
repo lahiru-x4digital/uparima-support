@@ -74,6 +74,7 @@ export const driverKeys = {
   vehicleTypes: ["drivers", "vehicle-types"] as const,
   provinces: ["drivers", "provinces"] as const,
   provinceDistricts: (province: string) => ["drivers", "province-districts", province] as const,
+  areaSearch: (text: string) => ["drivers", "area-search", text] as const,
   districtCities: (province: string, district: string) => ["drivers", "district-cities", province, district] as const,
   vehicleMakes: (typeId: string) => ["drivers", "vehicle-makes", typeId] as const,
   vehicleModels: (typeId: string, makeId: string) => ["drivers", "vehicle-models", typeId, makeId] as const,

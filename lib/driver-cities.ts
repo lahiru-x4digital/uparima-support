@@ -64,3 +64,10 @@ export async function loadDistrictCities(
   if (!district_) return [];
   return (await get<Place[]>(`/geo/areas?cityId=${district_.id}`)).map((area) => area.name);
 }
+
+/** A town found by name, with the district and province it sits in. */
+export type AreaMatch = { id: number; name: string; district: string; province: string };
+
+/** Towns matching the text anywhere in the country — picking one fills province and district too. */
+export const searchAreas = (get: Get, text: string): Promise<AreaMatch[]> =>
+  get<AreaMatch[]>(`/geo/areas/search?q=${encodeURIComponent(text.trim())}`);

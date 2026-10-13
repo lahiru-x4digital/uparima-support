@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiGet, getErrorMessage } from "@/lib/api";
-import { loadDistrictCities, loadProvinceDistricts, loadProvinces } from "@/lib/driver-cities";
+import { loadDistrictCities, loadProvinceDistricts, loadProvinces, searchAreas } from "@/lib/driver-cities";
 import { useAuth } from "@/lib/auth-context";
 import {
   adjustDriverSubscription,
@@ -58,6 +58,17 @@ export function useProvinceDistricts(province: string) {
     queryKey: driverKeys.provinceDistricts(province),
     queryFn: () => loadProvinceDistricts(apiGet, province),
     enabled: province !== "",
+    staleTime: 60 * 60_000,
+  });
+}
+
+/** Towns matching what was typed in the city search, from every district. Waits for two letters. */
+export function useAreaSearch(text: string) {
+  const wanted = text.trim();
+  return useQuery({
+    queryKey: driverKeys.areaSearch(wanted),
+    queryFn: () => searchAreas(apiGet, wanted),
+    enabled: wanted.length >= 2,
     staleTime: 60 * 60_000,
   });
 }
