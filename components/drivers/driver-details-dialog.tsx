@@ -1,18 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
-import { History, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Ban, History, MoreHorizontal, Pencil, Sparkles, Star, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Kbd } from "@/components/shared/kbd";
 import { Modal } from "@/components/shared/modal";
 import { NoAccess } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
-import { canAiValidateDriver, canApproveApplication, signupGaps } from "@/lib/driver-review";
+import { changedDriverFields, type DriverSectionKey } from "@/lib/driver-form-rules";
+import { canAiValidateDriver, canApproveApplication, formatDriverDate } from "@/lib/driver-review";
 import { useCan } from "@/lib/hooks/use-desk";
+import { useHotkeys } from "@/lib/hooks/use-hotkeys";
 import {
   useApproveDriver,
   useDeleteDriverPermanently,
@@ -23,10 +33,13 @@ import {
   useUpdateDriver,
   useValidateDriverWithAi,
 } from "@/lib/hooks/use-drivers";
-import { driverToFormValues, type AiValidationResult, type DriverFormFiles, type DriverFormValues } from "@/types/driver";
-import { DriverDetailBody } from "./driver-detail-body";
+import { driverToFormValues, type AiValidationResult, type DriverDetail, type DriverFormFiles, type DriverFormValues } from "@/types/driver";
+import { DRIVER_TABS, DriverDetailBody, useDriverTab } from "./driver-detail-body";
 import { DriverFlags } from "./driver-flags";
-import { DriverForm } from "./driver-form";
+import { DiscardChangesModal, DriverForm } from "./driver-form";
+import { DriverStatusStrip } from "./driver-status-strip";
+
+type Mode = { kind: "view" } | { kind: "edit"; section?: DriverSectionKey };
 
 /**
  * Full driver details — and, with the right permissions, every action the
@@ -45,6 +58,102 @@ export function DriverDetailsDialog({
 }) {
   const canViewDrivers = useCan("driver.view");
   const canRegister = useCan("driver.manual-register");
+  const canView = canViewDrivers || canRegister;
+  const { data, isLoading, error } = useDriverDetail(driverId);
+
+  const [mode, setMode] = useState<Mode>({ kind: "view" });
+  const [dirty, setDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  function close() {
+    setMode({ kind: "view" });
+    setDirty(false);
+    onClose();
+  }
+
+  // Esc, the backdrop and the ✕ all come through here: never drop an unsaved edit silently.
+  function requestClose() {
+    if (mode.kind === "edit" && dirty) setConfirmDiscard(true);
+    else close();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && requestClose()}>
+      <DialogContent className="flex h-[92vh] w-[96vw] max-w-7xl flex-col gap-3 overflow-hidden sm:max-w-7xl">
+        {!canView ? (
+          <NoAccess what="driver details" />
+        ) : isLoading ? (
+          <DialogSkeleton />
+        ) : error || !data ? (
+          <>
+            <DialogTitle className="sr-only">Driver</DialogTitle>
+            <p className="rounded-xl border bg-card p-6 text-center text-sm text-destructive">
+              {error ? getErrorMessage(error) : "Driver not found."}
+            </p>
+          </>
+        ) : (
+          <DriverDialogBody
+            driverId={driverId}
+            data={data}
+            mode={mode}
+            setMode={setMode}
+            onDirtyChange={setDirty}
+            onDeleted={close}
+          />
+        )}
+        <DiscardChangesModal
+          open={confirmDiscard}
+          onKeep={() => setConfirmDiscard(false)}
+          onDiscard={() => {
+            setConfirmDiscard(false);
+            close();
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DialogSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Loading driver">
+      <DialogTitle className="sr-only">Loading driver</DialogTitle>
+      <Skeleton className="h-6 w-72" />
+      <Skeleton className="h-4 w-96" />
+      <div className="flex gap-2">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-28" />
+        <Skeleton className="h-8 w-24" />
+      </div>
+      <Skeleton className="h-8 w-96" />
+      <div className="grid gap-3 lg:grid-cols-2">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-44" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Only one dialog (this one) open: a plain-key shortcut must not fire under a nested modal.
+const isTopmostDialog = () => document.querySelectorAll('[data-slot="dialog-content"]').length <= 1;
+
+function DriverDialogBody({
+  driverId,
+  data,
+  mode,
+  setMode,
+  onDirtyChange,
+  onDeleted,
+}: {
+  driverId: string;
+  data: DriverDetail;
+  mode: Mode;
+  setMode: (m: Mode) => void;
+  onDirtyChange: (dirty: boolean) => void;
+  onDeleted: () => void;
+}) {
+  const canRegister = useCan("driver.manual-register");
   const canUpdate = useCan("driver.update");
   const canApprove = useCan("driver.approve");
   const canSuspend = useCan("driver.suspend");
@@ -52,8 +161,8 @@ export function DriverDetailsDialog({
   const canRemoveDoc = useCan("driver.document-remove");
   const canSeeFees = useCan("driver-payment.view");
   const canSeeRides = useCan("ride.view");
+  const canAiValidate = canRegister || canUpdate || canApprove;
 
-  const { data, isLoading, error } = useDriverDetail(driverId);
   const approve = useApproveDriver();
   const suspend = useSuspendDriver();
   const restore = useRestoreDriver();
@@ -62,156 +171,101 @@ export function DriverDetailsDialog({
   const deleteDriver = useDeleteDriverPermanently();
   const update = useUpdateDriver();
 
-  const [mode, setMode] = useState<"view" | "edit">("view");
+  const [tab, setTab] = useDriverTab();
   const [aiResult, setAiResult] = useState<AiValidationResult | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
 
-  const canView = canViewDrivers || canRegister;
-  const canAiValidate = canRegister || canUpdate || canApprove;
-
-  function close() {
-    setMode("view");
-    setAiResult(null);
-    onClose();
-  }
-
-  async function handleEditSubmit(values: DriverFormValues, files: DriverFormFiles) {
-    await update.mutateAsync({ id: driverId, values, files });
-    setMode("view");
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(next) => !next && close()}>
-      <DialogContent className="flex max-h-[92vh] w-[96vw] max-w-7xl flex-col gap-3 overflow-hidden sm:max-w-7xl">
-        {!canView ? (
-          <NoAccess what="driver details" />
-        ) : isLoading ? (
-          <div className="flex justify-center p-10 text-muted-foreground">
-            <Loader2 className="size-6 animate-spin" />
-          </div>
-        ) : error || !data ? (
-          <p className="rounded-xl border bg-card p-6 text-center text-sm text-destructive">
-            {error ? getErrorMessage(error) : "Driver not found."}
-          </p>
-        ) : (
-          <DriverDialogBody
-            driverId={driverId}
-            data={data}
-            mode={mode}
-            setMode={setMode}
-            canUpdate={canUpdate}
-            canApprove={canApprove}
-            canSuspend={canSuspend}
-            canDelete={canDelete}
-            canSeeFees={canSeeFees}
-            canSeeRides={canSeeRides}
-            canRemoveDoc={canRemoveDoc}
-            canAiValidate={canAiValidate}
-            approve={approve}
-            suspend={suspend}
-            restore={restore}
-            validate={validate}
-            removeDocument={removeDocument}
-            deleteDriver={deleteDriver}
-            aiResult={aiResult}
-            setAiResult={setAiResult}
-            confirmDelete={confirmDelete}
-            setConfirmDelete={setConfirmDelete}
-            deleteText={deleteText}
-            setDeleteText={setDeleteText}
-            onEditSubmit={handleEditSubmit}
-            onDeleted={close}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Split out so the loading/error/no-access branches above stay simple early returns
-// without each needing the full set of mutation hooks in scope.
-function DriverDialogBody({
-  driverId,
-  data,
-  mode,
-  setMode,
-  canUpdate,
-  canApprove,
-  canSuspend,
-  canDelete,
-  canSeeFees,
-  canSeeRides,
-  canRemoveDoc,
-  canAiValidate,
-  approve,
-  suspend,
-  restore,
-  validate,
-  removeDocument,
-  deleteDriver,
-  aiResult,
-  setAiResult,
-  confirmDelete,
-  setConfirmDelete,
-  deleteText,
-  setDeleteText,
-  onEditSubmit,
-  onDeleted,
-}: {
-  driverId: string;
-  data: NonNullable<ReturnType<typeof useDriverDetail>["data"]>;
-  mode: "view" | "edit";
-  setMode: (m: "view" | "edit") => void;
-  canUpdate: boolean;
-  canApprove: boolean;
-  canSuspend: boolean;
-  canDelete: boolean;
-  canSeeFees: boolean;
-  canSeeRides: boolean;
-  canRemoveDoc: boolean;
-  canAiValidate: boolean;
-  approve: ReturnType<typeof useApproveDriver>;
-  suspend: ReturnType<typeof useSuspendDriver>;
-  restore: ReturnType<typeof useRestoreDriver>;
-  validate: ReturnType<typeof useValidateDriverWithAi>;
-  removeDocument: ReturnType<typeof useRemoveDriverDocument>;
-  deleteDriver: ReturnType<typeof useDeleteDriverPermanently>;
-  aiResult: AiValidationResult | null;
-  setAiResult: (r: AiValidationResult | null) => void;
-  confirmDelete: boolean;
-  setConfirmDelete: (v: boolean) => void;
-  deleteText: string;
-  setDeleteText: (v: string) => void;
-  onEditSubmit: (values: DriverFormValues, files: DriverFormFiles) => Promise<void>;
-  onDeleted: () => void;
-}) {
-  const { driver, document_urls } = data;
+  const { driver } = data;
   const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—";
   const busy = approve.isPending || suspend.isPending || restore.isPending;
-
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
-  // What an unfinished signup still needs; null for any other driver.
-  const gaps = signupGaps(driver);
+  const owed = Number(driver.platformFeeOwedLkr ?? 0);
+
+  const edit = useCallback((section?: DriverSectionKey) => setMode({ kind: "edit", section }), [setMode]);
 
   function runAiValidate() {
     setAiResult(null);
     validate.mutate(driverId, { onSuccess: (result) => setAiResult(result) });
   }
 
-  if (mode === "edit") {
+  async function handleEditSubmit(values: DriverFormValues, files: DriverFormFiles) {
+    // Only what this edit changed — see changedDriverFields.
+    const initial = driverToFormValues(driver, data.bankAccount);
+    await update.mutateAsync({ id: driverId, values: changedDriverFields(initial, values), files });
+    onDirtyChange(false);
+    setMode({ kind: "view" });
+  }
+
+  const viewing = mode.kind === "view";
+  useHotkeys(
+    {
+      e: () => canUpdate && isTopmostDialog() && edit(),
+      ...Object.fromEntries(DRIVER_TABS.map((t, i) => [String(i + 1), () => isTopmostDialog() && setTab(t.key)])),
+    },
+    { enabled: viewing },
+  );
+
+  // The one decision this driver is waiting on, as the primary button.
+  const primary =
+    canApprove && canApproveApplication(driver) ? (
+      <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
+        Approve
+      </Button>
+    ) : canApprove && driver.status === "suspended" ? (
+      <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
+        Re-approve
+      </Button>
+    ) : canApprove && driver.status === "deleted" ? (
+      <Button
+        size="sm"
+        disabled={busy}
+        onClick={() => restore.mutate(driver.id)}
+        title="Restores the account to Pending — review and Approve to reactivate"
+      >
+        Restore
+      </Button>
+    ) : null;
+
+  const showSuspend = canSuspend && driver.status === "approved";
+
+  const header = (
+    <DialogHeader className="gap-1 pr-8">
+      <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
+        {viewing ? name : `Edit ${name}`}
+        <StatusBadge value={driver.status} />
+        <TonePill tone={driver.isOnline ? "green" : "neutral"}>{driver.isOnline ? "Online" : "Offline"}</TonePill>
+        <DriverFlags driver={driver} />
+      </DialogTitle>
+      <DialogDescription className="flex flex-wrap items-center gap-x-2 text-xs">
+        <span className="inline-flex items-center gap-1">
+          <Star className="size-3.5 fill-current text-amber-500" />
+          {driver.averageRating != null ? Number(driver.averageRating).toFixed(1) : "—"}
+        </span>
+        <span>· {Number(driver.totalRides).toLocaleString()} rides</span>
+        <span>· Joined {formatDriverDate(driver.createdAt)}</span>
+        <span>· Driver #{driver.id}</span>
+        {owed > 0 && <span className="font-medium text-destructive">· Owes LKR {Math.round(owed).toLocaleString()}</span>}
+      </DialogDescription>
+    </DialogHeader>
+  );
+
+  if (mode.kind === "edit") {
     return (
       <>
-        <DialogHeader>
-          <DialogTitle className="text-base">Edit {name}</DialogTitle>
-        </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        {header}
+        <div className="min-h-0 flex-1 overflow-y-auto px-1">
           <DriverForm
             mode="edit"
             initialValues={driverToFormValues(driver, data.bankAccount)}
-            existingDocs={document_urls}
-            onSubmit={onEditSubmit}
-            onCancel={() => setMode("view")}
+            existingDocs={data.document_urls}
+            initialSection={mode.section}
+            onDirtyChange={onDirtyChange}
+            onSubmit={handleEditSubmit}
+            onCancel={() => {
+              onDirtyChange(false);
+              setMode({ kind: "view" });
+            }}
           />
         </div>
       </>
@@ -220,19 +274,18 @@ function DriverDialogBody({
 
   return (
     <>
-      <DialogHeader className="pr-8">
-        <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
-          {name}
-          <StatusBadge value={driver.status} />
-          <TonePill tone={driver.isOnline ? "green" : "neutral"}>{driver.isOnline ? "Online" : "Offline"}</TonePill>
-          <DriverFlags driver={driver} />
-        </DialogTitle>
-      </DialogHeader>
+      {header}
 
       <div className="flex flex-wrap items-center gap-2">
+        {primary}
         {canUpdate && (
-          <Button size="sm" variant="outline" onClick={() => setMode("edit")}>
-            <Pencil /> Edit
+          <Button size="sm" variant="outline" onClick={() => edit()}>
+            <Pencil /> Edit <Kbd>E</Kbd>
+          </Button>
+        )}
+        {showAiValidate && (
+          <Button size="sm" variant="outline" disabled={validate.isPending} onClick={runAiValidate}>
+            <Sparkles /> {validate.isPending ? "Validating…" : "AI Validate"}
           </Button>
         )}
         {canSeeRides && (
@@ -245,155 +298,46 @@ function DriverDialogBody({
             <History /> Ride history
           </Link>
         )}
-        {showAiValidate && (
-          <Button size="sm" variant="outline" disabled={validate.isPending} onClick={runAiValidate}>
-            <Sparkles /> {validate.isPending ? "Validating…" : "AI Validate"}
-          </Button>
-        )}
-        {canApprove && canApproveApplication(driver) && (
-          <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
-            Approve
-          </Button>
-        )}
-        {canSuspend && driver.status === "approved" && (
-          <Button size="sm" variant="destructive" disabled={busy} onClick={() => suspend.mutate(driver.id)}>
-            Suspend
-          </Button>
-        )}
-        {canApprove && driver.status === "suspended" && (
-          <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
-            Re-approve
-          </Button>
-        )}
-        {canApprove && driver.status === "deleted" && (
-          <Button
-            size="sm"
-            disabled={busy}
-            onClick={() => restore.mutate(driver.id)}
-            title="Restores the account to Pending — review and Approve to reactivate"
-          >
-            Restore
-          </Button>
-        )}
-        {canDelete && (
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={busy || deleteDriver.isPending}
-            onClick={() => {
-              setDeleteText("");
-              setConfirmDelete(true);
-            }}
-          >
-            <Trash2 /> Delete driver
-          </Button>
+        {(showSuspend || canDelete) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button size="sm" variant="ghost" aria-label="More actions" title="More actions" className="ml-auto" />}
+            >
+              <MoreHorizontal />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {showSuspend && (
+                <DropdownMenuItem variant="destructive" disabled={busy} onClick={() => suspend.mutate(driver.id)}>
+                  <Ban /> Suspend driver
+                </DropdownMenuItem>
+              )}
+              {showSuspend && canDelete && <DropdownMenuSeparator />}
+              {canDelete && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={busy || deleteDriver.isPending}
+                  onClick={() => {
+                    setDeleteText("");
+                    setConfirmDelete(true);
+                  }}
+                >
+                  <Trash2 /> Delete permanently…
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-{/* An unfinished signup: say exactly what keeps it out of review, so nobody has to guess why
-            there is no Approve button. */}
-        {gaps && gaps.length > 0 && (
-          <Card className="ring-amber-400/60">
-            <CardHeader>
-              <CardTitle className="text-amber-700 dark:text-amber-400">Signup Not Finished</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm">Still needed: {gaps.join(", ")}.</p>
-              <p className="text-sm text-muted-foreground">
-                Once these are filled in and saved, the driver moves to Pending and can be approved or checked with AI
-                Validate.
-              </p>
-              {canUpdate && (
-                <Button size="sm" variant="outline" onClick={() => setMode("edit")}>
-                  <Pencil /> Complete details
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
+      <DriverStatusStrip
+        driver={driver}
+        aiResult={aiResult}
+        canUpdate={canUpdate}
+        onCompleteDetails={() => edit()}
+        onOpenDocuments={() => setTab("documents")}
+      />
 
-        {gaps && gaps.length === 0 && (
-          <Card className="ring-emerald-500/40">
-            <CardHeader>
-              <CardTitle className="text-emerald-700 dark:text-emerald-400">Ready For Review</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">
-                Every required detail of this signup is filled in. Check the documents, then Approve it or run AI
-                Validate.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Shown once the required details are in — until then the card above already lists what is missing. */}
-        {driver.missingDocuments.length > 0 && !(gaps && gaps.length > 0) && (
-          <Card className="ring-amber-400/60">
-            <CardHeader>
-              <CardTitle className="text-amber-700 dark:text-amber-400">Incomplete Application</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">
-                Missing: {driver.missingDocuments.join(", ")}. This happens when a driver registers (or resubmits) while
-                &ldquo;Bypass Document Validation&rdquo; is on, or when staff complete a signup without it. Confirm the
-                missing item(s) before approving.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {!aiResult && driver.reviewValid === false && (
-          <Card className="ring-destructive/40">
-            <CardHeader>
-              <CardTitle className="text-destructive">Document Issues Found</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">{driver.reviewSummary}</p>
-              {(driver.reviewIssues ?? []).length > 0 && (
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                  {(driver.reviewIssues ?? []).map((issue, i) => (
-                    <li key={i}>{issue}</li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {aiResult && (
-          <Card className={aiResult.valid ? "ring-emerald-500/40" : "ring-amber-400/60"}>
-            <CardHeader>
-              <CardTitle
-                className={aiResult.valid ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}
-              >
-                {aiResult.valid ? "AI Validation Passed" : "AI Validation Found Issues"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">{aiResult.summary}</p>
-              {aiResult.filledLicenseNumber && (
-                <p className="mt-2 text-sm">
-                  License number <span className="font-mono font-semibold">{aiResult.filledLicenseNumber}</span> was
-                  read from the license photo and saved. Please check it against the photo.
-                </p>
-              )}
-              {aiResult.issues.length > 0 && (
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                  {aiResult.issues.map((issue, i) => (
-                    <li key={i}>{issue}</li>
-                  ))}
-                </ul>
-              )}
-              {aiResult.approved && (
-                <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                  Driver was automatically approved.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <DriverDetailBody
           driverId={driverId}
           data={data}
@@ -401,6 +345,9 @@ function DriverDialogBody({
           canRemoveDoc={canRemoveDoc}
           removingDocument={removeDocument.isPending}
           onRemoveDocument={(slot) => removeDocument.mutate({ id: driverId, slot })}
+          tab={tab}
+          onTabChange={setTab}
+          onEditSection={canUpdate ? edit : undefined}
         />
       </div>
 

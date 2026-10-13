@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { NoAccess, PageShell } from "@/components/shared/page-shell";
@@ -7,12 +8,21 @@ import { getErrorMessage } from "@/lib/api";
 import { useCan } from "@/lib/hooks/use-desk";
 import { useDriverDetail, useUpdateDriver } from "@/lib/hooks/use-drivers";
 import { driverToFormValues, type DriverFormFiles, type DriverFormValues } from "@/types/driver";
-import { changedDriverFields } from "@/lib/driver-form-rules";
+import { changedDriverFields, type DriverSectionKey } from "@/lib/driver-form-rules";
 import { DriverForm } from "./driver-form";
 
 /** Edit a driver's details and replace their documents. */
-export function DriverEdit({ id }: { id: string }) {
+export function DriverEdit({ id, section }: { id: string; section?: DriverSectionKey }) {
   const router = useRouter();
+  const [dirty, setDirty] = useState(false);
+
+  // Closing or reloading the tab with unsaved edits asks first (the form's Cancel asks itself).
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
   const canUpdate = useCan("driver.update");
   const { data, isLoading, error } = useDriverDetail(id);
   const update = useUpdateDriver();
@@ -25,6 +35,7 @@ export function DriverEdit({ id }: { id: string }) {
     // Only what this edit changed — see changedDriverFields.
     const initial = driverToFormValues(data.driver, data.bankAccount);
     await update.mutateAsync({ id, values: changedDriverFields(initial, values), files });
+    setDirty(false);
     router.push(back);
   }
 
@@ -43,6 +54,8 @@ export function DriverEdit({ id }: { id: string }) {
           mode="edit"
           initialValues={driverToFormValues(data.driver, data.bankAccount)}
           existingDocs={data.document_urls}
+          initialSection={section}
+          onDirtyChange={setDirty}
           onSubmit={handleSubmit}
           onCancel={() => router.push(back)}
         />

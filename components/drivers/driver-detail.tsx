@@ -278,6 +278,7 @@ export function DriverDetail({ id }: { id: string }) {
         canRemoveDoc={canRemoveDoc}
         removingDocument={removeDocument.isPending}
         onRemoveDocument={(slot) => removeDocument.mutate({ id, slot })}
+        onEditSection={canUpdate ? (section) => router.push(`/drivers/${id}/edit?section=${section}`) : undefined}
       />
 
       <Modal

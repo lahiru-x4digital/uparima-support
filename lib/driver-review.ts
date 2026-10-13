@@ -38,3 +38,30 @@ export function canAiValidateDriver(driver: Reviewed): boolean {
     (driver.status === "approved" && (driver.reviewValid === false || (driver.missingDocuments ?? []).length > 0))
   );
 }
+
+export type ExpiryStatus = "missing" | "expired" | "soon" | "ok";
+
+/** Days counted from the start of today, so a document expiring today is "soon", not expired. */
+export const EXPIRY_SOON_DAYS = 30;
+
+/** Whether a document's expiry date is past, close, or fine. `date` is "YYYY-MM-DD" or an ISO timestamp. */
+export function expiryStatus(date: string | null | undefined, now: Date = new Date()): { status: ExpiryStatus; days: number | null } {
+  if (!date) return { status: "missing", days: null };
+  const parsed = new Date(date.length === 10 ? `${date}T00:00:00` : date);
+  if (Number.isNaN(parsed.getTime())) return { status: "missing", days: null };
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  const days = Math.round((day.getTime() - today.getTime()) / 86_400_000);
+  if (days < 0) return { status: "expired", days };
+  if (days <= EXPIRY_SOON_DAYS) return { status: "soon", days };
+  return { status: "ok", days };
+}
+
+/** One unambiguous date format for every driver view: "13 Oct 2026". */
+export function formatDriverDate(date: string | null | undefined): string {
+  if (!date) return "—";
+  const parsed = new Date(date.length === 10 ? `${date}T00:00:00` : date);
+  return Number.isNaN(parsed.getTime())
+    ? "—"
+    : parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}

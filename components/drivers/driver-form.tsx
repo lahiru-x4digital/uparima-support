@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Eye, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Switch } from "@/components/ui/switch";
+import { Kbd } from "@/components/shared/kbd";
 import { Modal } from "@/components/shared/modal";
 import { getErrorMessage } from "@/lib/api";
-import { licenseNumberProblem, normalizeLicenseNumber } from "@/lib/driver-form-rules";
-import { useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
-import { extractDriverDocument, extractDriverProfilePicture } from "@/lib/services/drivers.service";
-import { DOC_FIELD_SPECS } from "@/lib/vehicle-doc-field-specs";
+import {
+  DRIVER_SECTIONS,
+  FIELD_LABELS,
+  REQUIRED_BY_SECTION,
+  bankProblems,
+  editBlockingProblems,
+  licenseNumberProblem,
+  missingRequiredFields,
+  normalizeLicenseNumber,
+  sectionOfField,
+  type DriverSectionKey,
+  type FieldProblems,
+} from "@/lib/driver-form-rules";
+import { useHotkeys } from "@/lib/hooks/use-hotkeys";
 import { cn } from "@/lib/utils";
-import { DriverLocationFields } from "./driver-location-fields";
 import {
   EMPTY_DRIVER_FORM,
   type DriverDocumentKey,
@@ -23,348 +28,116 @@ import {
   type DriverFormValues,
 } from "@/types/driver";
 import { DocumentPreviewModal } from "./document-preview-modal";
-import { NameWordPicker } from "./name-word-picker";
+import {
+  AddressSection,
+  BankSection,
+  DocumentsStep,
+  InsuranceSection,
+  LicenceSection,
+  PersonalSection,
+  RevenueSection,
+  StateDot,
+  VehicleSection,
+  type SectionProps,
+} from "./driver-form-sections";
 
-const CURRENT_YEAR = new Date().getFullYear();
-const VEHICLE_YEARS = Array.from({ length: CURRENT_YEAR - 1989 }, (_, i) => String(CURRENT_YEAR - i));
-
-type Step = {
-  key: string;
-  title: string;
-  // Heading of the step's main card when it differs from the tab's title.
-  cardTitle?: string;
-  fields: (keyof DriverFormValues)[];
-};
-
-const STEPS: Step[] = [
-  // Documents come first, mirroring the driver app's registration flow: the paperwork is
-  // photographed before typing any of the fields those photos can autofill. No required fields
-  // here — this stays assistive, a driver can still be created with zero photos and everything
-  // typed by hand.
-  { key: "documents", title: "Documents", fields: [] },
-  { key: "personal", title: "Personal Information", fields: ["phone", "firstName", "lastName", "nicNumber"] },
-  { key: "address", title: "Address Details", fields: ["addressLine1", "province", "district", "city"] },
-  {
-    key: "vehicle",
-    title: "Vehicle Information",
-    fields: ["vehicleTypeId", "vehicleMakeId", "vehicleModelId", "vehicleYom", "vehicleColor", "vehicleRegistrationNumber"],
-  },
-  { key: "license", title: "Driving License Details", fields: ["licenseNumber", "licenseExpiryDate"] },
-  { key: "insurance", title: "Insurance Details", fields: ["insurancePolicyNumber", "insuranceExpiryDate"] },
-  { key: "revenue", title: "Vehicle Revenue License", fields: ["revenueLicenseExpiryDate"] },
-  { key: "ownership", title: "Ownership & Bank Details", cardTitle: "Vehicle Ownership", fields: [] },
-];
-
-const SECTION_LABEL = "mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground";
-
-function SwitchRow({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: (value: boolean) => void;
-  label?: string;
-}) {
-  return (
-    <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium select-none">
-      <Switch checked={checked} onCheckedChange={onChange} />
-      {label}
-    </label>
-  );
-}
-
-function UploadTile({
-  label,
-  description,
-  file,
-  existingUrl,
-  onChange,
-  onPreview,
-  extractSlot,
-  isTemporaryLicense,
-  onConfirmFields,
-}: {
-  label: string;
-  description: string;
-  file?: File;
-  existingUrl?: string;
-  onChange: (file: File) => void;
-  onPreview: (label: string, url: string) => void;
-  // When set, a picked file is immediately run through the same live AI extraction the driver app
-  // uses — assistive only: fields can still be filled by hand whatever (or whether) this returns.
-  extractSlot?: DriverDocumentKey;
-  isTemporaryLicense?: boolean;
-  onConfirmFields?: (fields: Partial<DriverFormValues>) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  // Local preview of the picked file. Created when it is picked (not in an effect) and revoked when
-  // replaced or when the tile goes away.
-  const objectUrlRef = useRef<string | undefined>(undefined);
-  const [objectUrl, setObjectUrl] = useState<string | undefined>();
-  const [extracting, setExtracting] = useState(false);
-  const [issues, setIssues] = useState<string[]>([]);
-  const [pendingFields, setPendingFields] = useState<Record<string, string> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    },
-    [],
-  );
-
-  async function handlePicked(picked: File) {
-    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    objectUrlRef.current = URL.createObjectURL(picked);
-    setObjectUrl(objectUrlRef.current);
-    onChange(picked);
-    setIssues([]);
-    setPendingFields(null);
-    if (!extractSlot) return;
-
-    setExtracting(true);
-    try {
-      const result =
-        extractSlot === "profilePicture"
-          ? await extractDriverProfilePicture(picked)
-          : await extractDriverDocument(extractSlot, picked, isTemporaryLicense);
-      if (!result.readable) {
-        setIssues(result.issues.length > 0 ? result.issues : ["Photo unclear — consider retaking it."]);
-        return;
-      }
-      const extracted: Record<string, string> = {};
-      for (const spec of DOC_FIELD_SPECS[extractSlot] ?? []) {
-        const value = result.fields[spec.key];
-        if (value != null && value !== "") extracted[spec.key] = value;
-      }
-      if (Object.keys(extracted).length > 0) setPendingFields(extracted);
-    } catch (e) {
-      // Assistive only — a failed live check (network / AI trouble) never blocks attaching the
-      // file or filling fields in by hand.
-      setIssues([getErrorMessage(e) || "Extraction failed — you can still fill in the details manually."]);
-    } finally {
-      setExtracting(false);
-    }
-  }
-
-  const previewUrl = objectUrl ?? existingUrl;
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        disabled={extracting}
-        onClick={() => inputRef.current?.click()}
-        className={cn(
-          "flex w-full flex-col items-center gap-2.5 rounded-lg border border-dashed p-5 text-center transition-colors hover:border-ring hover:bg-accent",
-          file && "border-amber-400 bg-amber-50 dark:bg-amber-500/10",
-          extracting && "opacity-60",
-        )}
-      >
-        {previewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={previewUrl} alt={label} className="h-20 w-full rounded-md object-cover" />
-        ) : (
-          <div className="flex size-8 items-center justify-center rounded-md bg-muted">
-            <Upload className="size-4 text-muted-foreground" />
-          </div>
-        )}
-        <div>
-          <p className="text-sm font-semibold">{label}</p>
-          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-            {extracting
-              ? "Reading document…"
-              : file
-                ? file.name
-                : existingUrl
-                  ? "Uploaded — click to replace"
-                  : description}
-          </p>
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          aria-label={label}
-          onChange={(e) => {
-            const picked = e.target.files?.[0];
-            if (picked) void handlePicked(picked);
-          }}
-        />
-      </button>
-      {previewUrl && (
-        <button
-          type="button"
-          aria-label={`Preview ${label}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPreview(label, previewUrl);
-          }}
-          className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow hover:text-foreground"
-        >
-          <Eye className="size-3.5" />
-        </button>
-      )}
-      {issues.length > 0 && (
-        <div className="mt-1.5 space-y-1">
-          {issues.map((issue, i) => (
-            <p key={i} className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="mt-0.5 size-3 shrink-0" />
-              {issue}
-            </p>
-          ))}
-        </div>
-      )}
-
-      <Modal
-        open={!!pendingFields}
-        onClose={() => setPendingFields(null)}
-        title={`Confirm details — ${label}`}
-        className="sm:max-w-md"
-      >
-        {pendingFields && extractSlot && (
-          <DocConfirmFields
-            slot={extractSlot}
-            fields={pendingFields}
-            onSkip={() => setPendingFields(null)}
-            onConfirm={(edited) => {
-              onConfirmFields?.(edited as Partial<DriverFormValues>);
-              setPendingFields(null);
-            }}
-          />
-        )}
-      </Modal>
-    </div>
-  );
-}
-
-// Editable review step for a slot's extracted fields: the agent just explicitly reviewed these, so
-// confirming overwrites unconditionally (same contract as the driver app's confirm sheet). Only
-// entries the AI actually returned a value for are shown.
-function DocConfirmFields({
-  slot,
-  fields,
-  onConfirm,
-  onSkip,
-}: {
-  slot: DriverDocumentKey;
-  fields: Record<string, string>;
-  onConfirm: (fields: Record<string, string>) => void;
-  onSkip: () => void;
-}) {
-  const spec = (DOC_FIELD_SPECS[slot] ?? []).filter((f) => fields[f.key] !== undefined);
-  const [edited, setEdited] = useState(fields);
-
-  return (
-    <div className="space-y-3">
-      {spec.map((f) => (
-        <Field key={f.key} label={f.label}>
-          <Input
-            type={f.isDate ? "date" : "text"}
-            value={edited[f.key] ?? ""}
-            onChange={(e) => setEdited((p) => ({ ...p, [f.key]: e.target.value }))}
-          />
-        </Field>
-      ))}
-      <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={onSkip}>
-          Skip
-        </Button>
-        <Button type="button" onClick={() => onConfirm(edited)}>
-          Use these details
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * The add / edit driver wizard. `onSubmit` throws to show an error under the steps; the form stays
- * on screen so nothing typed is lost.
- */
-export function DriverForm({
-  mode,
-  initialValues,
-  existingDocs = {},
-  onSubmit,
-  onCancel,
-}: {
+type FormProps = {
   mode: "create" | "edit";
   initialValues?: DriverFormValues;
   existingDocs?: Partial<Record<DriverDocumentKey, string>>;
   onSubmit: (values: DriverFormValues, files: DriverFormFiles) => Promise<void>;
   onCancel: () => void;
-}) {
-  const [step, setStep] = useState(0);
-  const [values, setValues] = useState<DriverFormValues>(initialValues ?? EMPTY_DRIVER_FORM);
+  /** Edit only: the section to open on. Default: the first one with a required field still empty. */
+  initialSection?: DriverSectionKey;
+  /** Told whenever the form gains or loses unsaved changes, so the owner can guard closing. */
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+/**
+ * Add or edit a driver. Editing is one page of sections (same groups as the details view) with a
+ * pinned Save; creating keeps the step-by-step wizard. `onSubmit` throws to show its error beside
+ * Save; the form stays on screen so nothing typed is lost.
+ */
+export function DriverForm(props: FormProps) {
+  const { mode, initialValues, existingDocs = {}, onDirtyChange } = props;
+  const initial = initialValues ?? EMPTY_DRIVER_FORM;
+  const [values, setValues] = useState<DriverFormValues>(initial);
   const [files, setFiles] = useState<DriverFormFiles>({});
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ label: string; url: string } | null>(null);
 
-  // Makes are scoped to the chosen vehicle type (many-to-many); models to the (type, make) pair —
-  // a make like Honda offers different models under Car vs. Bike. Both refetch as their parent
-  // changes, and stay disabled until it is chosen (like Province / District).
-  const vehicleTypes = useVehicleTypes().data ?? [];
-  const vehicleMakes = useVehicleMakes(values.vehicleTypeId).data ?? [];
-  const vehicleModels = useVehicleModels(values.vehicleTypeId, values.vehicleMakeId).data ?? [];
+  const changedCount =
+    (Object.keys(values) as (keyof DriverFormValues)[]).filter((k) => values[k] !== initial[k]).length +
+    Object.keys(files).length;
+  const dirty = changedCount > 0;
 
-  function set<K extends keyof DriverFormValues>(key: K, val: DriverFormValues[K]) {
-    setValues((p) => ({ ...p, [key]: val }));
-  }
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
-  function setFile(key: DriverDocumentKey, file: File) {
-    setFiles((p) => ({ ...p, [key]: file }));
-  }
+  const section: SectionProps = {
+    mode,
+    values,
+    set: (key, value) => setValues((p) => ({ ...p, [key]: value })),
+    patch: (fields) => setValues((p) => ({ ...p, ...fields })),
+    files,
+    setFile: (key, file) => setFiles((p) => ({ ...p, [key]: file })),
+    existingDocs,
+    onPreview: (label, url) => setPreview({ label, url }),
+    // Confirming a document's extracted fields overwrites unconditionally; a licence number read
+    // off a photo is tidied the same way as a typed one.
+    applyExtracted: (fields) =>
+      setValues((p) => ({
+        ...p,
+        ...fields,
+        ...(fields.licenseNumber !== undefined
+          ? { licenseNumber: normalizeLicenseNumber(fields.licenseNumber, p.isTemporaryLicense) }
+          : {}),
+      })),
+    problems: {},
+    withDocuments: mode === "edit",
+  };
 
-  // Confirming a document's extracted fields overwrites unconditionally.
-  function applyExtractedFields(fields: Partial<DriverFormValues>) {
-    setValues((p) => ({
-      ...p,
-      ...fields,
-      // Read off a photo, so tidy it the same way as a typed one.
-      ...(fields.licenseNumber !== undefined
-        ? { licenseNumber: normalizeLicenseNumber(fields.licenseNumber, p.isTemporaryLicense) }
-        : {}),
-    }));
-  }
-
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-  const isFirst = step === 0;
-
-  // Bank details are optional but never half-filled: bank, holder and number go together (the
-  // backend refuses a partial account too). All empty leaves the driver's account as it is.
-  const bankStarted = [values.bankName, values.bankAccountName, values.bankAccountNumber, values.bankBranch].some(
-    (v) => v.trim() !== "",
+  return (
+    <>
+      {mode === "edit" ? (
+        <EditLayout {...props} initial={initial} section={section} files={files} dirty={dirty} changedCount={changedCount} />
+      ) : (
+        <CreateWizard {...props} section={section} files={files} dirty={dirty} />
+      )}
+      <DocumentPreviewModal preview={preview} onClose={() => setPreview(null)} />
+    </>
   );
-  const bankValid =
-    !bankStarted || [values.bankName, values.bankAccountName, values.bankAccountNumber].every((v) => v.trim() !== "");
-  const hadBankAccount = mode === "edit" && (initialValues?.bankAccountNumber ?? "") !== "";
+}
 
-  // The licence number is only judged when this edit touched it (or its kind). One already on
-  // file in an older format is left alone — and not sent — so it can't block an unrelated save.
-  const licenseTouched =
-    mode === "create" ||
-    values.licenseNumber !== initialValues?.licenseNumber ||
-    values.isTemporaryLicense !== initialValues?.isTemporaryLicense;
-  const licenseProblem = licenseTouched
-    ? licenseNumberProblem(values.licenseNumber, values.isTemporaryLicense)
-    : null;
+/** "Discard unsaved changes?" — shared by the form's Cancel and the owners' close guards. */
+export function DiscardChangesModal({
+  open,
+  onKeep,
+  onDiscard,
+}: {
+  open: boolean;
+  onKeep: () => void;
+  onDiscard: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onKeep} title="Discard unsaved changes?" className="sm:max-w-sm">
+      <p className="text-sm text-muted-foreground">The changes you made to this driver haven&apos;t been saved.</p>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline" onClick={onKeep} autoFocus>
+          Keep editing
+        </Button>
+        <Button variant="destructive" onClick={onDiscard}>
+          Discard
+        </Button>
+      </div>
+    </Modal>
+  );
+}
 
-  const stepValid =
-    current.fields.every((f) => String(values[f] ?? "").trim() !== "") &&
-    (current.key !== "ownership" || bankValid) &&
-    (current.key !== "license" || !licenseProblem);
-  const allValid = STEPS.every((s) => s.fields.every((f) => String(values[f] ?? "").trim() !== "")) && bankValid;
-
-  async function submit() {
-    // Steps can be opened in any order, so the last one can be reached without passing this check.
-    if (licenseProblem) {
-      setError(licenseProblem);
-      setStep(STEPS.findIndex((s) => s.key === "license"));
-      return;
-    }
+function useSubmit(onSubmit: FormProps["onSubmit"]) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function run(values: DriverFormValues, files: DriverFormFiles) {
     setBusy(true);
     setError(null);
     try {
@@ -375,409 +148,344 @@ export function DriverForm({
       setBusy(false);
     }
   }
+  return { busy, error, setError, run };
+}
 
-  async function handleNext() {
-    if (!stepValid) return;
-    if (isLast) {
-      await submit();
-      return;
+/** The bar pinned to the bottom of the scroll area: errors and Save are always in view together. */
+function Footer({ children, message }: { children: ReactNode; message?: ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-10 -mx-1 mt-4 border-t bg-background/95 px-1 pt-3 pb-1 backdrop-blur supports-backdrop-filter:bg-background/80">
+      {/* Always takes its line, so a message appearing doesn't shift the buttons. */}
+      <div className="mb-2 min-h-5 text-sm">{message}</div>
+      <div className="flex flex-wrap items-center gap-2">{children}</div>
+    </div>
+  );
+}
+
+const SECTION_BODY: Record<DriverSectionKey, (p: SectionProps, extra: { hadBankAccount: boolean }) => ReactNode> = {
+  personal: (p) => <PersonalSection {...p} />,
+  address: (p) => <AddressSection {...p} />,
+  vehicle: (p) => <VehicleSection {...p} withOwnership />,
+  license: (p) => <LicenceSection {...p} />,
+  insurance: (p) => <InsuranceSection {...p} />,
+  revenue: (p) => <RevenueSection {...p} />,
+  bank: (p, extra) => <BankSection {...p} hadBankAccount={extra.hadBankAccount} />,
+};
+
+function EditLayout({
+  initial,
+  section,
+  files,
+  dirty,
+  changedCount,
+  initialSection,
+  onSubmit,
+  onCancel,
+}: FormProps & {
+  initial: DriverFormValues;
+  section: SectionProps;
+  files: DriverFormFiles;
+  dirty: boolean;
+  changedCount: number;
+}) {
+  const { values } = section;
+  const { busy, error, run } = useSubmit(onSubmit);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const sectionRefs = useRef<Partial<Record<DriverSectionKey, HTMLElement | null>>>({});
+
+  const problems = useMemo(() => editBlockingProblems(initial, values), [initial, values]);
+  const missing = useMemo(() => missingRequiredFields(values, "edit"), [values]);
+  const blocked = Object.keys(problems).length > 0;
+  const canSave = dirty && !blocked && !busy;
+  const hadBankAccount = initial.bankAccountNumber !== "";
+
+  const sectionState = (key: DriverSectionKey) => {
+    const fields = (Object.keys(values) as (keyof DriverFormValues)[]).filter((f) => sectionOfField(f) === key);
+    if (fields.some((f) => problems[f])) return "error" as const;
+    if (missing.some((f) => sectionOfField(f) === key)) return "missing" as const;
+    if (fields.some((f) => values[f] !== initial[f])) return "changed" as const;
+    return null;
+  };
+
+  function goTo(key: DriverSectionKey, { focus = true } = {}) {
+    const el = sectionRefs.current[key];
+    if (!el) return;
+    el.scrollIntoView({ block: "start", behavior: "smooth" });
+    if (focus) {
+      el.querySelector<HTMLElement>("input:not([disabled]):not([type=file]), select:not([disabled])")?.focus({
+        preventScroll: true,
+      });
     }
-    setStep((s) => s + 1);
   }
 
-  const submitLabel = busy ? "Saving…" : mode === "create" ? "Create Driver" : "Save Changes";
+  // Open where the work is: the requested section, else the first one with a gap. Run once.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current) return;
+    opened.current = true;
+    const target = initialSection ?? (missing[0] ? sectionOfField(missing[0]) : "personal");
+    // After the dialog's own open/focus handling has settled.
+    const id = requestAnimationFrame(() => goTo(target));
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function save() {
+    if (!canSave) {
+      const first = Object.keys(problems)[0] as keyof DriverFormValues | undefined;
+      if (first) goTo(sectionOfField(first));
+      return;
+    }
+    void run(values, files);
+  }
+
+  function cancel() {
+    if (dirty) setConfirmDiscard(true);
+    else onCancel();
+  }
+
+  useHotkeys({ "mod+enter": save, "mod+s": save });
+
+  const firstProblem = Object.entries(problems)[0] as [keyof DriverFormValues, string] | undefined;
+  const sectionProps = { ...section, problems };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
-        {STEPS.map((s, i) => (
+    <div>
+      <nav
+        aria-label="Driver sections"
+        className="sticky top-0 z-10 -mx-1 mb-3 flex gap-1 overflow-x-auto border-b bg-background/95 px-1 py-2 backdrop-blur supports-backdrop-filter:bg-background/80"
+      >
+        {DRIVER_SECTIONS.map((s) => (
           <button
             key={s.key}
             type="button"
-            onClick={() => setStep(i)}
-            aria-current={i === step ? "step" : undefined}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-              i === step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70",
-            )}
+            onClick={() => goTo(s.key)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
           >
-            {i + 1}. {s.title}
+            <StateDot state={sectionState(s.key)} />
+            {s.title}
           </button>
         ))}
+      </nav>
+
+      <div className="space-y-3">
+        {DRIVER_SECTIONS.map((s) => {
+          const state = sectionState(s.key);
+          return (
+            <section
+              key={s.key}
+              ref={(el) => {
+                sectionRefs.current[s.key] = el;
+              }}
+              aria-labelledby={`driver-section-${s.key}`}
+              className={cn(
+                "scroll-mt-14 rounded-xl border p-4",
+                state === "error" && "border-destructive/50",
+                state === "missing" && "border-amber-400/60",
+              )}
+            >
+              <h3
+                id={`driver-section-${s.key}`}
+                className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+              >
+                {s.title}
+                <StateDot state={state} />
+              </h3>
+              {SECTION_BODY[s.key](sectionProps, { hadBankAccount })}
+            </section>
+          );
+        })}
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Footer
+        message={
+          error ? (
+            <p role="alert" className="text-destructive">
+              {error}
+            </p>
+          ) : firstProblem ? (
+            <p className="text-destructive">
+              <button type="button" className="underline underline-offset-2" onClick={() => goTo(sectionOfField(firstProblem[0]))}>
+                {FIELD_LABELS[firstProblem[0]]}
+              </button>
+              : {firstProblem[1]}
+            </p>
+          ) : missing.length > 0 ? (
+            <p className="text-amber-700 dark:text-amber-400">
+              Still needed for review: {missing.map((f) => FIELD_LABELS[f]).join(", ")}. You can save what you have.
+            </p>
+          ) : null
+        }
+      >
+        <Button type="button" variant="outline" onClick={cancel} disabled={busy}>
+          Cancel
+        </Button>
+        <span className="mr-auto text-xs text-muted-foreground">
+          {dirty ? `${changedCount} unsaved change${changedCount === 1 ? "" : "s"}` : "No changes yet"}
+        </span>
+        <Button type="button" onClick={save} disabled={!canSave}>
+          {busy && <Loader2 className="animate-spin" />}
+          {busy ? "Saving…" : "Save changes"}
+          <Kbd className="border-primary-foreground/30 bg-transparent text-primary-foreground/80">Ctrl ↵</Kbd>
+        </Button>
+      </Footer>
 
-      <Card>
-        <CardContent className="space-y-4">
-          <p className={SECTION_LABEL}>{current.cardTitle ?? current.title}</p>
+      <DiscardChangesModal
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => {
+          setConfirmDiscard(false);
+          onCancel();
+        }}
+      />
+    </div>
+  );
+}
 
-          {current.key === "ownership" && (
-            <div className="space-y-2">
-              <p className="text-sm">Do you own the vehicle?</p>
-              <SwitchRow
-                checked={values.ownsVehicle}
-                onChange={(v) => set("ownsVehicle", v)}
-                label={values.ownsVehicle ? "Yes" : "No"}
-              />
-            </div>
-          )}
+type Step = { key: string; title: string; fields: (keyof DriverFormValues)[] };
 
-          {current.key === "documents" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-                <div>
-                  <p className="text-sm font-medium">Temporary Driving Licence (Section 126(4))</p>
-                  <p className="text-xs text-muted-foreground">
-                    Turn this on if the driver only has the Department of Motor Traffic&apos;s temporary permit so
-                    far, while their printed card is still being processed.
-                  </p>
-                </div>
-                <Switch
-                  checked={values.isTemporaryLicense}
-                  onCheckedChange={(v) => set("isTemporaryLicense", v)}
-                  aria-label="Temporary driving licence"
-                />
-              </div>
+// Documents come first, mirroring the driver app's registration flow: the paperwork is
+// photographed before typing any of the fields those photos can autofill. No required fields
+// there — a driver can still be created with zero photos and everything typed by hand.
+const STEPS: Step[] = [
+  { key: "documents", title: "Documents", fields: [] },
+  ...DRIVER_SECTIONS.filter((s) => s.key !== "bank").map((s) => ({
+    key: s.key,
+    title: s.title,
+    fields: REQUIRED_BY_SECTION[s.key],
+  })),
+  { key: "bank", title: "Bank Account", fields: [] },
+];
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <UploadTile
-                  label={values.isTemporaryLicense ? "Temporary Licence Document" : "License Front Image"}
-                  description={
-                    values.isTemporaryLicense ? "Photo of the temporary licence certificate" : "Front side of driving license"
-                  }
-                  file={files.licenseFront}
-                  existingUrl={existingDocs.licenseFront}
-                  onChange={(f) => setFile("licenseFront", f)}
-                  onPreview={(l, u) => setPreview({ label: l, url: u })}
-                  extractSlot="licenseFront"
-                  isTemporaryLicense={values.isTemporaryLicense}
-                  onConfirmFields={applyExtractedFields}
-                />
-                <UploadTile
-                  label={values.isTemporaryLicense ? "Back / Other Side (Optional)" : "License Back Image"}
-                  description={
-                    values.isTemporaryLicense
-                      ? "Only if the driver's copy is folded/laminated with content on both sides"
-                      : "Back side of driving license"
-                  }
-                  file={files.licenseBack}
-                  existingUrl={existingDocs.licenseBack}
-                  onChange={(f) => setFile("licenseBack", f)}
-                  onPreview={(l, u) => setPreview({ label: l, url: u })}
-                  extractSlot="licenseBack"
-                  isTemporaryLicense={values.isTemporaryLicense}
-                  onConfirmFields={applyExtractedFields}
-                />
-                <UploadTile
-                  label="Insurance Card (Front)"
-                  description="Front side of insurance card"
-                  file={files.insuranceCardFront}
-                  existingUrl={existingDocs.insuranceCardFront}
-                  onChange={(f) => setFile("insuranceCardFront", f)}
-                  onPreview={(l, u) => setPreview({ label: l, url: u })}
-                  extractSlot="insuranceCardFront"
-                  onConfirmFields={applyExtractedFields}
-                />
-                <UploadTile
-                  label="Vehicle Revenue License Image"
-                  description="Photo of the revenue license"
-                  file={files.revenueLicenseImage}
-                  existingUrl={existingDocs.revenueLicenseImage}
-                  onChange={(f) => setFile("revenueLicenseImage", f)}
-                  onPreview={(l, u) => setPreview({ label: l, url: u })}
-                  extractSlot="revenueLicenseImage"
-                  onConfirmFields={applyExtractedFields}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Optional here — Profile Picture and Vehicle Front are captured on their own steps below. Uploading a
-                clear photo auto-fills the matching fields further in this form; you can still fill everything in by
-                hand instead.
-              </p>
-            </div>
-          )}
+function CreateWizard({
+  section,
+  files,
+  dirty,
+  onSubmit,
+  onCancel,
+}: FormProps & { section: SectionProps; files: DriverFormFiles; dirty: boolean }) {
+  const { values } = section;
+  const [step, setStep] = useState(0);
+  const { busy, error, setError, run } = useSubmit(onSubmit);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-          {current.key === "personal" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Mobile Number *">
-                <Input
-                  placeholder="+94771234567"
-                  value={values.phone}
-                  disabled={mode === "edit"}
-                  onChange={(e) => set("phone", e.target.value)}
-                />
-              </Field>
-              <Field label="First Name *">
-                <Input value={values.firstName} onChange={(e) => set("firstName", e.target.value)} />
-              </Field>
-              <Field label="Last Name *">
-                <Input value={values.lastName} onChange={(e) => set("lastName", e.target.value)} />
-              </Field>
-              <Field label="NIC Number *">
-                <Input value={values.nicNumber} onChange={(e) => set("nicNumber", e.target.value)} />
-              </Field>
-              <Field label="Referral Code (Optional)">
-                <Input value={values.referralCode} onChange={(e) => set("referralCode", e.target.value)} />
-              </Field>
-              <div className="sm:col-span-2">
-                <p className="mb-1.5 text-sm font-medium">Preferred Display Name (Optional)</p>
-                <p className="mb-2 text-xs text-muted-foreground">
-                  Riders see this instead of the full legal name. Pick one or more words below.
-                </p>
-                <NameWordPicker
-                  fullName={`${values.firstName} ${values.lastName}`}
-                  value={values.preferredDisplayName}
-                  onChange={(v) => set("preferredDisplayName", v)}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <p className="mb-1.5 text-sm font-medium">Profile Picture</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <UploadTile
-                    label="Profile Picture"
-                    description="Clear face photo"
-                    file={files.profilePicture}
-                    existingUrl={existingDocs.profilePicture}
-                    onChange={(f) => setFile("profilePicture", f)}
-                    onPreview={(l, u) => setPreview({ label: l, url: u })}
-                    extractSlot="profilePicture"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+  const current = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+  const isFirst = step === 0;
 
-          {current.key === "address" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Address Line 1 *">
-                <Input value={values.addressLine1} onChange={(e) => set("addressLine1", e.target.value)} />
-              </Field>
-              <Field label="Address Line 2 (Optional)">
-                <Input value={values.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} />
-              </Field>
-              <DriverLocationFields
-                value={{ province: values.province, district: values.district, city: values.city }}
-                onChange={(patch) => setValues((p) => ({ ...p, ...patch }))}
-              />
-              <Field label="Email Address (Optional)">
-                <Input type="email" value={values.email} onChange={(e) => set("email", e.target.value)} />
-              </Field>
-              <Field label="Secondary Mobile Number (Optional)">
-                <Input value={values.secondaryMobile} onChange={(e) => set("secondaryMobile", e.target.value)} />
-              </Field>
-            </div>
-          )}
+  const licenseProblem = licenseNumberProblem(values.licenseNumber, values.isTemporaryLicense);
+  const problems: FieldProblems = {
+    ...(current.key === "bank" ? bankProblems(values) : {}),
+    ...(current.key === "license" && licenseProblem ? { licenseNumber: licenseProblem } : {}),
+  };
+  const missingIn = (s: Step) => s.fields.filter((f) => String(values[f] ?? "").trim() === "");
+  const stepMissing = missingIn(current);
+  const stepValid = stepMissing.length === 0 && Object.keys(problems).length === 0;
+  const allValid =
+    missingRequiredFields(values, "create").length === 0 && Object.keys(bankProblems(values)).length === 0;
 
-          {current.key === "vehicle" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Vehicle Type *">
-                <NativeSelect
-                  value={values.vehicleTypeId}
-                  onChange={(e) => {
-                    set("vehicleTypeId", e.target.value);
-                    set("vehicleMakeId", "");
-                    set("vehicleModelId", "");
-                  }}
-                >
-                  <option value="">Select vehicle type…</option>
-                  {vehicleTypes.map((vt) => (
-                    <option key={vt.id} value={vt.id}>
-                      {vt.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label="Make (Brand) *">
-                <NativeSelect
-                  value={values.vehicleMakeId}
-                  onChange={(e) => {
-                    set("vehicleMakeId", e.target.value);
-                    set("vehicleModelId", "");
-                  }}
-                  disabled={!values.vehicleTypeId}
-                >
-                  <option value="">Select make…</option>
-                  {vehicleMakes.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label="Model *">
-                <NativeSelect
-                  value={values.vehicleModelId}
-                  onChange={(e) => set("vehicleModelId", e.target.value)}
-                  disabled={!values.vehicleMakeId}
-                >
-                  <option value="">Select model…</option>
-                  {vehicleModels.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label="Year of Manufacture *">
-                <NativeSelect value={values.vehicleYom} onChange={(e) => set("vehicleYom", e.target.value)}>
-                  <option value="">Select year…</option>
-                  {VEHICLE_YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label="Color *">
-                <Input value={values.vehicleColor} onChange={(e) => set("vehicleColor", e.target.value)} />
-              </Field>
-              <Field label="Registration Number *">
-                <Input
-                  placeholder="CAB-1234"
-                  value={values.vehicleRegistrationNumber}
-                  onChange={(e) => set("vehicleRegistrationNumber", e.target.value)}
-                />
-              </Field>
-              <div className="sm:col-span-2">
-                <p className="mb-1.5 text-sm font-medium">Vehicle Photo</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <UploadTile
-                    label="Vehicle Front"
-                    description="Front of the vehicle, number plate visible"
-                    file={files.vehicleFront}
-                    existingUrl={existingDocs.vehicleFront}
-                    onChange={(f) => setFile("vehicleFront", f)}
-                    onPreview={(l, u) => setPreview({ label: l, url: u })}
-                    extractSlot="vehicleFront"
-                    onConfirmFields={applyExtractedFields}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+  async function submit() {
+    // Steps can be opened in any order, so the last one can be reached without passing this check.
+    if (licenseProblem) {
+      setError(licenseProblem);
+      setStep(STEPS.findIndex((s) => s.key === "license"));
+      return;
+    }
+    await run(values, files);
+  }
 
-          {current.key === "license" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={values.isTemporaryLicense ? "Permit / Certificate No. *" : "License Number *"}>
-                <Input
-                  placeholder={values.isTemporaryLicense ? "C328761" : "B1234567"}
-                  value={values.licenseNumber}
-                  onChange={(e) =>
-                    set("licenseNumber", normalizeLicenseNumber(e.target.value, values.isTemporaryLicense))
-                  }
-                  aria-invalid={!!licenseProblem || undefined}
-                />
-              </Field>
-              <Field label={values.isTemporaryLicense ? "Valid Until *" : "Expiry Date *"}>
-                <Input
-                  type="date"
-                  value={values.licenseExpiryDate}
-                  onChange={(e) => set("licenseExpiryDate", e.target.value)}
-                />
-              </Field>
-              {licenseProblem && <p className="text-sm text-destructive sm:col-span-2">{licenseProblem}</p>}
-            </div>
-          )}
+  async function next() {
+    if (!stepValid || busy) return;
+    if (isLast) await submit();
+    else setStep((s) => s + 1);
+  }
 
-          {current.key === "insurance" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Insurance Policy Number *">
-                <Input
-                  value={values.insurancePolicyNumber}
-                  onChange={(e) => set("insurancePolicyNumber", e.target.value)}
-                />
-              </Field>
-              <Field label="Insurance Expiry Date *">
-                <Input
-                  type="date"
-                  value={values.insuranceExpiryDate}
-                  onChange={(e) => set("insuranceExpiryDate", e.target.value)}
-                />
-              </Field>
-            </div>
-          )}
+  function cancel() {
+    if (dirty) setConfirmDiscard(true);
+    else onCancel();
+  }
 
-          {current.key === "revenue" && (
-            <Field label="Revenue License Expiry Date *">
-              <Input
-                type="date"
-                value={values.revenueLicenseExpiryDate}
-                onChange={(e) => set("revenueLicenseExpiryDate", e.target.value)}
-              />
-            </Field>
-          )}
-        </CardContent>
-      </Card>
+  useHotkeys({ "mod+enter": () => void next() });
 
-      {current.key === "ownership" && (
-        <Card>
-          <CardContent className="space-y-4">
-            <div>
-              <p className={SECTION_LABEL}>Bank Details</p>
-              <p className="text-sm text-muted-foreground">
-                The driver&apos;s own bank account for payouts. Optional — but bank name, account holder and account
-                number are needed together.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={bankStarted ? "Bank Name *" : "Bank Name"}>
-                <Input
-                  placeholder="Commercial Bank"
-                  maxLength={150}
-                  value={values.bankName}
-                  onChange={(e) => set("bankName", e.target.value)}
-                />
-              </Field>
-              <Field label="Branch">
-                <Input maxLength={150} value={values.bankBranch} onChange={(e) => set("bankBranch", e.target.value)} />
-              </Field>
-              <Field label={bankStarted ? "Account Holder Name *" : "Account Holder Name"}>
-                <Input
-                  maxLength={150}
-                  value={values.bankAccountName}
-                  onChange={(e) => set("bankAccountName", e.target.value)}
-                />
-              </Field>
-              <Field label={bankStarted ? "Account Number *" : "Account Number"}>
-                <Input
-                  maxLength={50}
-                  value={values.bankAccountNumber}
-                  onChange={(e) => set("bankAccountNumber", e.target.value)}
-                />
-              </Field>
-            </div>
-            {!bankValid && (
-              <p className="text-sm text-destructive">
-                Fill in the bank name, account holder name and account number to save these bank details.
-              </p>
-            )}
-            {hadBankAccount && !bankStarted && (
-              <p className="text-sm text-muted-foreground">
-                Saving with these fields empty keeps the bank account already on file.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+  const stepProps = { ...section, problems };
+  const body: Record<string, ReactNode> = {
+    documents: <DocumentsStep {...stepProps} />,
+    personal: <PersonalSection {...stepProps} />,
+    address: <AddressSection {...stepProps} />,
+    vehicle: <VehicleSection {...stepProps} withOwnership />,
+    license: <LicenceSection {...stepProps} />,
+    insurance: <InsuranceSection {...stepProps} />,
+    revenue: <RevenueSection {...stepProps} />,
+    bank: <BankSection {...stepProps} hadBankAccount={false} />,
+  };
+  const submitLabel = busy ? "Saving…" : "Create Driver";
 
-      <div className="flex flex-wrap gap-3">
-        <Button type="button" variant="outline" onClick={isFirst ? onCancel : () => setStep((s) => s - 1)}>
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {STEPS.map((s, i) => {
+          const gaps = missingIn(s).length;
+          const touched = s.fields.some((f) => String(values[f] ?? "").trim() !== "");
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setStep(i)}
+              aria-current={i === step ? "step" : undefined}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                i === step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70",
+              )}
+            >
+              {s.fields.length > 0 && <StateDot state={gaps === 0 ? "done" : touched || i < step ? "missing" : null} />}
+              {i + 1}. {s.title}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Fixed height for every step, so the dialog doesn't jump as steps with more or fewer
+          fields come and go; a taller step scrolls inside. */}
+      <section className="h-[min(58vh,32rem)] overflow-y-auto rounded-xl border p-4">
+        <h3 className="mb-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">{current.title}</h3>
+        {body[current.key]}
+      </section>
+
+      <Footer
+        message={
+          error ? (
+            <p role="alert" className="text-destructive">
+              {error}
+            </p>
+          ) : stepMissing.length > 0 ? (
+            <p className="text-muted-foreground">Missing: {stepMissing.map((f) => FIELD_LABELS[f]).join(", ")}</p>
+          ) : null
+        }
+      >
+        <Button type="button" variant="outline" onClick={isFirst ? cancel : () => setStep((s) => s - 1)}>
           <ChevronLeft />
           {isFirst ? "Cancel" : "Back"}
         </Button>
-        <Button type="button" className="flex-1" disabled={!stepValid || busy} onClick={() => void handleNext()}>
+        <Button type="button" className="flex-1" disabled={!stepValid || busy} onClick={() => void next()}>
           {isLast ? submitLabel : "Next"}
           {!isLast && <ChevronRight />}
+          <Kbd className="border-primary-foreground/30 bg-transparent text-primary-foreground/80">Ctrl ↵</Kbd>
         </Button>
         {!isLast && (
           <Button type="button" variant="outline" disabled={!allValid || busy} onClick={() => void submit()}>
             {submitLabel}
           </Button>
         )}
-      </div>
+      </Footer>
 
-      <DocumentPreviewModal preview={preview} onClose={() => setPreview(null)} />
+      <DiscardChangesModal
+        open={confirmDiscard}
+        onKeep={() => setConfirmDiscard(false)}
+        onDiscard={() => {
+          setConfirmDiscard(false);
+          onCancel();
+        }}
+      />
     </div>
   );
 }
