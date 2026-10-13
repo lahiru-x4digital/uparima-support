@@ -12,6 +12,8 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
     params.needsContact = true;
     // "bot_only" is a synthetic, client-only status for ticketless WhatsApp
     // conversations — the ticket list endpoint knows nothing about it.
+  } else if (filters.status === "to_onboard") {
+    params.toOnboard = true;
   } else if (filters.status === "incomplete_driver") {
     params.incompleteDriver = true;
   } else if (filters.status === "queued") {
@@ -52,6 +54,8 @@ export function applyClientFilters(
     // entirely (list() only applies it when wired in — see useBotChatList),
     // so re-check it here against what the row itself carries.
     if (filters.status === "incomplete_driver" && c.status === "bot_only" && !c.incompleteDriver) return false;
+    // Same for "To onboard": the bot list is only server-filtered on its own tab.
+    if (filters.status === "to_onboard" && c.status === "bot_only" && !c.toOnboard) return false;
     // Queue and auto-closed are ticket-only views; a bot-only row has no routing.
     if ((filters.status === "queued" || filters.status === "auto_closed") && c.status === "bot_only") return false;
     if (filters.channel !== "all" && c.channel !== filters.channel) return false;

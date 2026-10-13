@@ -81,6 +81,8 @@ export interface Conversation {
   /** True when the submitter is a driver whose registration was never
    * finished (DriverStatus "incomplete") — drives the "Incomplete" tab. */
   incompleteDriver: boolean;
+  /** A driver still onboarding, or a number we have no record of — the "To onboard" view. */
+  toOnboard: boolean;
   /** null for a bot-only conversation, which has no ticket to prioritise. */
   priority: Priority | null;
   assignedToUserId: number | null;
@@ -139,7 +141,7 @@ export interface ConversationFilters {
   search: string;
   /** "needs_contact" is the WhatsApp hand-off queue; "incomplete_driver" is
    * the submitter's driver profile status, not a ticket status either. */
-  status: ConversationStatus | "needs_contact" | "incomplete_driver" | "queued" | "auto_closed" | "all";
+  status: ConversationStatus | "to_onboard" | "needs_contact" | "incomplete_driver" | "queued" | "auto_closed" | "all";
   channel: Channel | "all";
   assignee: "all" | "mine" | "unassigned";
 }
