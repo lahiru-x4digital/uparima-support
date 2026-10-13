@@ -9,6 +9,7 @@ import {
   adjustDriverSubscription,
   approveDriver,
   createDriver,
+  createDriverDraft,
   deleteDriverPermanently,
   getDriver,
   getDriverDevicePermissions,
@@ -162,6 +163,12 @@ export const useDeleteDriverPermanently = () =>
 export const useCreateDriver = () =>
   useDriverMutation(({ values, files }: { values: DriverFormValues; files: DriverFormFiles }) =>
     createDriver(values, files),
+  );
+
+export const useCreateDriverDraft = () =>
+  useDriverMutation(
+    ({ values, files }: { values: DriverFormValues; files: DriverFormFiles }) => createDriverDraft(values, files),
+    "Draft saved — finish it from the driver's details",
   );
 
 export const useUpdateDriver = () =>

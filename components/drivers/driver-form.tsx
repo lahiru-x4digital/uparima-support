@@ -51,6 +51,11 @@ type FormProps = {
   initialSection?: DriverSectionKey;
   /** Told whenever the form gains or loses unsaved changes, so the owner can guard closing. */
   onDirtyChange?: (dirty: boolean) => void;
+  /**
+   * Create only: save what is filled in so far as an unfinished signup. Offered once the mobile
+   * number and first name are in; throws to show its error like `onSubmit`.
+   */
+  onSaveDraft?: (values: DriverFormValues, files: DriverFormFiles) => Promise<void>;
 };
 
 /**
@@ -362,11 +367,15 @@ function CreateWizard({
   files,
   dirty,
   onSubmit,
+  onSaveDraft,
   onCancel,
 }: FormProps & { section: SectionProps; files: DriverFormFiles; dirty: boolean }) {
   const { values } = section;
   const [step, setStep] = useState(0);
-  const { busy, error, setError, run } = useSubmit(onSubmit);
+  const { busy: submitting, error: submitError, setError, run } = useSubmit(onSubmit);
+  const draft = useSubmit(onSaveDraft ?? (async () => {}));
+  const busy = submitting || draft.busy;
+  const error = submitError ?? draft.error;
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const current = STEPS[step];
@@ -383,6 +392,23 @@ function CreateWizard({
   const stepValid = stepMissing.length === 0 && Object.keys(problems).length === 0;
   const allValid =
     missingRequiredFields(values, "create").length === 0 && Object.keys(bankProblems(values)).length === 0;
+
+  // A draft needs enough to find it again (mobile + first name) and nothing the backend would
+  // refuse: a half-filled bank account or a malformed licence number.
+  const draftBlocker =
+    values.phone.trim() === "" || values.firstName.trim() === ""
+      ? "Add the mobile number and first name to save a draft"
+      : Object.keys(bankProblems(values)).length > 0
+        ? "Finish or clear the bank details to save a draft"
+        : licenseProblem
+          ? "Fix the licence number to save a draft"
+          : null;
+
+  function saveDraft() {
+    if (!onSaveDraft || draftBlocker || busy) return;
+    setError(null);
+    void draft.run(values, files);
+  }
 
   async function submit() {
     // Steps can be opened in any order, so the last one can be reached without passing this check.
@@ -405,7 +431,7 @@ function CreateWizard({
     else onCancel();
   }
 
-  useHotkeys({ "mod+enter": () => void next() });
+  useHotkeys({ "mod+enter": () => void next(), "mod+s": saveDraft });
 
   const stepProps = { ...section, problems };
   const body: Record<string, ReactNode> = {
@@ -418,7 +444,7 @@ function CreateWizard({
     revenue: <RevenueSection {...stepProps} />,
     bank: <BankSection {...stepProps} hadBankAccount={false} />,
   };
-  const submitLabel = busy ? "Saving…" : "Create Driver";
+  const submitLabel = submitting ? "Saving…" : "Create Driver";
 
   return (
     <div className="space-y-4">
@@ -471,6 +497,18 @@ function CreateWizard({
           {!isLast && <ChevronRight />}
           <Kbd className="border-primary-foreground/30 bg-transparent text-primary-foreground/80">Ctrl ↵</Kbd>
         </Button>
+        {onSaveDraft && !allValid && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!!draftBlocker || busy}
+            title={draftBlocker ?? "Save what's filled in as an unfinished signup and finish it later"}
+            onClick={saveDraft}
+          >
+            {draft.busy ? "Saving…" : "Save as draft"}
+            <Kbd>Ctrl S</Kbd>
+          </Button>
+        )}
         {!isLast && (
           <Button type="button" variant="outline" disabled={!allValid || busy} onClick={() => void submit()}>
             {submitLabel}

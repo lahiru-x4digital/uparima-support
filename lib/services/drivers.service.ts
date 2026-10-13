@@ -77,6 +77,14 @@ export const getDriverTermsStatus = (id: number | string) =>
 export const createDriver = (values: DriverFormValues, files: DriverFormFiles) =>
   apiPost<Driver>(BASE, buildFormData(values, files), MULTIPART);
 
+/**
+ * Add Driver's "Save as draft": whatever is filled in, saved as an unfinished signup (status
+ * "incomplete") to finish later with updateDriver. Needs only the mobile number and first name;
+ * empty fields are left out by buildFormData.
+ */
+export const createDriverDraft = (values: DriverFormValues, files: DriverFormFiles) =>
+  apiPost<Driver>(`${BASE}/draft`, buildFormData(values, files), MULTIPART);
+
 export function updateDriver(id: number | string, values: Partial<DriverFormValues>, files: DriverFormFiles) {
   // The phone is the account's login — the backend refuses to change it here,
   // and rejects the whole request for an unknown field.

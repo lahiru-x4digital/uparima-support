@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NoAccess } from "@/components/shared/page-shell";
 import { useCan } from "@/lib/hooks/use-desk";
-import { useCreateDriver } from "@/lib/hooks/use-drivers";
+import { useCreateDriver, useCreateDriverDraft } from "@/lib/hooks/use-drivers";
 import type { DriverFormFiles, DriverFormValues } from "@/types/driver";
-import { DriverForm } from "./driver-form";
+import { DiscardChangesModal, DriverForm } from "./driver-form";
 
 /**
  * Register a brand-new driver from the inbox, without leaving the ticket —
@@ -26,14 +27,30 @@ export function DriverCreateDialog({
 }) {
   const canRegister = useCan("driver.manual-register");
   const create = useCreateDriver();
+  const createDraft = useCreateDriverDraft();
+  const [dirty, setDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   async function handleSubmit(values: DriverFormValues, files: DriverFormFiles) {
     const driver = await create.mutateAsync({ values, files });
+    setDirty(false);
     onCreated(driver.id);
   }
 
+  // A draft opens in the driver details dialog, whose status line lists what it still needs.
+  async function handleSaveDraft(values: DriverFormValues, files: DriverFormFiles) {
+    const driver = await createDraft.mutateAsync({ values, files });
+    setDirty(false);
+    onCreated(driver.id);
+  }
+
+  function close() {
+    setDirty(false);
+    onClose();
+  }
+
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+    <Dialog open={open} onOpenChange={(next) => !next && (dirty ? setConfirmDiscard(true) : close())}>
       <DialogContent className="flex max-h-[92vh] w-[96vw] max-w-4xl flex-col gap-3 overflow-hidden sm:max-w-4xl">
         {!canRegister ? (
           <NoAccess what="driver registration" />
@@ -43,10 +60,25 @@ export function DriverCreateDialog({
               <DialogTitle className="text-base">Register driver</DialogTitle>
             </DialogHeader>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <DriverForm mode="create" initialValues={initialValues} onSubmit={handleSubmit} onCancel={onClose} />
+              <DriverForm
+                mode="create"
+                initialValues={initialValues}
+                onSubmit={handleSubmit}
+                onSaveDraft={handleSaveDraft}
+                onDirtyChange={setDirty}
+                onCancel={close}
+              />
             </div>
           </>
         )}
+        <DiscardChangesModal
+          open={confirmDiscard}
+          onKeep={() => setConfirmDiscard(false)}
+          onDiscard={() => {
+            setConfirmDiscard(false);
+            close();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
