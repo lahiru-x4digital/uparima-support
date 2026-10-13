@@ -29,6 +29,7 @@ import { ChatPane } from "./chat-pane";
 import { ContextPanel } from "./context-panel";
 import { ConversationList } from "./conversation-list";
 import { FilterBar } from "./filter-bar";
+import { FollowupsStrip } from "./followups-strip";
 
 const NO_STAFF: never[] = [];
 
@@ -184,6 +185,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   return (
     <div className="flex min-h-0 flex-1">
       <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
+        <FollowupsStrip onOpenTicket={select} />
         {!botView && (
           <FilterBar filters={filters} needsContactCount={needsContact.data} myOpenCount={myOpenCount} hideChannel={!!lockedChannel}
             onChange={(p) => onFiltersChange({ ...given, ...p })} />

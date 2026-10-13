@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
-import { driverNoteKeys, ticketKeys } from "@/lib/hooks/query-keys";
+import { driverFollowupKeys, driverNoteKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { getToken } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
 import { env } from "@/lib/env";
@@ -84,6 +84,11 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
       void qc.invalidateQueries({ queryKey: driverNoteKeys.list(event.driverId) });
     });
 
+    // A follow-up was set, handed over or finished: refresh every follow-up list.
+    socket.on("support:driver_followup", () => {
+      void qc.invalidateQueries({ queryKey: driverFollowupKeys.all });
+    });
+
     socket.on("incident:critical", (incident: CriticalIncident) => {
       toast.error("Critical safety incident reported", {
         description: incident.description?.slice(0, 140),
@@ -97,6 +102,7 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
       socket.off("support:handoff");
       socket.off("support:ticket_updated");
       socket.off("support:driver_note");
+      socket.off("support:driver_followup");
       socket.off("incident:critical");
       socket.disconnect();
       clearBadge();

@@ -19,6 +19,7 @@ import type { DriverDetail, DriverDocumentKey } from "@/types/driver";
 import { DetailList } from "./detail-list";
 import { DocumentPreviewModal } from "./document-preview-modal";
 import { DriverDevicePermissionsCard } from "./driver-device-permissions-card";
+import { DriverFollowup } from "./driver-followup";
 import { DriverNotes } from "./driver-notes";
 import { DriverSubscriptionCard } from "./driver-subscription-card";
 import { DriverTermsCard } from "./driver-terms-card";
@@ -184,6 +185,15 @@ export function DriverDetailBody({
 
         <TabsContent value="overview" className="pt-2">
           <div className="grid gap-3 lg:grid-cols-2">
+            <Card size="sm" className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Follow-up</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DriverFollowup driverId={Number(driverId)} />
+              </CardContent>
+            </Card>
+
             <Card size="sm">
               <CardHeader>
                 <CardTitle>Personal &amp; Contact</CardTitle>

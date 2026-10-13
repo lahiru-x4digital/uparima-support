@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Bike, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Bike, Bookmark, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -10,7 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { DriverCreateDialog } from "@/components/drivers/driver-create-dialog";
 import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
 import { DriverLocationDialog } from "@/components/drivers/driver-location-dialog";
+import { DriverFollowup } from "@/components/drivers/driver-followup";
 import { DriverNotes } from "@/components/drivers/driver-notes";
+import { useDriverFollowups } from "@/lib/hooks/use-driver-followups";
 import { useDriverNotes } from "@/lib/hooks/use-driver-notes";
 import { useDriverDetail } from "@/lib/hooks/use-drivers";
 import { useCan, useRide } from "@/lib/hooks/use-desk";
@@ -146,6 +148,21 @@ function DriverStats({
         )}
       </div>
     </div>
+  );
+}
+
+function FollowupSection({ driverId, ticketNumber }: { driverId: number; ticketNumber: string }) {
+  const newFiles = (useDriverFollowups(driverId).data ?? []).reduce((sum, f) => sum + f.newFiles, 0);
+  return (
+    <section aria-labelledby="driver-followup-heading" className="flex flex-col gap-2">
+      <h4 id="driver-followup-heading" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <Bookmark className="size-3.5" /> Follow-up
+        {newFiles > 0 && (
+          <span className="rounded-full bg-primary px-1.5 text-[10px] leading-4 text-primary-foreground">{newFiles} new</span>
+        )}
+      </h4>
+      <DriverFollowup driverId={driverId} ticketNumber={ticketNumber || undefined} />
+    </section>
   );
 }
 
@@ -327,6 +344,10 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
               <UserPlus className="size-3.5" /> Register as driver
             </Button>
           ) : null}
+
+          {c.submitter?.kind === "driver" && canSeeDriver && (
+            <FollowupSection driverId={c.submitter.driverId} ticketNumber={c.ticketNumber} />
+          )}
 
           {c.submitter?.kind === "driver" && canSeeDriver && (
             <NotesSection driverId={c.submitter.driverId} ticketNumber={c.ticketNumber} focusKey={focusNotesKey} />

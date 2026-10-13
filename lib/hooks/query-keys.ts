@@ -80,6 +80,12 @@ export const driverKeys = {
   vehicleModels: (typeId: string, makeId: string) => ["drivers", "vehicle-models", typeId, makeId] as const,
 };
 
+export const driverFollowupKeys = {
+  all: ["driver-followups"] as const,
+  list: (driverId: number | string) => ["driver-followups", "driver", String(driverId)] as const,
+  mine: ["driver-followups", "mine"] as const,
+};
+
 export const driverNoteKeys = {
   all: ["driver-notes"] as const,
   list: (driverId: number | string) => ["driver-notes", String(driverId)] as const,
