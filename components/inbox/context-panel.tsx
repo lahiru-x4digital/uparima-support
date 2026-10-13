@@ -12,6 +12,7 @@ import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog"
 import { DriverLocationDialog } from "@/components/drivers/driver-location-dialog";
 import { DriverNotes } from "@/components/drivers/driver-notes";
 import { useDriverNotes } from "@/lib/hooks/use-driver-notes";
+import { useDriverDetail } from "@/lib/hooks/use-drivers";
 import { useCan, useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
@@ -79,9 +80,34 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-/** Compact driver stats: status (flagged visibly when suspended/rejected),
- * rating/rides as one secondary line, and a balance line that only appears
- * when there's actually something owed — most drivers have none. */
+/** The driver's account status, flagged in red when suspended or rejected. */
+function DriverStatusBadge({ status }: { status: string }) {
+  return (
+    <Badge variant={FLAGGED_DRIVER_STATUSES.has(status) ? "destructive" : "secondary"} className="shrink-0 capitalize">
+      {status}
+    </Badge>
+  );
+}
+
+/** An unfinished signup: what it still needs, from the driver record (the same query the
+ * details dialog uses, so opening it afterwards costs nothing). */
+function IncompleteSignupNote({ driverId }: { driverId: number }) {
+  const { data } = useDriverDetail(String(driverId));
+  const missing = [...(data?.driver.missingFields ?? []), ...(data?.driver.missingDocuments ?? [])];
+  return (
+    <p className="flex items-start gap-1.5 rounded-md border-l-4 border-l-amber-500 bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+      <span>
+        <strong>Signup not finished</strong>
+        {missing.length > 0 && <> — needs {missing.join(", ")}</>}
+      </span>
+    </p>
+  );
+}
+
+/** Driver alerts and actions. Status and rating live in the header; this only shows what needs
+ * attention — why the account is blocked, an unfinished signup, a balance owed (most drivers
+ * have none) — followed by the two actions in one row. */
 function DriverStats({
   submitter,
   onViewDriver,
@@ -93,42 +119,32 @@ function DriverStats({
   onEditLocation?: () => void;
 }) {
   const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
-  // platformFeeOwedLkr/creditBalance/averageRating are Postgres `decimal`/`int` columns that
-  // TypeORM can return as strings — coerce before formatting so a string value never crashes
-  // `.toFixed`/`.toLocaleString`.
+  // platformFeeOwedLkr/creditBalance are Postgres `decimal` columns that TypeORM can return as
+  // strings — coerce before formatting so a string value never crashes `.toLocaleString`.
   const platformFeeOwedLkr = Number(submitter.platformFeeOwedLkr);
   const creditBalance = Number(submitter.creditBalance);
-  const averageRating = Number(submitter.averageRating);
-  const totalRides = Number(submitter.totalRides);
   const owed = platformFeeOwedLkr > 0;
   const credit = creditBalance > 0;
   return (
     <div className="flex flex-col gap-1.5 text-sm">
-      <div className="flex items-center gap-2">
-        <Badge variant={flagged ? "destructive" : "secondary"} className="capitalize">
-          {submitter.status}
-        </Badge>
-        {flagged && submitter.suspensionReason && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground" title={submitter.suspensionReason}>
-            <AlertTriangle className="size-3.5 text-destructive" /> {submitter.suspensionReason.replace(/_/g, " ")}
-          </span>
-        )}
-      </div>
-      <p className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Star className="size-3.5 fill-current text-amber-500" /> {averageRating.toFixed(1)} · {totalRides.toLocaleString()} rides
-      </p>
+      {flagged && submitter.suspensionReason && (
+        <p className="flex items-center gap-1.5 text-xs text-destructive" title={submitter.suspensionReason}>
+          <AlertTriangle className="size-3.5 shrink-0" /> {submitter.suspensionReason.replace(/_/g, " ")}
+        </p>
+      )}
+      {submitter.status === "incomplete" && <IncompleteSignupNote driverId={submitter.driverId} />}
       {(owed || credit) && (
         <p className={cn("text-xs", owed ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
           {owed ? `Owes LKR ${Math.round(platformFeeOwedLkr).toLocaleString()}` : `Credit: LKR ${Math.round(creditBalance).toLocaleString()}`}
         </p>
       )}
-      <div className="mt-1 flex flex-wrap gap-1.5">
-        <Button size="sm" variant="outline" className="w-fit" onClick={onViewDriver}>
-          <ExternalLink className="size-3.5" /> View / edit driver
+      <div className="flex gap-1.5">
+        <Button size="sm" variant="outline" className="min-w-0 flex-1" title="View / edit driver" onClick={onViewDriver}>
+          <ExternalLink className="size-3.5" /> <span className="truncate">View / edit</span>
         </Button>
         {onEditLocation && (
-          <Button size="sm" variant="outline" className="w-fit" onClick={onEditLocation}>
-            <MapPin className="size-3.5" /> Change location
+          <Button size="sm" variant="outline" className="min-w-0 flex-1" title="Change location" onClick={onEditLocation}>
+            <MapPin className="size-3.5" /> <span className="truncate">Location</span>
           </Button>
         )}
       </div>
@@ -271,24 +287,35 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
         <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close details"><X /></Button>
       </div>
       <ScrollArea className="min-h-0 flex-1">
-        <div className="flex flex-col gap-5 p-4">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <Avatar size="lg" className="size-14"><AvatarFallback className="text-base">{initials(c.customerName)}</AvatarFallback></Avatar>
-            <div>
-              <p className="font-semibold">{c.customerName}</p>
-              <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+        <div className="flex flex-col gap-4 p-4">
+          <div className="flex items-start gap-3">
+            <Avatar className="size-10"><AvatarFallback>{initials(c.customerName)}</AvatarFallback></Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="truncate font-semibold" title={c.customerName}>{c.customerName}</p>
+                {c.submitter?.kind === "driver" && <DriverStatusBadge status={c.submitter.status} />}
+              </div>
+              <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
                 <RoleIcon className="size-3" /> {c.role === "rider" ? "Rider" : "Driver"}
-                {c.submitter?.kind === "driver" ? ` · ${c.submitter.status}` : ""}
+                {c.submitter?.kind === "driver" && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <Star className="size-3 fill-current text-amber-500" />
+                    {Number(c.submitter.averageRating).toFixed(1)} · {Number(c.submitter.totalRides).toLocaleString()} rides
+                  </>
+                )}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 text-sm">
-            <span className="flex items-center gap-2"><Phone className="size-4 text-muted-foreground" />{c.phone}</span>
-            {c.email && <span className="flex items-center gap-2 break-all"><Mail className="size-4 shrink-0 text-muted-foreground" />{c.email}</span>}
-            {c.submitter?.kind === "driver" && c.submitter.vehicleRegistrationNumber && (
-              <span className="flex items-center gap-2"><Car className="size-4 text-muted-foreground" />{c.submitter.vehicleRegistrationNumber}</span>
-            )}
+          <div className="flex flex-col gap-1.5 text-sm">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <span className="flex items-center gap-1.5"><Phone className="size-4 text-muted-foreground" />{c.phone}</span>
+              {c.submitter?.kind === "driver" && c.submitter.vehicleRegistrationNumber && (
+                <span className="flex items-center gap-1.5"><Car className="size-4 text-muted-foreground" />{c.submitter.vehicleRegistrationNumber}</span>
+              )}
+            </div>
+            {c.email && <span className="flex items-center gap-1.5 break-all"><Mail className="size-4 shrink-0 text-muted-foreground" />{c.email}</span>}
             {c.submitter?.kind === "hire_tenant" && <span className="text-muted-foreground">Business: {c.submitter.tenantName}</span>}
           </div>
 
@@ -304,6 +331,10 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             </Button>
           ) : null}
 
+          {c.submitter?.kind === "driver" && canSeeDriver && (
+            <NotesSection driverId={c.submitter.driverId} ticketNumber={c.ticketNumber} focusKey={focusNotesKey} />
+          )}
+
           {c.rideId && <RideCard rideId={c.rideId} />}
 
           <TicketAttachments items={c.attachments} />
@@ -311,11 +342,9 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           <Separator />
 
           <div className="flex flex-col gap-2">
-            <Row label="Ticket" value={c.ticketNumber || "—"} />
-            <Row label="Opened" value={formatTime(c.createdAt)} />
-            <Row label="Channel" value={CHANNELS[c.channel].label} />
+            <Row label="Ticket" value={c.ticketNumber ? `${c.ticketNumber} · ${formatTime(c.createdAt)}` : `Started ${formatTime(c.createdAt)}`} />
+            <Row label="Channel" value={language ? `${CHANNELS[c.channel].label} · ${language}` : CHANNELS[c.channel].label} />
             {topic && <Row label="Topic" value={topic} />}
-            {language && <Row label="Language" value={language} />}
             {c.contactPreference && <Row label="Wants" value={c.contactPreference === "message" ? "A message" : "A call"} />}
             {sla && (
               <Row label="Response" value={
@@ -352,13 +381,6 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
             </Field>
           ) : (
             <p className="text-xs text-muted-foreground">No ticket yet — reply to start one.</p>
-          )}
-
-          {c.submitter?.kind === "driver" && canSeeDriver && (
-            <>
-              <Separator />
-              <NotesSection driverId={c.submitter.driverId} ticketNumber={c.ticketNumber} focusKey={focusNotesKey} />
-            </>
           )}
 
           {c.previousTickets.length > 0 && (
