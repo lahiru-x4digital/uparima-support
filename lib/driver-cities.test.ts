@@ -1,24 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { cityOptions, findPlace, formDistrict, formProvince, loadDistrictCities, placeKey } from "./driver-cities";
-import { SRI_LANKA_DISTRICTS_BY_PROVINCE } from "./sri-lanka-locations";
+import {
+  cityOptions,
+  findPlace,
+  listedCity,
+  listedName,
+  loadDistrictCities,
+  loadProvinceDistricts,
+  loadProvinces,
+  placeKey,
+} from "./driver-cities";
 
 describe("showing a stored province and district in the form's dropdowns", () => {
-  it("recognises the names the driver app stores", () => {
-    expect(formProvince("Sabaragamuwa Province")).toBe("Sabaragamuwa");
-    expect(formProvince("North Western Province")).toBe("North Western");
-    expect(formDistrict("Kegalle District")).toBe("Kegalle");
-    expect(formDistrict("Nuwara Eliya District")).toBe("Nuwara Eliya");
+  const provinces = ["Western Province", "North Western Province", "Sabaragamuwa Province"];
+
+  it("shows a short or older name as the listed one the driver app saves", () => {
+    expect(listedName(provinces, "Western")).toBe("Western Province");
+    expect(listedName(provinces, "North Western")).toBe("North Western Province");
+    expect(listedName(provinces, "Western Province")).toBe("Western Province");
   });
 
-  it("offers that province's districts", () => {
-    expect(SRI_LANKA_DISTRICTS_BY_PROVINCE[formProvince("Sabaragamuwa Province")]).toContain("Kegalle");
-  });
-
-  it("leaves the form's own names, an empty value and an unknown name alone", () => {
-    expect(formProvince("Western")).toBe("Western");
-    expect(formDistrict("Colombo")).toBe("Colombo");
-    expect(formProvince("")).toBe("");
-    expect(formDistrict("Atlantis")).toBe("Atlantis");
+  it("shows nothing picked for an empty value or a name the list doesn't hold, Sinhala included", () => {
+    expect(listedName(provinces, "")).toBe("");
+    expect(listedName(provinces, "Atlantis")).toBe("");
+    expect(listedName(provinces, "බස්නාහිර")).toBe("");
   });
 });
 
@@ -44,17 +48,17 @@ describe("matching the form's names to the location list", () => {
 
 describe("the city dropdown's options", () => {
   it("lists the district's cities alphabetically, once each", () => {
-    expect(cityOptions(["Peradeniya", "Kandy City", "Gampola", "Kandy City"], "")).toEqual([
+    expect(cityOptions(["Peradeniya", "Kandy City", "Gampola", "Kandy City"])).toEqual([
       "Gampola",
       "Kandy City",
       "Peradeniya",
     ]);
   });
 
-  it("keeps a city already on the record that the list doesn't have", () => {
-    expect(cityOptions(["Gampola", "Kandy City"], "Thennekumbura")).toEqual(["Thennekumbura", "Gampola", "Kandy City"]);
-    expect(cityOptions(["Gampola", "Kandy City"], "Kandy City")).toEqual(["Gampola", "Kandy City"]);
-    expect(cityOptions([], "Rajagiriya")).toEqual(["Rajagiriya"]);
+  it("shows a stored city only when the list has it", () => {
+    expect(listedCity(["Gampola", "Kandy City"], "kandy city ")).toBe("Kandy City");
+    expect(listedCity(["Gampola", "Kandy City"], "Thennekumbura")).toBe("");
+    expect(listedCity(["Gampola"], "ගම්පොල")).toBe("");
   });
 });
 
@@ -87,5 +91,25 @@ describe("loading a district's cities", () => {
   it("gives nothing for a province or district the list doesn't have", async () => {
     expect(await loadDistrictCities(get, "Southern", "Galle")).toEqual([]);
     expect(await loadDistrictCities(get, "Central", "Colombo")).toEqual([]);
+  });
+});
+
+describe("loading provinces and a province's districts", () => {
+  const lists: Record<string, { id: number; name: string }[]> = {
+    "/geo/states?countryId=1": [
+      { id: 1, name: "Western Province" },
+      { id: 2, name: "Central Province" },
+    ],
+    "/geo/cities?stateId=2": [{ id: 4, name: "Kandy District" }],
+  };
+  const get = <T,>(path: string) => Promise.resolve((lists[path] ?? []) as T);
+
+  it("names them as the driver app saves them", async () => {
+    expect(await loadProvinces(get)).toEqual(["Western Province", "Central Province"]);
+    expect(await loadProvinceDistricts(get, "Central")).toEqual(["Kandy District"]);
+  });
+
+  it("gives no districts for a province the list doesn't have", async () => {
+    expect(await loadProvinceDistricts(get, "Atlantis")).toEqual([]);
   });
 });

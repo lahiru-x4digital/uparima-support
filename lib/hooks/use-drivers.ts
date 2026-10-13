@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiGet, getErrorMessage } from "@/lib/api";
-import { loadDistrictCities } from "@/lib/driver-cities";
+import { loadDistrictCities, loadProvinceDistricts, loadProvinces } from "@/lib/driver-cities";
 import { useAuth } from "@/lib/auth-context";
 import {
   adjustDriverSubscription,
@@ -45,6 +45,21 @@ export function usePendingDrivers() {
 export function useDriverDetail(id: string) {
   const { user } = useAuth();
   return useQuery({ queryKey: driverKeys.detail(id), queryFn: () => getDriver(id), enabled: !!user });
+}
+
+/** The provinces, named as the driver app saves them. */
+export function useProvinces() {
+  return useQuery({ queryKey: driverKeys.provinces, queryFn: () => loadProvinces(apiGet), staleTime: 60 * 60_000 });
+}
+
+/** The districts of the province picked in the driver form. */
+export function useProvinceDistricts(province: string) {
+  return useQuery({
+    queryKey: driverKeys.provinceDistricts(province),
+    queryFn: () => loadProvinceDistricts(apiGet, province),
+    enabled: province !== "",
+    staleTime: 60 * 60_000,
+  });
 }
 
 /** The cities of the district picked in the driver form — the list the driver app registers with. */

@@ -2,8 +2,6 @@
 // registers with (the backend's public /geo lists), so staff pick from it instead of typing.
 // The admin dashboard (uparima-classified-dashbord/lib/driver-cities.ts) has the same rules.
 
-import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "./sri-lanka-locations";
-
 export type Place = { id: number; name: string };
 
 /**
@@ -20,37 +18,47 @@ export const findPlace = <T extends { name: string }>(places: T[], name: string)
   name.trim() === "" ? undefined : places.find((p) => placeKey(p.name) === placeKey(name));
 
 /**
- * A stored province or district under the name the driver form's dropdown offers it by. A driver
- * who signed up in the app has "Western Province" / "Colombo District" on record, which the
- * dropdown would otherwise show as nothing picked. A name the form doesn't offer is kept as it is.
+ * A stored province or district under the name the location list holds it by — the name the driver
+ * app saves ("Western Province", "Colombo District"). A short or older name ("Western") resolves to
+ * it, so the dropdown shows it picked. A name the list doesn't hold (free text, Sinhala) shows as
+ * nothing picked: only listed places can be chosen, never typed.
  */
-export const formProvince = (stored: string): string =>
-  SRI_LANKA_PROVINCES.find((p) => placeKey(p) === placeKey(stored)) ?? stored;
+export const listedName = (places: string[], stored: string): string =>
+  places.find((p) => placeKey(p) === placeKey(stored)) ?? "";
 
-export const formDistrict = (stored: string): string =>
-  Object.values(SRI_LANKA_DISTRICTS_BY_PROVINCE)
-    .flat()
-    .find((d) => placeKey(d) === placeKey(stored)) ?? stored;
+/** What the city dropdown offers: the district's cities in alphabetical order, once each. */
+export function cityOptions(cities: string[]): string[] {
+  return [...new Set(cities.map((c) => c.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
 
-/**
- * What the city dropdown offers: the district's cities in alphabetical order. A city already on
- * the driver's record stays on offer even when the list doesn't have it, so opening the form
- * never drops it.
- */
-export function cityOptions(cities: string[], current: string): string[] {
-  const options = [...new Set(cities.map((c) => c.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  const kept = current.trim();
-  return kept !== "" && !options.includes(kept) ? [kept, ...options] : options;
+/** The stored city as the list spells it, or "" when the list doesn't have it. */
+export const listedCity = (cities: string[], stored: string): string =>
+  cities.find((c) => c.trim().toLowerCase() === stored.trim().toLowerCase()) ?? "";
+
+type Get = <T>(path: string) => Promise<T>;
+
+// Sri Lanka is country 1 in the location list, as in the driver app.
+const loadStates = (get: Get) => get<Place[]>("/geo/states?countryId=1");
+
+/** The provinces, named as the driver app saves them. */
+export async function loadProvinces(get: Get): Promise<string[]> {
+  return (await loadStates(get)).map((p) => p.name);
+}
+
+/** The districts of one province, found by the name the form holds. Empty when the province isn't in the list. */
+export async function loadProvinceDistricts(get: Get, province: string): Promise<string[]> {
+  const province_ = findPlace(await loadStates(get), province);
+  if (!province_) return [];
+  return (await get<Place[]>(`/geo/cities?stateId=${province_.id}`)).map((d) => d.name);
 }
 
 /** The cities of one district, found by the names the form holds. Empty when the district isn't in the list. */
 export async function loadDistrictCities(
-  get: <T>(path: string) => Promise<T>,
+  get: Get,
   province: string,
   district: string,
 ): Promise<string[]> {
-  // Sri Lanka is country 1 in the location list, as in the driver app.
-  const province_ = findPlace(await get<Place[]>("/geo/states?countryId=1"), province);
+  const province_ = findPlace(await loadStates(get), province);
   if (!province_) return [];
   const district_ = findPlace(await get<Place[]>(`/geo/cities?stateId=${province_.id}`), district);
   if (!district_) return [];

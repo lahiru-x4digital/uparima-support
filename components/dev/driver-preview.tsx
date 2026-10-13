@@ -260,6 +260,8 @@ export function DriverPreview() {
     qc.setQueryData(driverKeys.vehicleTypes, [{ id: 1, name: "Car" }, { id: 4, name: "Bike" }]);
     qc.setQueryData(driverKeys.vehicleMakes("1"), [{ id: 2, name: "Toyota" }, { id: 5, name: "Suzuki" }]);
     qc.setQueryData(driverKeys.vehicleModels("1", "2"), [{ id: 3, name: "Axio" }, { id: 6, name: "Prius" }]);
+    qc.setQueryData(driverKeys.provinces, ["Western Province", "Central Province"]);
+    qc.setQueryData(driverKeys.provinceDistricts("Western"), ["Colombo District", "Gampaha District"]);
     qc.setQueryData(driverKeys.districtCities("Western", "Colombo"), ["Colombo", "Dehiwala", "Maharagama"]);
     return null;
   });

@@ -1,12 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
 import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { cityOptions, formDistrict, formProvince } from "@/lib/driver-cities";
-import { useDistrictCities } from "@/lib/hooks/use-drivers";
-import { SRI_LANKA_DISTRICTS_BY_PROVINCE, SRI_LANKA_PROVINCES } from "@/lib/sri-lanka-locations";
+import { cityOptions, listedCity, listedName } from "@/lib/driver-cities";
+import { useDistrictCities, useProvinceDistricts, useProvinces } from "@/lib/hooks/use-drivers";
 
 export interface DriverLocation {
   province: string;
@@ -25,23 +22,21 @@ export function DriverLocationFields({
   value: DriverLocation;
   onChange: (patch: Partial<DriverLocation>) => void;
 }) {
-  const districts = useMemo(
-    () => (value.province ? (SRI_LANKA_DISTRICTS_BY_PROVINCE[formProvince(value.province)] ?? []) : []),
-    [value.province],
-  );
+  const provinces = useProvinces().data ?? [];
+  const districts = useProvinceDistricts(value.province).data ?? [];
   const cityList = useDistrictCities(value.province, value.district);
   const cities = cityList.data ?? [];
 
   return (
     <>
-      {/* Shown under the dropdown's own names; what is on record only changes when staff pick. */}
+      {/* Only listed places can be chosen, never typed. A short or older name on record shows as its listed one; one the list doesn't hold shows as nothing picked, so staff pick again. */}
       <Field label="Province *">
         <NativeSelect
-          value={formProvince(value.province)}
+          value={listedName(provinces, value.province)}
           onChange={(e) => onChange({ province: e.target.value, district: "", city: "" })}
         >
           <option value="">Select province…</option>
-          {SRI_LANKA_PROVINCES.map((p) => (
+          {provinces.map((p) => (
             <option key={p} value={p}>
               {p}
             </option>
@@ -50,7 +45,7 @@ export function DriverLocationFields({
       </Field>
       <Field label="District *">
         <NativeSelect
-          value={formDistrict(value.district)}
+          value={listedName(districts, value.district)}
           onChange={(e) => onChange({ district: e.target.value, city: "" })}
           disabled={!value.province}
         >
@@ -63,29 +58,26 @@ export function DriverLocationFields({
         </NativeSelect>
       </Field>
       <Field label="City *">
-        {cityList.isSuccess && cities.length === 0 ? (
-          // Nothing listed for this district, so there is nothing to pick from.
-          <Input
-            value={value.city}
-            onChange={(e) => onChange({ city: e.target.value })}
-            placeholder="No cities are listed for this district — type it"
-          />
-        ) : (
-          <NativeSelect
-            value={value.city}
-            onChange={(e) => onChange({ city: e.target.value })}
-            disabled={!value.district || cityList.isLoading}
-          >
-            <option value="">
-              {!value.district ? "Select district first…" : cityList.isLoading ? "Loading cities…" : "Select city…"}
+        <NativeSelect
+          value={listedCity(cities, value.city)}
+          onChange={(e) => onChange({ city: e.target.value })}
+          disabled={!value.district || cityList.isLoading || (cityList.isSuccess && cities.length === 0)}
+        >
+          <option value="">
+            {!value.district
+              ? "Select district first…"
+              : cityList.isLoading
+                ? "Loading cities…"
+                : cityList.isSuccess && cities.length === 0
+                  ? "No cities are listed for this district"
+                  : "Select city…"}
+          </option>
+          {cityOptions(cities).map((c) => (
+            <option key={c} value={c}>
+              {c}
             </option>
-            {cityOptions(cities, value.city).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </NativeSelect>
-        )}
+          ))}
+        </NativeSelect>
         {cityList.isError && (
           <p className="text-xs text-destructive">
             The cities for this district couldn&apos;t be loaded.{" "}
