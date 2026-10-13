@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { AlertTriangle, Bike, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { DriverCreateDialog } from "@/components/drivers/driver-create-dialog";
@@ -80,13 +80,10 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-/** The driver's account status, flagged in red when suspended or rejected. */
+/** The driver's account status in the same colours as the driver pages: green approved, amber
+ * pending / unfinished, red suspended / rejected, grey deleted. */
 function DriverStatusBadge({ status }: { status: string }) {
-  return (
-    <Badge variant={FLAGGED_DRIVER_STATUSES.has(status) ? "destructive" : "secondary"} className="shrink-0 capitalize">
-      {status}
-    </Badge>
-  );
+  return <StatusBadge value={status} />;
 }
 
 /** An unfinished signup: what it still needs, from the driver record (the same query the
