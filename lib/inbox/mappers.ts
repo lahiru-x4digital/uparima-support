@@ -200,6 +200,18 @@ export function detailToConversation(
   const leadMessages = whatsappSession?.length
     ? whatsappSession.map((m) => botMessage(m, customerName))
     : [firstMessage(ticket, customerName, now)];
+  // A WhatsApp template sent from the portal is logged both in the bot session and as a staff
+  // reply; show it once (the bot-session copy) by dropping the reply that mirrors it.
+  const mirroredReply = (r: TicketReply) =>
+    !r.id.startsWith("tmp-") &&
+    r.isStaffReply &&
+    !!whatsappSession?.some(
+      (m) =>
+        m.direction === "out" &&
+        m.body.trim() === r.message.trim() &&
+        Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000,
+    );
+  const visibleReplies = replies.filter((r) => !mirroredReply(r));
   return {
     ...base(ticket, staff, now, canReply),
     // Fetching detail is what marks a ticket seen server-side, so the
@@ -216,7 +228,7 @@ export function detailToConversation(
     submitter,
     messages: [
       ...leadMessages,
-      ...[...replies]
+      ...[...visibleReplies]
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         .map((r) => replyMessage(r, customerName, staff, now)),
     ],
