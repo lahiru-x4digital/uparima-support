@@ -3,8 +3,8 @@ import type { TicketListParams } from "@/types/ticket";
 
 /**
  * The part of the filters the backend can apply: ticket status, the WhatsApp
- * and email channels, and the "needs contact" queue. Everything else (search, other
- * channels, "unassigned") is applied to the loaded pages in the browser.
+ * and email channels, the "needs contact" queue, assignee and text search. Everything
+ * else (other channels) is applied to the loaded pages in the browser.
  */
 export function toListParams(filters: ConversationFilters, meId: number | null = null): TicketListParams {
   const params: TicketListParams = {};
@@ -30,6 +30,8 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
   if (filters.assignee === "unassigned") params.unassigned = true;
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
   if (filters.channel === "email") params.source = "email";
+  const search = filters.search.trim();
+  if (search) params.search = search;
   return params;
 }
 
@@ -46,7 +48,8 @@ export function applyClientFilters(
   filters: ConversationFilters,
   meId: number | null,
 ): Conversation[] {
-  const q = filters.search.trim().toLowerCase();
+  // Text search is applied by the backend (see toListParams), so it reaches
+  // every page; filtering it again here could only hide rows it matched.
   return conversations.filter((c) => {
     if (filters.status === "needs_contact" && c.status === "bot_only" && !c.needsContact) return false;
     // Ticket rows are already server-filtered to incompleteDriver=true for
@@ -61,7 +64,6 @@ export function applyClientFilters(
     if (filters.channel !== "all" && c.channel !== filters.channel) return false;
     if (filters.assignee === "mine" && (meId == null || c.assignedToUserId !== meId)) return false;
     if (filters.assignee === "unassigned" && c.assignedToUserId !== null) return false;
-    if (!q) return true;
-    return [c.customerName, c.ticketNumber, c.phone, c.subject].some((v) => v.toLowerCase().includes(q));
+    return true;
   });
 }

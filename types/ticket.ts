@@ -163,6 +163,8 @@ export interface TicketListParams {
   autoClosed?: boolean;
   /** "queued" = the routing queue: waiting for a matching agent. */
   routingStatus?: RoutingStatus;
+  /** Matches ticket number, subject and sender name/phone/email across all pages. */
+  search?: string;
 }
 
 export interface Staff {

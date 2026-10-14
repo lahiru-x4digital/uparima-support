@@ -46,7 +46,7 @@ export function FilterBar({ filters, needsContactCount, myOpenCount, onChange, h
         <Input
           value={filters.search}
           onChange={(e) => onChange({ search: e.target.value })}
-          placeholder="Search loaded: name, ticket, phone…"
+          placeholder="Search name, ticket, phone…"
           aria-label="Search conversations"
           className="pl-8"
         />

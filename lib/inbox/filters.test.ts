@@ -52,10 +52,9 @@ describe("applyClientFilters", () => {
   ];
   const ids = (cs: Conversation[]) => cs.map((c) => c.id);
 
-  it("searches name, ticket number and phone", () => {
-    expect(ids(applyClientFilters(list, filters({ search: "kamal" }), 5))).toEqual(["a"]);
-    expect(ids(applyClientFilters(list, filters({ search: "tkt-2" }), 5))).toEqual(["b"]);
-    expect(ids(applyClientFilters(list, filters({ search: "0000" }), 5))).toEqual(["b"]);
+  it("leaves text search to the backend", () => {
+    expect(ids(applyClientFilters(list, filters({ search: "kamal" }), 5))).toEqual(["a", "b"]);
+    expect(toListParams(filters({ search: "  kamal " }), 5).search).toBe("kamal");
   });
 
   it("filters by channel and assignee", () => {

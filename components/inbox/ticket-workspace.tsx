@@ -9,6 +9,7 @@ import { assignTicket } from "@/lib/services/tickets.service";
 import { useAuth } from "@/lib/auth-context";
 import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
 import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
@@ -75,14 +76,17 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const canUpdate = useCan("support-ticket.update");
   const canSeeEmail = useCan("email-account.view");
 
-  const list = useTicketList(filters, me?.id ?? user?.id ?? null);
+  // Search runs on the backend so it covers every page; wait for typing to pause before asking.
+  const search = useDebouncedValue(filters.search);
+  const queryFilters = useMemo(() => ({ ...filters, search }), [filters, search]);
+  const list = useTicketList(queryFilters, me?.id ?? user?.id ?? null);
   const needsContact = useTicketCount("needs-contact", { needsContact: true });
   const myId = me?.id ?? user?.id ?? null;
   const myPending = useTicketCount("mine-pending", { assignedToUserId: myId ?? undefined, status: "pending" }, myId != null);
   const myInReview = useTicketCount("mine-in-review", { assignedToUserId: myId ?? undefined, status: "in_review" }, myId != null);
   const myOpenCount = (myPending.data ?? 0) + (myInReview.data ?? 0);
   const botList = useBotChatList(
-    view === "bot" ? filters.search.trim() : "",
+    search.trim(),
     view === "bot" && filters.status === "incomplete_driver",
     view === "bot" && filters.status === "to_onboard",
   );
