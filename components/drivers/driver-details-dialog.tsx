@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Ban, History, MoreHorizontal, Pencil, Sparkles, Star, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -59,9 +59,16 @@ export function DriverDetailsDialog({
   const canViewDrivers = useCan("driver.view");
   const canRegister = useCan("driver.manual-register");
   const canView = canViewDrivers || canRegister;
-  const { data, isLoading, error } = useDriverDetail(driverId);
-
   const [mode, setMode] = useState<Mode>({ kind: "view" });
+  // Refreshes on its own (the bot saves documents after this was loaded) — but never underneath an edit.
+  const { data, isLoading, error, refetch } = useDriverDetail(driverId, {
+    live: mode.kind === "edit" ? false : open ? "always" : "incomplete",
+  });
+  // Opening it shows what is saved now, not what was fetched when the panel first loaded.
+  useEffect(() => {
+    if (open) void refetch();
+  }, [open, refetch]);
+
   const [dirty, setDirty] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
