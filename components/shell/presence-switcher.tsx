@@ -20,7 +20,7 @@ const skillLabel = (key: string) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
-/** My Online / Away / Offline switch, with today's shift and open load. Only Online agents are routed tickets. */
+/** My Online / Away / Offline switch, with today's shift and pending count. Only Online agents are routed tickets. */
 export function PresenceSwitcher({ collapsed }: { collapsed: boolean }) {
   const { data } = useMyRouting();
   const setPresence = useSetPresence();
@@ -70,7 +70,12 @@ export function PresenceSwitcher({ collapsed }: { collapsed: boolean }) {
       <div className="mt-2 space-y-1 px-0.5 text-sidebar-foreground/75">
         <p className="flex justify-between gap-2">
           <span title="Your shift today (Sri Lanka time)">{shiftText(data.todayShifts)}</span>
-          <span className="shrink-0 font-medium text-sidebar-foreground">{data.openLoad} open</span>
+          <span
+            className="shrink-0 font-medium text-sidebar-foreground"
+            title="Tickets assigned to you that are waiting for a response. Contacted tickets (in review) aren't counted."
+          >
+            {data.openLoad} pending
+          </span>
         </p>
         {outOfShift && (
           <p className="rounded-md bg-amber-400/20 px-1.5 py-1 text-amber-100">
