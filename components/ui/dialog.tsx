@@ -41,15 +41,20 @@ function DialogOverlay({
 
 function DialogContent({
   className,
+  overlayClassName,
   children,
   showCloseButton = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  /** Extra classes for the backdrop. Setting it also renders the backdrop when this dialog is
+   * nested in another one — Base UI skips a nested dialog's backdrop by default, which would
+   * leave the dialog underneath sharp and bright. */
+  overlayClassName?: string
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} forceRender={overlayClassName != null} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(

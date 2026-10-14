@@ -21,6 +21,10 @@ function NativeSelect({
         data-slot="native-select"
         className={cn(
           "h-8 w-full appearance-none rounded-lg border border-input bg-transparent py-1 pr-8 pl-2.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive dark:bg-input/30",
+          // The popup list is drawn by the browser. Without these it stays white while the text
+          // follows the dark theme, so options turn invisible: tell the browser the scheme and
+          // give the options a solid background of their own.
+          "dark:[color-scheme:dark] [&>option]:bg-popover [&>option]:text-popover-foreground",
           className,
         )}
         {...props}

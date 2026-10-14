@@ -125,7 +125,14 @@ export function DiscardChangesModal({
   onDiscard: () => void;
 }) {
   return (
-    <Modal open={open} onClose={onKeep} title="Discard unsaved changes?" className="sm:max-w-sm">
+    <Modal
+      open={open}
+      onClose={onKeep}
+      title="Discard unsaved changes?"
+      className="sm:max-w-sm"
+      // Always opens over the edit dialog: dim and blur it so it is clearly out of reach.
+      overlayClassName="bg-black/60 supports-backdrop-filter:backdrop-blur-sm"
+    >
       <p className="text-sm text-muted-foreground">The changes you made to this driver haven&apos;t been saved.</p>
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="outline" onClick={onKeep} autoFocus>

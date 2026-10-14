@@ -15,16 +15,22 @@ export function Modal({
   title,
   children,
   className,
+  overlayClassName,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
   children: ReactNode;
   className?: string;
+  /** Backdrop classes — use a stronger dim when this modal opens on top of another dialog. */
+  overlayClassName?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className={cn("flex max-h-[90vh] flex-col gap-3 sm:max-w-lg", className)}>
+      <DialogContent
+        overlayClassName={overlayClassName}
+        className={cn("flex max-h-[90vh] flex-col gap-3 sm:max-w-lg", className)}
+      >
         {title && (
           <DialogHeader className="pr-8">
             <DialogTitle className="text-base">{title}</DialogTitle>
