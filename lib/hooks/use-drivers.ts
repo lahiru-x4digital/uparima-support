@@ -42,9 +42,26 @@ export function usePendingDrivers() {
   return useQuery({ queryKey: driverKeys.pending, queryFn: listPendingDrivers, enabled: !!user });
 }
 
-export function useDriverDetail(id: string) {
+const LIVE_DRIVER_POLL_MS = 5_000;
+
+/**
+ * One driver. `live` keeps it fresh while it is on screen, for a signup the WhatsApp bot is still
+ * filling in (documents and details arrive after the page loaded): "incomplete" polls only while
+ * the signup is unfinished, "always" polls whatever the status. Leave it off while the data feeds
+ * an edit form — a refresh underneath a half-typed edit would shift what counts as changed.
+ */
+export function useDriverDetail(id: string, options: { live?: "incomplete" | "always" | false } = {}) {
   const { user } = useAuth();
-  return useQuery({ queryKey: driverKeys.detail(id), queryFn: () => getDriver(id), enabled: !!user });
+  const { live = false } = options;
+  return useQuery({
+    queryKey: driverKeys.detail(id),
+    queryFn: () => getDriver(id),
+    enabled: !!user,
+    refetchInterval: (query) => {
+      if (!live) return false;
+      return live === "always" || query.state.data?.driver.status === "incomplete" ? LIVE_DRIVER_POLL_MS : false;
+    },
+  });
 }
 
 /** The provinces, named as the driver app saves them. */
