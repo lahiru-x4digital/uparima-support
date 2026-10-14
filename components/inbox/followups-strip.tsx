@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bookmark, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronUp, Clock, X } from "lucide-react";
 import { toast } from "sonner";
-import { useMyFollowups } from "@/lib/hooks/use-driver-followups";
+import { useDriverFollowupActions, useMyFollowups } from "@/lib/hooks/use-driver-followups";
 import { formatTime } from "@/lib/inbox/mappers";
 import { cn } from "@/lib/utils";
 import { AlertDot } from "./option-select";
@@ -17,6 +17,7 @@ const isOverdue = (dueAt: string | null) => !!dueAt && new Date(dueAt).getTime()
  */
 export function FollowupsStrip({ onOpenTicket }: { onOpenTicket: (ticketId: string) => void }) {
   const { data } = useMyFollowups();
+  const { remove } = useDriverFollowupActions();
   const [open, setOpen] = useState(false);
   const followups = data ?? [];
   const needsLook = followups.filter((f) => f.newFiles > 0 || isOverdue(f.dueAt)).length;
@@ -60,13 +61,13 @@ export function FollowupsStrip({ onOpenTicket }: { onOpenTicket: (ticketId: stri
             const overdue = isOverdue(f.dueAt);
             const waiting = f.items.filter((i) => !i.received).map((i) => i.slot);
             return (
-              <li key={f.id}>
+              <li key={f.id} className="relative">
                 <button
                   type="button"
                   disabled={!f.ticket}
                   title={f.ticket ? "Open the ticket" : "No ticket linked"}
                   onClick={() => f.ticket && onOpenTicket(f.ticket.id)}
-                  className="flex w-full flex-col gap-0.5 rounded-md px-1.5 py-1 text-left text-xs enabled:hover:bg-muted"
+                  className="flex w-full flex-col gap-0.5 rounded-md py-1 pr-7 pl-1.5 text-left text-xs enabled:hover:bg-muted"
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="truncate font-medium">{f.driver.name ?? f.driver.phone ?? `Driver #${f.driverId}`}</span>
@@ -83,6 +84,16 @@ export function FollowupsStrip({ onOpenTicket }: { onOpenTicket: (ticketId: stri
                       {formatTime(f.dueAt)}
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Remove follow-up for ${f.driver.name ?? f.driver.phone ?? `driver #${f.driverId}`}`}
+                  title="Remove from my follow-ups"
+                  disabled={remove.isPending}
+                  onClick={() => remove.mutate(f.id)}
+                  className="absolute top-1 right-1 flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  <X className="size-3.5" />
                 </button>
               </li>
             );
