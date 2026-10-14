@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Conversation, ConversationStatus } from "@/types/inbox";
 import { CHANNELS, STATUSES, initials } from "./meta";
 import { OptionSelect } from "./option-select";
+import { HeaderCalls, LogCallButton } from "./ticket-calls";
 
 const STATUS_OPTIONS = (Object.keys(STATUSES) as ConversationStatus[])
   .filter((s) => s !== "bot_only")
@@ -50,11 +51,15 @@ export function ChatHeader({
         ) : null}
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-sm font-semibold">{c.customerName}</h2>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2 className="truncate text-sm font-semibold">{c.customerName}</h2>
+          {c.ticketNumber && <HeaderCalls ticketId={c.id} />}
+        </div>
         <p className="truncate text-xs text-muted-foreground">
           {c.ticketNumber ? `${c.ticketNumber} · ` : ""}{CHANNELS[c.channel].label}{c.channel === "email" ? ` · ${c.email ?? ""}` : ` · ${c.role === "rider" ? "Rider" : "Driver"}`}
         </p>
       </div>
+      {canUpdate && c.ticketNumber && <LogCallButton ticketId={c.id} />}
       {canUpdate && c.ticketNumber && (
         <OptionSelect label="Status" value={c.status} options={STATUS_OPTIONS} onChange={onStatusChange} />
       )}

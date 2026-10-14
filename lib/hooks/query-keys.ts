@@ -86,6 +86,11 @@ export const driverFollowupKeys = {
   mine: ["driver-followups", "mine"] as const,
 };
 
+export const ticketCallKeys = {
+  all: ["ticket-calls"] as const,
+  list: (ticketId: string) => ["ticket-calls", ticketId] as const,
+};
+
 export const driverNoteKeys = {
   all: ["driver-notes"] as const,
   list: (driverId: number | string) => ["driver-notes", String(driverId)] as const,
