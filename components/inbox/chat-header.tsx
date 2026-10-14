@@ -51,15 +51,17 @@ export function ChatHeader({
         ) : null}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <h2 className="truncate text-sm font-semibold">{c.customerName}</h2>
-          {c.ticketNumber && <HeaderCalls ticketId={c.id} />}
-        </div>
+        <h2 className="truncate text-sm font-semibold">{c.customerName}</h2>
         <p className="truncate text-xs text-muted-foreground">
           {c.ticketNumber ? `${c.ticketNumber} · ` : ""}{CHANNELS[c.channel].label}{c.channel === "email" ? ` · ${c.email ?? ""}` : ` · ${c.role === "rider" ? "Rider" : "Driver"}`}
         </p>
       </div>
-      {canUpdate && c.ticketNumber && <LogCallButton ticketId={c.id} />}
+      {c.ticketNumber && (
+        <div className="flex shrink-0 items-center gap-1.5">
+          <HeaderCalls ticketId={c.id} />
+          {canUpdate && <LogCallButton ticketId={c.id} />}
+        </div>
+      )}
       {canUpdate && c.ticketNumber && (
         <OptionSelect label="Status" value={c.status} options={STATUS_OPTIONS} onChange={onStatusChange} />
       )}

@@ -53,7 +53,7 @@ function toLocalInput(date: Date): string {
 
 /**
  * The calls agents made to the customer about a ticket, as chips beside the customer's name in the
- * chat header: the 1st, 2nd and 3rd call (outcome as an icon; its name and the time are on hover) and a "History" button.
+ * chat header: the 1st, 2nd and 3rd call, in order, as an icon each (which call it is, the outcome, the time and who made it are on hover) and a "History" button.
  * Later calls are only in the history popover, which has every call's note and who made it. Shows
  * nothing until the first call is logged — calls are logged from <LogCallButton>.
  */
@@ -70,9 +70,8 @@ export function HeaderCalls({ ticketId }: { ticketId: string }) {
           title={`${ordinal(call.number)} call — ${STATUS[call.status].label}, ${formatDateTime(call.calledAt)} by ${
             call.caller.name ?? `Staff #${call.caller.id}`
           }`}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] leading-4"
+          className="inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5"
         >
-          <span className="text-muted-foreground">{ordinal(call.number)} call</span>
           <StatusIcon status={call.status} />
         </span>
       ))}
