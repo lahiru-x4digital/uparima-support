@@ -2,19 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { io } from "socket.io-client";
 import { toast } from "sonner";
 import { driverFollowupKeys, driverNoteKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { getToken } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
-import { env } from "@/lib/env";
+import { acquireDeskSocket, releaseDeskSocket } from "@/lib/realtime/desk-socket";
 import { topicLabel } from "@/components/inbox/meta";
 import type { HandoffEvent } from "@/types/ticket";
 
-// The rides gateway is the `/rides` Socket.IO namespace on the same server as the REST
-// API, one level up from the `/api/v1` prefix. Staff accounts join `support-desk:alerts`
-// on connect, so there is nothing to subscribe to.
-const SOCKET_ORIGIN = env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 const BASE_TITLE = "Uparima Support";
 
 interface CriticalIncident {
@@ -25,7 +20,8 @@ interface CriticalIncident {
 /**
  * Live alerts for the signed-in agent: a driver asking the WhatsApp bot for a person
  * (`support:handoff`) refreshes the inbox and raises a toast and a tab-title badge; a
- * critical incident raises an urgent toast. Open it once, high in the tree.
+ * critical incident raises an urgent toast. Open it once, high in the tree. Shares the one desk
+ * socket with the routing alerts (see desk-socket.ts).
  */
 export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: string) => void) {
   const qc = useQueryClient();
@@ -38,8 +34,7 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
   });
 
   useEffect(() => {
-    const token = getToken();
-    if (!enabled || !token) return;
+    if (!enabled || !getToken()) return;
 
     let unseen = 0;
     const clearBadge = () => {
@@ -51,13 +46,9 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
     };
     document.addEventListener("visibilitychange", onVisible);
 
-    // A function, so a reconnect after the access token was refreshed sends the new one.
-    const socket = io(`${SOCKET_ORIGIN}/rides`, {
-      transports: ["websocket"],
-      auth: (send) => send({ token: getToken() }),
-    });
+    const socket = acquireDeskSocket();
 
-    socket.on("support:handoff", (event: HandoffEvent) => {
+    const onHandoff = (event: HandoffEvent) => {
       void qc.invalidateQueries({ queryKey: ticketKeys.all });
       // Already routed to a colleague: theirs to handle, so no toast here.
       if (event.assignedToUserId != null && event.assignedToUserId !== meIdRef.current) return;
@@ -72,39 +63,40 @@ export function useSupportAlerts(enabled: boolean, onOpenTicket?: (ticketId: str
         unseen += 1;
         document.title = `(${unseen}) ${BASE_TITLE}`;
       }
-    });
+    };
 
     // A customer wrote, a ticket was opened, or another agent changed it: refresh like a chat would.
-    socket.on("support:ticket_updated", () => {
-      void qc.invalidateQueries({ queryKey: ticketKeys.all });
-    });
+    const onTicketUpdated = () => void qc.invalidateQueries({ queryKey: ticketKeys.all });
 
     // A colleague added, edited or deleted a note on a driver: refresh that driver's notes.
-    socket.on("support:driver_note", (event: { driverId: number }) => {
+    const onDriverNote = (event: { driverId: number }) =>
       void qc.invalidateQueries({ queryKey: driverNoteKeys.list(event.driverId) });
-    });
 
     // A follow-up was set, handed over or finished: refresh every follow-up list.
-    socket.on("support:driver_followup", () => {
-      void qc.invalidateQueries({ queryKey: driverFollowupKeys.all });
-    });
+    const onDriverFollowup = () => void qc.invalidateQueries({ queryKey: driverFollowupKeys.all });
 
-    socket.on("incident:critical", (incident: CriticalIncident) => {
+    const onCritical = (incident: CriticalIncident) => {
       toast.error("Critical safety incident reported", {
         description: incident.description?.slice(0, 140),
         duration: Infinity,
         closeButton: true,
       });
-    });
+    };
+
+    socket.on("support:handoff", onHandoff);
+    socket.on("support:ticket_updated", onTicketUpdated);
+    socket.on("support:driver_note", onDriverNote);
+    socket.on("support:driver_followup", onDriverFollowup);
+    socket.on("incident:critical", onCritical);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
-      socket.off("support:handoff");
-      socket.off("support:ticket_updated");
-      socket.off("support:driver_note");
-      socket.off("support:driver_followup");
-      socket.off("incident:critical");
-      socket.disconnect();
+      socket.off("support:handoff", onHandoff);
+      socket.off("support:ticket_updated", onTicketUpdated);
+      socket.off("support:driver_note", onDriverNote);
+      socket.off("support:driver_followup", onDriverFollowup);
+      socket.off("incident:critical", onCritical);
+      releaseDeskSocket();
       clearBadge();
     };
   }, [enabled, qc]);

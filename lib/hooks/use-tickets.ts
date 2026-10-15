@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
 import { toListParams } from "@/lib/inbox/filters";
-import { getTicket, listTickets } from "@/lib/services/tickets.service";
+import { getAssignmentHistory, getTicket, listTickets } from "@/lib/services/tickets.service";
 import type { ConversationFilters } from "@/types/inbox";
 import type { Paginated, TicketListParams, TicketRow } from "@/types/ticket";
 import { ticketKeys } from "./query-keys";
@@ -37,6 +37,15 @@ export function useTicketDetail(id: string | null) {
     enabled: !!id,
     refetchInterval: THREAD_POLL_MS,
     refetchIntervalInBackground: false,
+  });
+}
+
+/** The ticket's assignment path (who got it, why it moved). Refreshed with every ticket list refresh. */
+export function useAssignmentHistory(id: string | null) {
+  return useQuery({
+    queryKey: ticketKeys.assignmentHistory(id ?? ""),
+    queryFn: () => getAssignmentHistory(id as string),
+    enabled: !!id,
   });
 }
 

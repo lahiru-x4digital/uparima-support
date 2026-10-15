@@ -57,6 +57,17 @@ export function formatTime(iso: string, now: Date = new Date()): string {
     : date.toLocaleDateString([], { day: "numeric", month: "short" });
 }
 
+/** "just now", "5m ago", "3h ago", "2d ago". */
+export function timeAgo(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const minutes = Math.max(0, Math.floor((now.getTime() - then) / 60_000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)}h ago`;
+  return `${Math.floor(minutes / (24 * 60))}d ago`;
+}
+
 export interface SlaState {
   label: string;
   overdue: boolean;
@@ -122,6 +133,7 @@ function base(
       autoClosed: !!ticket.autoClosed,
       autoCloseReason: ticket.autoCloseReason ?? null,
       assignedAt: ticket.assignedAt ?? null,
+      firstOpenedAt: ticket.firstOpenedAt ?? null,
       assignmentMethod: ticket.assignmentMethod ?? null,
       outOfShift: !!ticket.assignedOutOfShift,
       onboardingReason: ticket.onboardingReason ?? null,

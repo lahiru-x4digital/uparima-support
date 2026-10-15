@@ -23,7 +23,7 @@ import {
   rowToConversation,
 } from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
-import { OPEN_TICKET_EVENT } from "@/components/realtime/desk-realtime-provider";
+import { OPEN_TICKET_EVENT, TICKET_TAKEN_EVENT } from "@/components/realtime/desk-realtime-provider";
 import { cn } from "@/lib/utils";
 import type { Channel, Conversation, ConversationFilters } from "@/types/inbox";
 import { ChatPane } from "./chat-pane";
@@ -84,7 +84,6 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const myId = me?.id ?? user?.id ?? null;
   const myPending = useTicketCount("mine-pending", { assignedToUserId: myId ?? undefined, status: "pending" }, myId != null);
   const myInReview = useTicketCount("mine-in-review", { assignedToUserId: myId ?? undefined, status: "in_review" }, myId != null);
-  const myOpenCount = (myPending.data ?? 0) + (myInReview.data ?? 0);
   const botList = useBotChatList(
     search.trim(),
     view === "bot" && filters.status === "incomplete_driver",
@@ -100,9 +99,12 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const merged = useMemo(() => {
     // A channel-locked list (Email) is tickets only: bot chats are WhatsApp.
     if (lockedChannel || view === "tickets") return ticketConversations;
+    // "Assigned to me" is ordered by the backend, newest assignment first: re-sorting by creation
+    // date would bury a ticket that just landed on me. Bot chats have no assignee, so none are in it.
+    if (filters.assignee === "mine" && view !== "bot") return ticketConversations;
     if (view === "bot") return allBotConversations;
     return [...ticketConversations, ...allBotConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [lockedChannel, view, ticketConversations, allBotConversations]);
+  }, [lockedChannel, view, filters.assignee, ticketConversations, allBotConversations]);
 
   // Bot-only chats have no assignee, so the Assignee filter doesn't apply on the Bot chats tab.
   const visible = useMemo(
@@ -142,6 +144,20 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     if (detail.data) return detailToConversation(detail.data, row, staff);
     return ticketConversations.find((c) => c.id === activeId) ?? null;
   }, [activeId, activeBotRef, botThread.data, allBotConversations, rows, detail.data, ticketConversations, staff]);
+
+  // A ticket I had was just moved to someone else (support:unassigned): while I am looking at it,
+  // warn before another reply goes out, unless I choose to reply anyway.
+  const [takenAway, setTakenAway] = useState<string | null>(null);
+  const [replyAnywayId, setReplyAnywayId] = useState<string | null>(null);
+  useEffect(() => {
+    const onTaken = (e: Event) => setTakenAway((e as CustomEvent<{ ticketId: string }>).detail.ticketId);
+    window.addEventListener(TICKET_TAKEN_EVENT, onTaken);
+    return () => window.removeEventListener(TICKET_TAKEN_EVENT, onTaken);
+  }, []);
+  const movedAway =
+    active && takenAway === active.id && replyAnywayId !== active.id && active.assignedToUserId !== myId
+      ? { to: active.assignedTo }
+      : null;
 
   const ticketId = isBotActive ? "" : (activeId ?? "");
   const reply = useReply(ticketId);
@@ -191,7 +207,8 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
       <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
         <FollowupsStrip onOpenTicket={select} />
         {!botView && (
-          <FilterBar filters={filters} needsContactCount={needsContact.data} myOpenCount={myOpenCount} hideChannel={!!lockedChannel}
+          <FilterBar filters={filters} needsContactCount={needsContact.data} myPendingCount={myPending.data}
+            myInReviewCount={myInReview.data} hideChannel={!!lockedChannel}
             onChange={(p) => onFiltersChange({ ...given, ...p })} />
         )}
         {!lockedChannel && filters.channel === "email" && canSeeEmail && onOpenMailbox && (
@@ -211,6 +228,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
           loadingMore={botView ? botList.isFetchingNextPage : list.isFetchingNextPage}
           filtered={filtered}
           markOpen={filters.assignee === "mine"}
+          meId={myId}
           onSelect={select}
           onRetry={() => (botView ? void botList.refetch() : void list.refetch())}
           onLoadMore={() => (botView ? void botList.fetchNextPage() : void list.fetchNextPage())}
@@ -228,6 +246,8 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             contextOpen={contextOpen}
             canReply={canReplyPerm}
             canUpdate={canUpdate}
+            movedAway={movedAway}
+            onReplyAnyway={() => active && setReplyAnywayId(active.id)}
             markingContacted={markContacted.isPending}
             convertingToTicket={convertToTicket.isPending}
             onRetry={() => (isBotActive ? void botThread.refetch() : void detail.refetch())}

@@ -16,6 +16,8 @@ interface Props {
   filtered: boolean;
   /** Show the red "unfinished" mark on each open card (the "Assigned to me" view). */
   markOpen?: boolean;
+  /** The signed-in agent, to mark tickets that just landed on them. */
+  meId?: number | null;
   onSelect: (id: string) => void;
   onRetry: () => void;
   onLoadMore: () => void;
@@ -39,7 +41,7 @@ function Skeleton() {
 }
 
 export function ConversationList({
-  conversations, activeId, loading, error, hasMore, loadingMore, filtered, markOpen, onSelect, onRetry, onLoadMore,
+  conversations, activeId, loading, error, hasMore, loadingMore, filtered, markOpen, meId, onSelect, onRetry, onLoadMore,
 }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +85,7 @@ export function ConversationList({
   return (
     <ScrollArea className="min-h-0 flex-1">
       {conversations.map((c) => (
-        <ConversationItem key={c.id} conversation={c} active={c.id === activeId} markOpen={markOpen} onSelect={() => onSelect(c.id)} />
+        <ConversationItem key={c.id} conversation={c} active={c.id === activeId} markOpen={markOpen} meId={meId} onSelect={() => onSelect(c.id)} />
       ))}
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center p-3">

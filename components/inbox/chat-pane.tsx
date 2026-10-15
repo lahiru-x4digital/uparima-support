@@ -16,6 +16,9 @@ interface Props {
   contextOpen: boolean;
   canReply: boolean;
   canUpdate: boolean;
+  /** The ticket was taken off me while open: who has it now (null = nobody). Replies are held back. */
+  movedAway?: { to: string | null } | null;
+  onReplyAnyway?: () => void;
   markingContacted: boolean;
   convertingToTicket: boolean;
   onRetry: () => void;
@@ -32,7 +35,7 @@ interface Props {
 }
 
 export function ChatPane({
-  conversation, loading, error, contextOpen, canReply, canUpdate, markingContacted, convertingToTicket,
+  conversation, loading, error, contextOpen, canReply, canUpdate, movedAway, onReplyAnyway, markingContacted, convertingToTicket,
   onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
 }: Props) {
   if (!conversation) {
@@ -63,7 +66,15 @@ export function ChatPane({
       ) : (
         <MessageList conversationId={conversation.id} messages={conversation.messages} />
       )}
-      {canReply ? (
+      {movedAway ? (
+        <div className="flex flex-wrap items-center justify-center gap-3 border-t bg-amber-50 p-3 text-center text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">
+          <span>
+            {movedAway.to ? `This ticket now belongs to ${movedAway.to}.` : "This ticket no longer has an owner."} Replying here could clash
+            with them.
+          </span>
+          <Button size="sm" variant="outline" onClick={onReplyAnyway}>Reply anyway</Button>
+        </div>
+      ) : canReply ? (
         conversation.channel === "whatsapp" && !conversation.isCurrentSession ? (
           // A reply always reaches the customer now, in their current
           // session — no template or free text here helps a session that

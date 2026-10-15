@@ -65,6 +65,29 @@ export const QUEUED_REASONS: Record<string, string> = {
   no_qualified_agent: "No agent has this language and skill: ask an admin to add it",
 };
 
+/** Why a ticket was given to an agent, or taken from one (the assignment history's `reason`). */
+export const ASSIGNMENT_REASONS: Record<string, string> = {
+  new_ticket: "New ticket",
+  queue_drain: "Picked up from the queue",
+  reassigned: "Moved from another agent",
+  rebalanced: "Rebalanced to even out the load",
+  agent_offline: "The agent went offline",
+  agent_away_timeout: "The agent was away too long",
+  skill_or_language_mismatch: "Its skill or language changed",
+  manual: "Assigned by staff",
+  no_online_match: "No matching agent was online",
+  no_qualified_agent: "No agent has the skill or language",
+};
+
+/** Why the router picked this agent among the online ones (the history's `meta.rule`). */
+export const ASSIGNMENT_RULES: Record<string, string> = {
+  previous_agent: "Returning customer: handled by this agent before",
+  only_candidate: "The only matching agent online",
+  least_load: "Fewest pending tickets",
+  tie_break: "Equal load: the one assigned longest ago",
+  rebalance: "Spread from a busier agent",
+};
+
 export const AUTO_CLOSE_REASONS: Record<string, string> = {
   driver_registered: "Closed automatically: the driver finished signing up in the bot",
 };

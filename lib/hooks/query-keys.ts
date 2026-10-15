@@ -8,6 +8,7 @@ export const ticketKeys = {
   lists: () => ["tickets", "list"] as const,
   list: (params: TicketListParams) => ["tickets", "list", params] as const,
   detail: (id: string) => ["tickets", "detail", id] as const,
+  assignmentHistory: (id: string) => ["tickets", "assignment-history", id] as const,
   count: (name: string) => ["tickets", "count", name] as const,
 };
 

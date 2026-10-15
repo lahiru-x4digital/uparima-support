@@ -42,6 +42,8 @@ export interface Ticket {
   autoClosed?: boolean;
   autoCloseReason?: string | null;
   assignedAt?: string | null;
+  /** When the assignee first opened it; cleared on every (re)assignment, so null = new to them. */
+  firstOpenedAt?: string | null;
   assignmentMethod?: AssignmentMethod | null;
   /** Auto-assigned to an online agent outside their shift (nobody in shift matched). */
   assignedOutOfShift?: boolean;
@@ -157,6 +159,8 @@ export interface TicketListParams {
   toOnboard?: boolean;
   /** Only tickets assigned to this staff user (users.id). */
   assignedToUserId?: number;
+  /** "assigned" = most recently assigned first, pending before in review (the "Assigned to me" view). */
+  sort?: "assigned";
   /** Only tickets nobody owns yet. */
   unassigned?: boolean;
   /** Only tickets the system closed (true) or not (false). */
@@ -224,4 +228,20 @@ export interface AssignedEvent {
   channel: string;
   outOfShift: boolean;
   method: AssignmentMethod;
+}
+
+/** One step of a ticket's assignment path (GET /support-desk/tickets/:id/assignment-history). */
+export interface AssignmentStep {
+  id: string;
+  type: "assigned" | "auto_assigned" | "unassigned" | "queued";
+  at: string;
+  /** new_ticket, queue_drain, reassigned, rebalanced, agent_offline, manual, no_online_match … */
+  reason: string | null;
+  /** Who did it; null = the system. */
+  by: { id: number; name: string | null } | null;
+  /** The agent it concerns: who got the ticket, or who lost it. */
+  agent: { id: number; name: string | null } | null;
+  /** The agent who held it before. */
+  from: { id: number; name: string | null } | null;
+  meta: Record<string, unknown> | null;
 }

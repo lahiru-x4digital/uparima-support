@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bot, Inbox, Mail } from "lucide-react";
 import { useCan, useMe } from "@/lib/hooks/use-desk";
+import { SHOW_MINE_EVENT, SHOW_MINE_PARAM } from "@/components/realtime/desk-realtime-provider";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
 import { cn } from "@/lib/utils";
 import type { ConversationFilters } from "@/types/inbox";
@@ -20,14 +21,30 @@ const TABS: { key: InboxView; label: string }[] = [
 // Agents start on their own work, on the chats that still need onboarding; "Everyone" in the Status
 // filter and "All" in the Assignee filter are one click away.
 const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "mine" };
+// Everything on my list, any status, newest assignment first: where "N tickets assigned to you" leads.
+const MINE_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine" };
+
+const mineFromUrl = () =>
+  typeof window !== "undefined" && new URLSearchParams(window.location.search).has(SHOW_MINE_PARAM);
 
 /**
  * The support inbox page: a header with the view switch, then the merged conversation workspace
  * (All / Tickets / Bot chats) or the Email mailbox.
  */
 export function InboxShell() {
-  const [filters, setFilters] = useState<ConversationFilters>(DEFAULT_FILTERS);
+  // An assignment toast on another page links to /inbox?mine=1.
+  const [filters, setFilters] = useState<ConversationFilters>(() => (mineFromUrl() ? MINE_FILTERS : DEFAULT_FILTERS));
   const [view, setView] = useState<InboxView>("all");
+  const showMine = useCallback(() => {
+    setView("all");
+    setFilters(MINE_FILTERS);
+  }, []);
+  useEffect(() => {
+    if (mineFromUrl()) window.history.replaceState(null, "", window.location.pathname);
+    // The assignment toast's "View" button while already on this page.
+    window.addEventListener(SHOW_MINE_EVENT, showMine);
+    return () => window.removeEventListener(SHOW_MINE_EVENT, showMine);
+  }, [showMine]);
   const { data: me } = useMe();
   const canSeeEmail = useCan("email-account.view");
   const needsContact = useTicketCount("needs-contact", { needsContact: true });

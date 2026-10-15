@@ -80,3 +80,18 @@ describe("applyClientFilters", () => {
     expect(ids(applyClientFilters(withBotOnly, filters({ status: "needs_contact" }), 5))).toEqual(["a", "b", "bot:waiting"]);
   });
 });
+
+describe("toListParams: Assigned to me", () => {
+  it("orders by the newest assignment so a ticket that just landed on me is on top", () => {
+    expect(toListParams(filters({ assignee: "mine" }), 5)).toEqual({ assignedToUserId: 5, sort: "assigned" });
+  });
+
+  it("does not sort or filter by assignee without a signed-in agent", () => {
+    expect(toListParams(filters({ assignee: "mine" }), null)).toEqual({});
+  });
+
+  it("keeps the default newest-created order for every other assignee view", () => {
+    expect(toListParams(filters({ assignee: "unassigned" }), 5)).toEqual({ unassigned: true });
+    expect(toListParams(filters(), 5)).toEqual({});
+  });
+});

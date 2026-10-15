@@ -26,7 +26,11 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
     params.status = filters.status;
   }
   // "Assigned to me" / "Unassigned" are applied by the backend so they cover every page.
-  if (filters.assignee === "mine" && meId != null) params.assignedToUserId = meId;
+  // Newest assignment first, so a ticket that just landed on me is on top however old it is.
+  if (filters.assignee === "mine" && meId != null) {
+    params.assignedToUserId = meId;
+    params.sort = "assigned";
+  }
   if (filters.assignee === "unassigned") params.unassigned = true;
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
   if (filters.channel === "email") params.source = "email";

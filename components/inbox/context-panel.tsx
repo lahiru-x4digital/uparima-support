@@ -33,6 +33,7 @@ import {
   topicLabel,
 } from "./meta";
 import { OptionSelect } from "./option-select";
+import { AssignmentWhy } from "./assignment-history";
 
 const PRIORITY_OPTIONS = (Object.keys(PRIORITIES) as Priority[]).map((p) => ({ value: p, label: PRIORITIES[p].label }));
 const UNASSIGNED = "__none__";
@@ -267,10 +268,13 @@ function AssignmentNote({ conversation: c }: { conversation: Conversation }) {
   if (!r.assignmentMethod) return null;
   const when = r.assignedAt ? ` · ${formatTime(r.assignedAt)}` : "";
   return (
-    <p className="text-xs text-muted-foreground">
-      {r.assignmentMethod === "auto" ? "Auto-assigned" : "Assigned by staff"}{when}
-      {r.outOfShift && <span className="text-amber-700 dark:text-amber-300"> · outside their shift</span>}
-    </p>
+    <div className="flex flex-col gap-1">
+      <p className="text-xs text-muted-foreground">
+        {r.assignmentMethod === "auto" ? "Auto-assigned" : "Assigned by staff"}{when}
+        {r.outOfShift && <span className="text-amber-700 dark:text-amber-300"> · outside their shift</span>}
+      </p>
+      <AssignmentWhy ticketId={c.ticketNumber ? c.id : null} />
+    </div>
   );
 }
 

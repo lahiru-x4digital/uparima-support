@@ -13,6 +13,7 @@ import {
   rowToConversation,
   slaState,
   whatsappDigits,
+  timeAgo,
 } from "./mappers";
 
 const NOW = new Date("2026-10-06T12:00:00Z");
@@ -414,5 +415,24 @@ describe("productOf", () => {
     expect(productOf("uparima_mart")).toBe("mart");
     expect(productOf("")).toBeNull();
     expect(productOf("something_else")).toBeNull();
+  });
+});
+
+describe("timeAgo", () => {
+  const now = new Date("2026-10-15T12:00:00Z");
+
+  it("reads minutes, hours and days", () => {
+    expect(timeAgo("2026-10-15T11:55:00Z", now)).toBe("5m ago");
+    expect(timeAgo("2026-10-15T09:00:00Z", now)).toBe("3h ago");
+    expect(timeAgo("2026-10-13T12:00:00Z", now)).toBe("2d ago");
+  });
+
+  it("says just now under a minute, and never goes negative for a clock-skewed time", () => {
+    expect(timeAgo("2026-10-15T11:59:40Z", now)).toBe("just now");
+    expect(timeAgo("2026-10-15T12:05:00Z", now)).toBe("just now");
+  });
+
+  it("is empty for a bad date", () => {
+    expect(timeAgo("not a date", now)).toBe("");
   });
 });

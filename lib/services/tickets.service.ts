@@ -1,5 +1,6 @@
 import { apiGet, apiGetPage, apiPatch, apiPost } from "@/lib/api";
 import type {
+  AssignmentStep,
   Ticket,
   TicketDetail,
   TicketListParams,
@@ -13,6 +14,10 @@ export const listTickets = (params: TicketListParams) =>
   apiGetPage<TicketRow>("/support-desk/tickets", { params });
 
 export const getTicket = (id: string) => apiGet<TicketDetail>(`/support-desk/tickets/${id}`);
+
+/** Who the ticket was given to, in order, and why it moved or waited. */
+export const getAssignmentHistory = (id: string) =>
+  apiGet<AssignmentStep[]>(`/support-desk/tickets/${id}/assignment-history`);
 
 /** Multipart: `message` plus any number of `files`. */
 /** `emailTemplateId` (email tickets): sends that designed email instead of plain text. */

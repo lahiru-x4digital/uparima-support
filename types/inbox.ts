@@ -130,6 +130,8 @@ export interface ConversationRouting {
   autoClosed: boolean;
   autoCloseReason: string | null;
   assignedAt: string | null;
+  /** When the assignee first opened it; null = they have not. */
+  firstOpenedAt: string | null;
   assignmentMethod: AssignmentMethod | null;
   outOfShift: boolean;
   onboardingReason: OnboardingReason | null;
