@@ -100,10 +100,14 @@ function ApprovalsSection({ from, to }: { from: string; to: string }) {
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
       <h2 className="flex items-center gap-2 text-sm font-semibold">
         <UserCheck className="size-4 text-muted-foreground" /> Drivers approved with my involvement
-        {data && <span className="font-normal text-muted-foreground">({rows.length})</span>}
+        {data && (
+          <span className="font-normal text-muted-foreground">
+            ({rows.filter((r) => r.role === "lead").length} credit · {rows.filter((r) => r.role === "assist").length} assist)
+          </span>
+        )}
       </h2>
       <p className="mb-3 mt-1 text-xs text-muted-foreground">
-        Counts when I pressed approve, or logged a call or sent a reply to the driver in the {data?.windowDays ?? 14} days before they were approved.
+        Drivers I pressed approve for, or called or replied to in the {data?.windowDays ?? 14} days before they were approved. Each driver counts once as credit for one agent; the others are assists.
       </p>
       {error && !data ? (
         <p className="text-sm text-destructive">{getErrorMessage(error)}</p>
@@ -137,6 +141,7 @@ function ApprovalsSection({ from, to }: { from: string; to: string }) {
                   </td>
                   <td className={TD}>
                     <div className="flex flex-wrap gap-1">
+                      <TonePill tone={r.role === "lead" ? "green" : "neutral"}>{r.role === "lead" ? "Credit" : "Assist"}</TonePill>
                       {r.involvement.map((k) => (
                         <TonePill key={k} tone={INVOLVEMENT[k]?.tone ?? "neutral"}>
                           {INVOLVEMENT[k]?.label ?? k}
@@ -219,6 +224,10 @@ export function MyPerformance() {
   const from = daysAgo(days);
   const to = daysAgo(0);
   const { data, isLoading, error } = useMyPerformance(from, to);
+  // Same query as the approvals list below, so this costs no extra request.
+  const approvals = useMyApprovals(from, to).data?.data;
+  const credited = approvals?.filter((r) => r.role === "lead").length;
+  const assisted = approvals?.filter((r) => r.role === "assist").length;
 
   const a = data?.agent;
   const prev = data?.previous;
@@ -257,6 +266,11 @@ export function MyPerformance() {
             <Stat label="Not opened yet" value={a.workload.notOpened} alert={a.workload.notOpened > 0} />
             <Stat label="Assigned" value={a.workload.assigned} hint={<Delta now={a.workload.assigned} before={prev?.workload.assigned} />} />
             <Stat label="Completed" value={a.workload.completed} hint={<Delta now={a.workload.completed} before={prev?.workload.completed} />} />
+            <Stat
+              label="Drivers approved"
+              value={credited ?? "—"}
+              hint={note(assisted ? `+ ${assisted} assist${assisted === 1 ? "" : "s"}` : "your credit, once per driver")}
+            />
             <Stat label="Reopened" value={a.workload.reopened} hint={<Delta now={a.workload.reopened} before={prev?.workload.reopened} lowerIsBetter />} />
           </Section>
 

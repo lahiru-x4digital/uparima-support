@@ -68,6 +68,8 @@ export interface MyApproval {
   /** manual | auto | ai_validate | admin_create */
   approvedHow: string | null;
   approvedBy: string | null;
+  /** lead = counts as my credit; assist = I took part but another agent leads it. */
+  role: "lead" | "assist";
   involvement: ApprovalInvolvement[];
 }
 
