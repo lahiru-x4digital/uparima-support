@@ -1,7 +1,7 @@
 import { MessageSquare, PhoneCall } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { slaState, timeAgo } from "@/lib/inbox/mappers";
+import { isNewToMe, slaState, timeAgo } from "@/lib/inbox/mappers";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/inbox";
 import {
@@ -12,6 +12,7 @@ import {
   PRIORITIES,
   PRODUCTS,
   QUEUED_REASONS,
+  QUEUED_SHORT,
   STATUSES,
   initials,
   topicLabel,
@@ -39,8 +40,7 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
   const showMineAlert = !showHelpAlert && !!markOpen && c.status !== "completed";
   const mine = meId != null && c.assignedToUserId === meId && c.status !== "completed";
   const assignedAt = mine ? (c.routing?.assignedAt ?? null) : null;
-  // firstOpenedAt is cleared on every (re)assignment, so null means I have not opened it yet.
-  const newToMe = mine && !!assignedAt && !c.routing?.firstOpenedAt;
+  const newToMe = isNewToMe(c, meId);
   const PreferenceIcon = c.contactPreference === "message" ? MessageSquare : PhoneCall;
 
   return (
@@ -141,7 +141,7 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
                 c.routing.queuedReason === "no_qualified_agent"
                   ? "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200"
                   : "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200")}>
-              Queued
+              Queued{c.routing.queuedReason && QUEUED_SHORT[c.routing.queuedReason] ? ` · ${QUEUED_SHORT[c.routing.queuedReason]}` : ""}
             </span>
           )}
           {c.routing?.outOfShift && c.assignedToUserId != null && c.status !== "completed" && (

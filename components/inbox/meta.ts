@@ -88,6 +88,12 @@ export const ASSIGNMENT_RULES: Record<string, string> = {
   rebalance: "Spread from a busier agent",
 };
 
+/** Short form of QUEUED_REASONS, for the chip on a queued card. */
+export const QUEUED_SHORT: Record<string, string> = {
+  no_online_match: "none online",
+  no_qualified_agent: "no skill match",
+};
+
 export const AUTO_CLOSE_REASONS: Record<string, string> = {
   driver_registered: "Closed automatically: the driver finished signing up in the bot",
 };

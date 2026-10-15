@@ -14,7 +14,7 @@ import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
 import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
-import { applyClientFilters } from "@/lib/inbox/filters";
+import { applyClientFilters, reconcileFilters } from "@/lib/inbox/filters";
 import {
   botChatRefFromId,
   botChatRowToConversation,
@@ -209,7 +209,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
         {!botView && (
           <FilterBar filters={filters} needsContactCount={needsContact.data} myPendingCount={myPending.data}
             myInReviewCount={myInReview.data} hideChannel={!!lockedChannel}
-            onChange={(p) => onFiltersChange({ ...given, ...p })} />
+            onChange={(p) => onFiltersChange(reconcileFilters(given, p))} />
         )}
         {!lockedChannel && filters.channel === "email" && canSeeEmail && onOpenMailbox && (
           <button type="button" onClick={onOpenMailbox}

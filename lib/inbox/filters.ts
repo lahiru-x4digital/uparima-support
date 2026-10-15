@@ -20,6 +20,8 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
     // The routing queue: no matching agent was online when it came in.
     params.routingStatus = "queued";
     params.unassigned = true;
+    // Closest deadline first: the order the router will hand them out in.
+    params.sort = "queue";
   } else if (filters.status === "auto_closed") {
     params.autoClosed = true;
   } else if (filters.status !== "all" && filters.status !== "bot_only") {
@@ -37,6 +39,17 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
   const search = filters.search.trim();
   if (search) params.search = search;
   return params;
+}
+
+/**
+ * Applies a filter change. A queued ticket has no owner, so "Waiting for agent" with "Assigned to me"
+ * would always be empty: choosing one steps the other back to "all" instead of showing a blank list.
+ */
+export function reconcileFilters(current: ConversationFilters, patch: Partial<ConversationFilters>): ConversationFilters {
+  const next = { ...current, ...patch };
+  if (patch.status === "queued" && next.assignee === "mine") next.assignee = "all";
+  if (patch.assignee === "mine" && next.status === "queued") next.status = "all";
+  return next;
 }
 
 /** Search, non-WhatsApp channels and assignee, over what is already loaded.

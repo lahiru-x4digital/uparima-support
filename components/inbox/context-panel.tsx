@@ -260,9 +260,13 @@ function AssignmentNote({ conversation: c }: { conversation: Conversation }) {
   if (c.assignedToUserId == null) {
     if (r.status !== "queued") return null;
     return (
-      <p className={cn("text-xs", r.queuedReason === "no_qualified_agent" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
-        Waiting in the queue: {QUEUED_REASONS[r.queuedReason ?? ""] ?? "no matching agent yet"}.
-      </p>
+      <div className="flex flex-col gap-1">
+        <p className={cn("text-xs", r.queuedReason === "no_qualified_agent" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+          Waiting in the queue: {QUEUED_REASONS[r.queuedReason ?? ""] ?? "no matching agent yet"}.
+        </p>
+        {/* Who had it before and why it came back to the queue, if it did. */}
+        <AssignmentWhy ticketId={c.ticketNumber ? c.id : null} summary={false} />
+      </div>
     );
   }
   if (!r.assignmentMethod) return null;

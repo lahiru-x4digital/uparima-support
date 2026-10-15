@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Conversation, ConversationFilters } from "@/types/inbox";
-import { applyClientFilters, toListParams } from "./filters";
+import { applyClientFilters, reconcileFilters, toListParams } from "./filters";
 
 const filters = (over: Partial<ConversationFilters> = {}): ConversationFilters => ({
   search: "",
@@ -93,5 +93,42 @@ describe("toListParams: Assigned to me", () => {
   it("keeps the default newest-created order for every other assignee view", () => {
     expect(toListParams(filters({ assignee: "unassigned" }), 5)).toEqual({ unassigned: true });
     expect(toListParams(filters(), 5)).toEqual({});
+  });
+});
+
+describe("toListParams: Waiting for agent", () => {
+  it("works the queue closest deadline first, the order the router hands tickets out in", () => {
+    expect(toListParams(filters({ status: "queued" }), 5)).toEqual({
+      routingStatus: "queued",
+      unassigned: true,
+      sort: "queue",
+    });
+  });
+});
+
+describe("reconcileFilters", () => {
+  it("steps Assigned to me back to all when Waiting for agent is chosen (a queued ticket has no owner)", () => {
+    expect(reconcileFilters(filters({ assignee: "mine" }), { status: "queued" })).toMatchObject({
+      status: "queued",
+      assignee: "all",
+    });
+  });
+
+  it("steps Waiting for agent back to everyone when Assigned to me is chosen", () => {
+    expect(reconcileFilters(filters({ status: "queued" }), { assignee: "mine" })).toMatchObject({
+      status: "all",
+      assignee: "mine",
+    });
+  });
+
+  it("leaves every other combination alone", () => {
+    expect(reconcileFilters(filters({ assignee: "mine" }), { status: "pending" })).toMatchObject({
+      status: "pending",
+      assignee: "mine",
+    });
+    expect(reconcileFilters(filters({ status: "queued" }), { assignee: "unassigned" })).toMatchObject({
+      status: "queued",
+      assignee: "unassigned",
+    });
   });
 });

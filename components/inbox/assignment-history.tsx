@@ -35,24 +35,24 @@ function describe(step: AssignmentStep): string {
  * Why the current agent has this ticket, and how it got there: the latest assignment's reason (a
  * returning customer, a rebalance, the previous agent leaving …), with the whole trail one click away.
  */
-export function AssignmentWhy({ ticketId }: { ticketId: string | null }) {
+export function AssignmentWhy({ ticketId, summary = true }: { ticketId: string | null; summary?: boolean }) {
   const { data } = useAssignmentHistory(ticketId);
   const [open, setOpen] = useState(false);
   const steps = data ?? [];
   if (steps.length === 0) return null;
 
   const latest = [...steps].reverse().find(isGain);
-  const summary = latest ? why(latest) : "";
+  const why_ = summary && latest ? why(latest) : "";
 
   return (
     <div className="flex flex-col gap-1">
-      {summary && (
+      {why_ && (
         <p className="text-xs text-muted-foreground">
-          Why: {summary}
+          Why: {why_}
           {latest?.from ? ` · was ${who(latest.from)}` : ""}
         </p>
       )}
-      {steps.length > 1 && (
+      {(steps.length > 1 || !summary) && (
         <button
           type="button"
           aria-expanded={open}

@@ -57,6 +57,24 @@ export function formatTime(iso: string, now: Date = new Date()): string {
     : date.toLocaleDateString([], { day: "numeric", month: "short" });
 }
 
+/**
+ * A ticket that landed on me and I have not opened yet. The backend clears `firstOpenedAt` on every
+ * (re)assignment and sets it when the assignee opens the ticket, so null means "new to you" even
+ * when a colleague opened it before. A finished ticket is never new.
+ */
+export function isNewToMe(
+  c: Pick<Conversation, "assignedToUserId" | "status"> & { routing: Pick<NonNullable<Conversation["routing"]>, "assignedAt" | "firstOpenedAt"> | null },
+  meId: number | null | undefined,
+): boolean {
+  return (
+    meId != null &&
+    c.assignedToUserId === meId &&
+    c.status !== "completed" &&
+    !!c.routing?.assignedAt &&
+    !c.routing.firstOpenedAt
+  );
+}
+
 /** "just now", "5m ago", "3h ago", "2d ago". */
 export function timeAgo(iso: string, now: Date = new Date()): string {
   const then = new Date(iso).getTime();

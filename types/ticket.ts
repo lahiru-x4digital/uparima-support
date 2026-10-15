@@ -159,8 +159,11 @@ export interface TicketListParams {
   toOnboard?: boolean;
   /** Only tickets assigned to this staff user (users.id). */
   assignedToUserId?: number;
-  /** "assigned" = most recently assigned first, pending before in review (the "Assigned to me" view). */
-  sort?: "assigned";
+  /**
+   * "assigned" = most recently assigned first, pending before in review (the "Assigned to me" view);
+   * "queue" = closest response deadline first, the order the routing queue is drained in.
+   */
+  sort?: "assigned" | "queue";
   /** Only tickets nobody owns yet. */
   unassigned?: boolean;
   /** Only tickets the system closed (true) or not (false). */

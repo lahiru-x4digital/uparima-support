@@ -9,6 +9,7 @@ import {
   botChatThreadToConversation,
   channelOf,
   detailToConversation,
+  isNewToMe,
   productOf,
   rowToConversation,
   slaState,
@@ -434,5 +435,44 @@ describe("timeAgo", () => {
 
   it("is empty for a bad date", () => {
     expect(timeAgo("not a date", now)).toBe("");
+  });
+});
+
+describe("isNewToMe", () => {
+  const routing = { assignedAt: "2026-10-15T10:00:00Z", firstOpenedAt: null as string | null };
+  const ticket = (over: Record<string, unknown> = {}) => ({
+    assignedToUserId: 5,
+    status: "pending" as const,
+    routing,
+    ...over,
+  });
+
+  it("is new when it is mine and I have not opened it", () => {
+    expect(isNewToMe(ticket(), 5)).toBe(true);
+  });
+
+  it("is not new once I have opened it", () => {
+    expect(isNewToMe(ticket({ routing: { ...routing, firstOpenedAt: "2026-10-15T10:05:00Z" } }), 5)).toBe(false);
+  });
+
+  it("is still new to me when a colleague opened it before it was reassigned (the backend clears it on every assignment)", () => {
+    // Nothing on the row remembers the earlier opener: the flag only reflects the current assignee.
+    expect(isNewToMe(ticket({ routing: { ...routing, firstOpenedAt: null } }), 5)).toBe(true);
+  });
+
+  it("is not new for someone else's ticket, an unassigned one, a finished one, or a bot chat", () => {
+    expect(isNewToMe(ticket({ assignedToUserId: 6 }), 5)).toBe(false);
+    expect(isNewToMe(ticket({ assignedToUserId: null }), 5)).toBe(false);
+    expect(isNewToMe(ticket({ status: "completed" }), 5)).toBe(false);
+    expect(isNewToMe(ticket({ routing: null }), 5)).toBe(false);
+  });
+
+  it("is never new without a signed-in agent", () => {
+    expect(isNewToMe(ticket(), null)).toBe(false);
+    expect(isNewToMe(ticket(), undefined)).toBe(false);
+  });
+
+  it("needs a recorded assignment time", () => {
+    expect(isNewToMe(ticket({ routing: { assignedAt: null as unknown as string, firstOpenedAt: null } }), 5)).toBe(false);
   });
 });
