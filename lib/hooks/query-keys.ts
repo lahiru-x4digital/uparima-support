@@ -125,3 +125,9 @@ export const sosKeys = {
   list: (status: string, page: number) => ["sos", "list", status, page] as const,
   detail: (id: string) => ["sos", "detail", id] as const,
 };
+
+export const performanceKeys = {
+  mine: (from: string, to: string) => ["performance", "mine", from, to] as const,
+  approvals: (from: string, to: string) => ["performance", "approvals", from, to] as const,
+  completed: (from: string, to: string, page: number) => ["performance", "completed", from, to, page] as const,
+};
