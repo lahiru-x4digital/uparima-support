@@ -38,8 +38,13 @@ function buildFormData(values: Partial<DriverFormValues>, files: DriverFormFiles
 // ── Lists & lookups ─────────────────────────────────────────────────────────
 
 /** Every driver matching `status` ("all" for none). Unpaginated. */
-export const listDrivers = (status?: string) =>
-  apiGet<Driver[]>(BASE, { params: status && status !== "all" ? { status } : undefined });
+export const listDrivers = (status?: string, search?: string) =>
+  apiGet<Driver[]>(BASE, {
+    params: {
+      ...(status && status !== "all" ? { status } : {}),
+      ...(search ? { search } : {}),
+    },
+  });
 
 export const listPendingDrivers = () => apiGet<Driver[]>(`${BASE}/pending`);
 

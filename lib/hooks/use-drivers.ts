@@ -32,9 +32,14 @@ import { driverKeys } from "./query-keys";
 
 // ── Reads ───────────────────────────────────────────────────────────────────
 
-export function useDrivers(status: string) {
+/** `search` is matched on the server; `enabled` holds the request back until there is something to ask for. */
+export function useDrivers(status: string, { search = "", enabled = true } = {}) {
   const { user } = useAuth();
-  return useQuery({ queryKey: driverKeys.list(status), queryFn: () => listDrivers(status), enabled: !!user });
+  return useQuery({
+    queryKey: driverKeys.list(status, search),
+    queryFn: () => listDrivers(status, search),
+    enabled: !!user && enabled,
+  });
 }
 
 export function usePendingDrivers() {

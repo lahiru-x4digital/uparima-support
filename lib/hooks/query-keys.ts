@@ -65,7 +65,7 @@ export const messageTemplateKeys = {
 
 export const driverKeys = {
   all: ["drivers"] as const,
-  list: (status: string) => ["drivers", "list", status] as const,
+  list: (status: string, search = "") => ["drivers", "list", status, search] as const,
   pending: ["drivers", "pending"] as const,
   detail: (id: string) => ["drivers", "detail", id] as const,
   subscription: (id: string) => ["drivers", "subscription", id] as const,
