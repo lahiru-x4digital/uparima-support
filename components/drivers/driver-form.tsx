@@ -12,7 +12,6 @@ import {
   REQUIRED_BY_SECTION,
   bankProblems,
   editBlockingProblems,
-  licenseNumberProblem,
   missingRequiredFields,
   normalizeLicenseNumber,
   sectionOfField,
@@ -89,13 +88,13 @@ export function DriverForm(props: FormProps) {
     existingDocs,
     onPreview: (label, url) => setPreview({ label, url }),
     // Confirming a document's extracted fields overwrites unconditionally; a licence number read
-    // off a photo is tidied the same way as a typed one.
+    // off a photo is trimmed.
     applyExtracted: (fields) =>
       setValues((p) => ({
         ...p,
         ...fields,
         ...(fields.licenseNumber !== undefined
-          ? { licenseNumber: normalizeLicenseNumber(fields.licenseNumber, p.isTemporaryLicense) }
+          ? { licenseNumber: normalizeLicenseNumber(fields.licenseNumber) }
           : {}),
       })),
     problems: {},
@@ -389,11 +388,7 @@ function CreateWizard({
   const isLast = step === STEPS.length - 1;
   const isFirst = step === 0;
 
-  const licenseProblem = licenseNumberProblem(values.licenseNumber, values.isTemporaryLicense);
-  const problems: FieldProblems = {
-    ...(current.key === "bank" ? bankProblems(values) : {}),
-    ...(current.key === "license" && licenseProblem ? { licenseNumber: licenseProblem } : {}),
-  };
+  const problems: FieldProblems = current.key === "bank" ? bankProblems(values) : {};
   const missingIn = (s: Step) => s.fields.filter((f) => String(values[f] ?? "").trim() === "");
   const stepMissing = missingIn(current);
   const stepValid = stepMissing.length === 0 && Object.keys(problems).length === 0;
@@ -401,15 +396,13 @@ function CreateWizard({
     missingRequiredFields(values, "create").length === 0 && Object.keys(bankProblems(values)).length === 0;
 
   // A draft needs enough to find it again (mobile + first name) and nothing the backend would
-  // refuse: a half-filled bank account or a malformed licence number.
+  // refuse: a half-filled bank account.
   const draftBlocker =
     values.phone.trim() === "" || values.firstName.trim() === ""
       ? "Add the mobile number and first name to save a draft"
       : Object.keys(bankProblems(values)).length > 0
         ? "Finish or clear the bank details to save a draft"
-        : licenseProblem
-          ? "Fix the licence number to save a draft"
-          : null;
+        : null;
 
   function saveDraft() {
     if (!onSaveDraft || draftBlocker || busy) return;
@@ -418,12 +411,6 @@ function CreateWizard({
   }
 
   async function submit() {
-    // Steps can be opened in any order, so the last one can be reached without passing this check.
-    if (licenseProblem) {
-      setError(licenseProblem);
-      setStep(STEPS.findIndex((s) => s.key === "license"));
-      return;
-    }
     await run(values, files);
   }
 

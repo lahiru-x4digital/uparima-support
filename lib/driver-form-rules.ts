@@ -3,24 +3,13 @@
 
 import type { DriverFormValues } from "@/types/driver";
 
-/** The backend's rule for a standard licence card: one capital letter, then digits (B1234567). */
-const LICENSE_NUMBER = /^[A-Z]\d+$/;
-
 /**
- * A licence number as it should be stored. On a standard card that is capitals and digits only,
- * so "b 1234567" and "B-1234567" (as typed, or as read off a photo) become "B1234567". A temporary
- * licence's permit number has no fixed shape and is only trimmed.
+ * A licence number as it should be stored. The Support Portal takes any number as written (no
+ * letter + digits format check — the backend's support-desk endpoints don't apply one either), so
+ * this only trims, e.g. a number read off a photo.
  */
-export function normalizeLicenseNumber(value: string, isTemporary: boolean): string {
-  return isTemporary ? value.trim() : value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-}
-
-/** What is wrong with a licence number, in words for the person filling the form; null when fine. */
-export function licenseNumberProblem(value: string, isTemporary: boolean): string | null {
-  if (isTemporary || value.trim() === "") return null; // "required" is the form's own check
-  return LICENSE_NUMBER.test(value)
-    ? null
-    : "A licence number is one letter followed by digits, like B1234567. For a temporary licence, switch on “Temporary Driving Licence”.";
+export function normalizeLicenseNumber(value: string): string {
+  return value.trim();
 }
 
 // Fields the backend reads as a set: sending one without the others is refused or misjudged.
@@ -163,9 +152,5 @@ export function editBlockingProblems(initial: DriverFormValues, values: DriverFo
   for (const field of Object.values(REQUIRED_BY_SECTION).flat()) {
     if (!isBlank(initial[field]) && isBlank(values[field])) problems[field] = "Required — can't be cleared";
   }
-  const licenseTouched =
-    values.licenseNumber !== initial.licenseNumber || values.isTemporaryLicense !== initial.isTemporaryLicense;
-  const license = licenseTouched ? licenseNumberProblem(values.licenseNumber, values.isTemporaryLicense) : null;
-  if (license) problems.licenseNumber = license;
   return problems;
 }

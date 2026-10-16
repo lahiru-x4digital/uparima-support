@@ -1,14 +1,22 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
-import { normalizeLicenseNumber, type FieldProblems } from "@/lib/driver-form-rules";
+import type { FieldProblems } from "@/lib/driver-form-rules";
 import { useVehicleMakes, useVehicleModels, useVehicleTypes } from "@/lib/hooks/use-drivers";
 import { cn } from "@/lib/utils";
-import type { DriverDocumentKey, DriverFormFiles, DriverFormValues } from "@/types/driver";
+import {
+  capitalizeModelName,
+  NEW_VEHICLE_MODEL_PREFIX,
+  newVehicleModelName,
+  type DriverDocumentKey,
+  type DriverFormFiles,
+  type DriverFormValues,
+} from "@/types/driver";
 import { DriverLocationFields } from "./driver-location-fields";
 import { NameWordPicker } from "./name-word-picker";
 import { UploadTile } from "./driver-upload-tile";
@@ -215,9 +223,14 @@ export function VehicleSection(p: SectionProps & { withOwnership: boolean }) {
   const vehicleTypes = useVehicleTypes().data ?? [];
   const vehicleMakes = useVehicleMakes(values.vehicleTypeId).data ?? [];
   const vehicleModels = useVehicleModels(values.vehicleTypeId, values.vehicleMakeId).data ?? [];
+  const modelOptions = vehicleModels.map((m) => ({ value: String(m.id), label: m.name }));
+  const modelLabel =
+    newVehicleModelName(values.vehicleModelId) ??
+    modelOptions.find((o) => o.value === values.vehicleModelId)?.label ??
+    "";
 
   const select = (
-    field: "vehicleTypeId" | "vehicleMakeId" | "vehicleModelId" | "vehicleYom",
+    field: "vehicleTypeId" | "vehicleMakeId" | "vehicleYom",
     label: string,
     placeholder: string,
     options: { value: string; label: string }[],
@@ -260,14 +273,22 @@ export function VehicleSection(p: SectionProps & { withOwnership: boolean }) {
         (v) => p.patch({ vehicleMakeId: v, vehicleModelId: "" }),
         !values.vehicleTypeId,
       )}
-      {select(
-        "vehicleModelId",
-        "Model",
-        values.vehicleMakeId ? "Select model…" : "Pick a make first",
-        vehicleModels.map((m) => ({ value: String(m.id), label: m.name })),
-        (v) => p.set("vehicleModelId", v),
-        !values.vehicleMakeId,
-      )}
+      {/* Pick a listed model or type a new one — saved under this type + make (see NEW_VEHICLE_MODEL_PREFIX). */}
+      <Field label={<Req>Model</Req>}>
+        <CreatableCombobox
+          name="vehicleModelId"
+          value={values.vehicleModelId}
+          selectedLabel={modelLabel}
+          options={modelOptions}
+          onChange={(v) => p.set("vehicleModelId", v)}
+          onCreate={(name) => NEW_VEHICLE_MODEL_PREFIX + name}
+          formatNew={capitalizeModelName}
+          placeholder={values.vehicleMakeId ? "Type or pick a model…" : "Pick a make first"}
+          disabled={!values.vehicleMakeId}
+          invalid={!!p.problems.vehicleModelId}
+        />
+        <FieldError message={p.problems.vehicleModelId} />
+      </Field>
       {select(
         "vehicleYom",
         "Year",
@@ -303,7 +324,6 @@ export function LicenceSection(p: SectionProps) {
           label={temp ? "Permit / certificate no." : "Licence number"}
           required
           placeholder={temp ? "C328761" : "B1234567"}
-          transform={(v) => normalizeLicenseNumber(v, temp)}
         />
         <TextField p={p} field="licenseExpiryDate" label={temp ? "Valid until" : "Expiry date"} required type="date" />
         {p.withDocuments && (

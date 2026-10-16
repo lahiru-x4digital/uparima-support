@@ -12,6 +12,7 @@ import type {
   DocumentExtractionResult,
   VehicleLookup,
 } from "@/types/driver";
+import { newVehicleModelName } from "@/types/driver";
 
 // Driver management — the backend's `/support-desk/drivers/*`, which wraps the
 // classified dashboard's admin driver endpoints. Each route is gated by its own
@@ -27,7 +28,9 @@ function buildFormData(values: Partial<DriverFormValues>, files: DriverFormFiles
   const fd = new FormData();
   for (const [key, value] of Object.entries(values)) {
     if (value === undefined || value === null || value === "") continue;
-    fd.append(key, String(value));
+    const typedModel = key === "vehicleModelId" ? newVehicleModelName(String(value)) : null;
+    if (typedModel) fd.append("vehicleModelName", typedModel);
+    else fd.append(key, String(value));
   }
   for (const [key, file] of Object.entries(files)) {
     if (file) fd.append(key, file);

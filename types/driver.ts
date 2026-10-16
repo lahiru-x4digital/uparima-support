@@ -169,6 +169,24 @@ export type DriverFormValues = {
   bankBranch: string;
 };
 
+/**
+ * A model typed in the Model box that isn't in the list is kept in `vehicleModelId` as
+ * `new:<Name>` and sent as `vehicleModelName` — the backend reuses a model of that name under the
+ * chosen type + make (any letter case) or creates it.
+ */
+export const NEW_VEHICLE_MODEL_PREFIX = "new:";
+
+export const newVehicleModelName = (vehicleModelId: string): string | null =>
+  vehicleModelId.startsWith(NEW_VEHICLE_MODEL_PREFIX) ? vehicleModelId.slice(NEW_VEHICLE_MODEL_PREFIX.length) : null;
+
+/** "corolla axio" → "Corolla Axio". Only first letters are raised; the rest stays as typed ("CR-V"). */
+export function capitalizeModelName(name: string): string {
+  return name
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(^|[\s-])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
 export const EMPTY_DRIVER_FORM: DriverFormValues = {
   phone: "",
   firstName: "",
