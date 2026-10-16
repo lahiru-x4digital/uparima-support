@@ -53,6 +53,8 @@ export interface Ticket {
   queuedReason?: QueuedReason | null;
   createdAt: string;
   updatedAt: string;
+  /** Newest message on the ticket (customer or staff reply), else its creation. Only on list rows. */
+  lastActivityAt?: string | null;
 }
 
 export type AssignmentMethod = "auto" | "manual";

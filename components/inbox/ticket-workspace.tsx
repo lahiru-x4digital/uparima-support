@@ -99,11 +99,14 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const merged = useMemo(() => {
     // A channel-locked list (Email) is tickets only: bot chats are WhatsApp.
     if (lockedChannel || view === "tickets") return ticketConversations;
-    // "Assigned to me" is ordered by the backend, newest assignment first: re-sorting by creation
-    // date would bury a ticket that just landed on me. Bot chats have no assignee, so none are in it.
+    // "Assigned to me" is ordered by the backend, newest assignment or message first: re-sorting by
+    // creation date would bury a ticket that just landed on me. Bot chats have no assignee, so none are in it.
     if (filters.assignee === "mine" && view !== "bot") return ticketConversations;
     if (view === "bot") return allBotConversations;
-    return [...ticketConversations, ...allBotConversations].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    // Newest message first, like a chat list: a driver writing back brings the conversation to the top.
+    return [...ticketConversations, ...allBotConversations].sort((a, b) =>
+      (b.activityAt ?? b.createdAt).localeCompare(a.activityAt ?? a.createdAt),
+    );
   }, [lockedChannel, view, filters.assignee, ticketConversations, allBotConversations]);
 
   // Bot-only chats have no assignee, so the Assignee filter doesn't apply on the Bot chats tab.

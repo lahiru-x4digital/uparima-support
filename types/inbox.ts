@@ -89,6 +89,8 @@ export interface Conversation {
   assignedTo: string | null;
   /** Last activity, display text. */
   lastAt: string;
+  /** ISO time of the newest message; the list is ordered by it, like a chat app. Falls back to createdAt. */
+  activityAt?: string;
   createdAt: string;
   subject: string;
   /** First line of the customer's message, for the list. */
