@@ -164,8 +164,8 @@ export interface TicketListParams {
    * "queue" = closest response deadline first, the order the routing queue is drained in.
    */
   sort?: "assigned" | "queue" | "oldest";
-  /** Only tickets created more than this many days ago. */
-  olderThanDays?: number;
+  /** Only tickets created more than this many hours ago. */
+  olderThanHours?: number;
   /** Only tickets nobody owns yet. */
   unassigned?: boolean;
   /** Only tickets the system closed (true) or not (false). */

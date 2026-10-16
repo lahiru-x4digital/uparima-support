@@ -21,10 +21,12 @@ const PER_PAGE = 25;
 const OLD_AFTER_DAYS = 2;
 
 const AGE_FILTERS = [
-  { key: "all", label: "All", days: undefined },
-  { key: "2d", label: "Older than 2 days", days: 2 },
-  { key: "7d", label: "Older than 7 days", days: 7 },
-  { key: "14d", label: "Older than 14 days", days: 14 },
+  { key: "all", label: "All", hours: undefined },
+  { key: "12h", label: "Older than 12 hours", hours: 12 },
+  { key: "24h", label: "Older than 24 hours", hours: 24 },
+  { key: "2d", label: "Older than 2 days", hours: 48 },
+  { key: "7d", label: "Older than 7 days", hours: 168 },
+  { key: "14d", label: "Older than 14 days", hours: 336 },
 ] as const;
 
 const ageDays = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -38,9 +40,9 @@ export function MyTickets() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const olderThanDays = AGE_FILTERS.find((f) => f.key === age)?.days;
+  const olderThanHours = AGE_FILTERS.find((f) => f.key === age)?.hours;
   const params: TicketListParams | null = me
-    ? { status: "pending", assignedToUserId: me.id, sort: "oldest", olderThanDays, page, perPage: PER_PAGE }
+    ? { status: "pending", assignedToUserId: me.id, sort: "oldest", olderThanHours, page, perPage: PER_PAGE }
     : null;
 
   const { data, isLoading, error } = useQuery({
@@ -184,7 +186,7 @@ export function MyTickets() {
         {isLoading && <p className="p-6 text-center text-sm text-muted-foreground">Loading…</p>}
         {error && <p className="p-6 text-center text-sm text-red-600">{getErrorMessage(error)}</p>}
         {!isLoading && !error && rows.length === 0 && (
-          <p className="p-6 text-center text-sm text-muted-foreground">Nothing here. You have no pending tickets{olderThanDays ? " that old" : ""}.</p>
+          <p className="p-6 text-center text-sm text-muted-foreground">Nothing here. You have no pending tickets{olderThanHours ? " that old" : ""}.</p>
         )}
       </div>
 
