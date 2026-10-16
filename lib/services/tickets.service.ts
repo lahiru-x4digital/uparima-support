@@ -38,6 +38,10 @@ export const updateTicketStatus = (id: string, status: TicketStatus) =>
 export const updateTicketPriority = (id: string, priority: TicketPriority) =>
   apiPatch<Ticket>(`/support-desk/tickets/${id}/priority`, { priority });
 
+/** Completes several of my own tickets at once; ids not assigned to me come back as `skipped`. */
+export const bulkCloseTickets = (ids: string[]) =>
+  apiPost<{ closed: string[]; skipped: string[] }>("/support-desk/tickets/bulk-close", { ids });
+
 export const assignTicket = (id: string, assignedToUserId: number) =>
   apiPatch<Ticket>(`/support-desk/tickets/${id}/assign`, { assignedToUserId });
 

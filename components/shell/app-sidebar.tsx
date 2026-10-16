@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PresenceSwitcher } from "@/components/shell/presence-switcher";
 import { useAuth } from "@/lib/auth-context";
@@ -33,6 +33,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
+  { href: "/my-tickets", label: "My Open Tickets", icon: ListChecks },
   { href: "/my-performance", label: "My Performance", icon: Gauge },
   { href: "/templates", label: "Templates", icon: ClipboardList },
   // { href: "/sms", label: "Send SMS", icon: Send, exact: true },
