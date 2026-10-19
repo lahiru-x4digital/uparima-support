@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { History, Loader2, PhoneCall, PhoneMissed } from "lucide-react";
+import { History, Loader2, Pencil, PhoneCall, PhoneMissed } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/format";
-import { useLogTicketCall, useTicketCalls } from "@/lib/hooks/use-ticket-calls";
+import { useMe } from "@/lib/hooks/use-desk";
+import { useLogTicketCall, useTicketCalls, useUpdateTicketCall } from "@/lib/hooks/use-ticket-calls";
 import { cn } from "@/lib/utils";
 import { TICKET_CALL_NOTE_MAX_LENGTH, type TicketCall, type TicketCallStatus } from "@/types/ticket-call";
 
@@ -75,43 +77,143 @@ export function HeaderCalls({ ticketId }: { ticketId: string }) {
           <StatusIcon status={call.status} />
         </span>
       ))}
-      <CallHistory calls={calls} />
+      <CallHistory ticketId={ticketId} calls={calls} />
     </>
   );
 }
 
-/** Every call, newest first: outcome, when, who called, and the note. */
-function CallHistory({ calls }: { calls: TicketCall[] }) {
-  const newestFirst = [...calls].reverse();
+/** Answered / No answer, as two buttons — used by the log form and the edit dialog. */
+function OutcomePicker({ value, onChange }: { value: TicketCallStatus; onChange: (s: TicketCallStatus) => void }) {
   return (
-    <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="xs" aria-label="Call history" />}>
-        <History /> Call history{calls.length > SHOWN ? ` (${calls.length})` : ""}
-      </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <p className="mb-2 text-xs font-medium text-muted-foreground">Call history</p>
-        <ul className="flex max-h-72 flex-col divide-y overflow-y-auto">
-          {newestFirst.map((call) => (
-            <li key={call.id} className="flex flex-col gap-0.5 py-2 text-xs first:pt-0 last:pb-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2">
-                  <span className="font-medium">{ordinal(call.number)} call</span>
-                  <StatusLabel status={call.status} />
-                </span>
-              </div>
-              <p className="text-muted-foreground">
-                {formatDateTime(call.calledAt)} · by {call.caller.name ?? `Staff #${call.caller.id}`}
-              </p>
-              {call.note ? (
-                <p className="mt-0.5 whitespace-pre-wrap break-words text-foreground">{call.note}</p>
-              ) : (
-                <p className="mt-0.5 text-muted-foreground italic">No note</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      </PopoverContent>
-    </Popover>
+    <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Call outcome">
+      {(Object.keys(STATUS) as TicketCallStatus[]).map((s) => {
+        const { label, Icon } = STATUS[s];
+        const active = value === s;
+        return (
+          <button
+            key={s}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(s)}
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors",
+              active ? "border-primary bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted",
+            )}
+          >
+            <Icon className="size-3.5" /> {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Every call, newest first: outcome, when, who called, and the note. The agent who logged a call gets an
+ * Edit button on it (only theirs — the backend refuses anyone else's); each change is in the action log. */
+function CallHistory({ ticketId, calls }: { ticketId: string; calls: TicketCall[] }) {
+  const newestFirst = [...calls].reverse();
+  const { data: me } = useMe();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<TicketCall | null>(null);
+
+  return (
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger render={<Button variant="ghost" size="xs" aria-label="Call history" />}>
+          <History /> Call history{calls.length > SHOWN ? ` (${calls.length})` : ""}
+        </PopoverTrigger>
+        <PopoverContent className="w-80">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Call history</p>
+          <ul className="flex max-h-72 flex-col divide-y overflow-y-auto">
+            {newestFirst.map((call) => (
+              <li key={call.id} className="flex flex-col gap-0.5 py-2 text-xs first:pt-0 last:pb-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2">
+                    <span className="font-medium">{ordinal(call.number)} call</span>
+                    <StatusLabel status={call.status} />
+                  </span>
+                  {me?.id === call.caller.id && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      aria-label={`Edit the ${ordinal(call.number)} call`}
+                      onClick={() => {
+                        setOpen(false);
+                        setEditing(call);
+                      }}
+                    >
+                      <Pencil /> Edit
+                    </Button>
+                  )}
+                </div>
+                <p className="text-muted-foreground">
+                  {formatDateTime(call.calledAt)} · by {call.caller.name ?? `Staff #${call.caller.id}`}
+                </p>
+                {call.note ? (
+                  <p className="mt-0.5 whitespace-pre-wrap break-words text-foreground">{call.note}</p>
+                ) : (
+                  <p className="mt-0.5 text-muted-foreground italic">No note</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </PopoverContent>
+      </Popover>
+      {editing && <EditCallDialog ticketId={ticketId} call={editing} onClose={() => setEditing(null)} />}
+    </>
+  );
+}
+
+/** Small dialog to correct the outcome and note of a call I logged. */
+function EditCallDialog({ ticketId, call, onClose }: { ticketId: string; call: TicketCall; onClose: () => void }) {
+  const [status, setStatus] = useState<TicketCallStatus>(call.status);
+  const [note, setNote] = useState(call.note ?? "");
+  const update = useUpdateTicketCall(ticketId);
+  const unchanged = status === call.status && note.trim() === (call.note ?? "");
+
+  function save() {
+    update.mutate({ callId: call.id, status, note: note.trim() }, { onSuccess: onClose });
+  }
+
+  return (
+    <Dialog open onOpenChange={(next) => !next && !update.isPending && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Edit the {ordinal(call.number)} call</DialogTitle>
+          <DialogDescription>
+            {formatDateTime(call.calledAt)}. Changes are recorded in the action log.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+        >
+          <OutcomePicker value={status} onChange={setStatus} />
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Note
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={TICKET_CALL_NOTE_MAX_LENGTH}
+              placeholder="What was said, what happens next…"
+              className="min-h-24 text-xs md:text-xs"
+            />
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={update.isPending}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={update.isPending || unchanged}>
+              {update.isPending && <Loader2 className="animate-spin" />} Save changes
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -161,27 +263,7 @@ export function LogCallButton({ ticketId }: { ticketId: string }) {
         >
           <p className="text-xs font-medium">Log the {ordinal(nextNumber)} call</p>
 
-          <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Call outcome">
-            {(Object.keys(STATUS) as TicketCallStatus[]).map((s) => {
-              const { label, Icon } = STATUS[s];
-              const active = status === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setStatus(s)}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors",
-                    active ? "border-primary bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  <Icon className="size-3.5" /> {label}
-                </button>
-              );
-            })}
-          </div>
+          <OutcomePicker value={status} onChange={setStatus} />
 
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             Called at

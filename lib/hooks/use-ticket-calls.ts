@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { listTicketCalls, logTicketCall } from "@/lib/services/ticket-calls.service";
-import type { TicketCallInput } from "@/types/ticket-call";
+import { listTicketCalls, logTicketCall, updateTicketCall } from "@/lib/services/ticket-calls.service";
+import type { TicketCallInput, TicketCallUpdate } from "@/types/ticket-call";
 import { ticketCallKeys } from "./query-keys";
 
 // A colleague's call is picked up on the next refetch (focus or this poll).
@@ -29,6 +29,17 @@ export function useLogTicketCall(ticketId: string) {
     mutationFn: (input: TicketCallInput) => logTicketCall(ticketId, input),
     onSuccess: () => toast.success("Call logged"),
     onError: (error) => toast.error("Couldn't log the call", { description: getErrorMessage(error) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ticketCallKeys.list(ticketId) }),
+  });
+}
+
+/** Edit the outcome and/or note of a call the signed-in agent logged themselves. */
+export function useUpdateTicketCall(ticketId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ callId, ...input }: TicketCallUpdate & { callId: string }) => updateTicketCall(ticketId, callId, input),
+    onSuccess: () => toast.success("Call updated"),
+    onError: (error) => toast.error("Couldn't update the call", { description: getErrorMessage(error) }),
     onSettled: () => qc.invalidateQueries({ queryKey: ticketCallKeys.list(ticketId) }),
   });
 }

@@ -20,3 +20,9 @@ export interface TicketCallInput {
 }
 
 export const TICKET_CALL_NOTE_MAX_LENGTH = 1000;
+
+/** `PATCH /support-desk/tickets/:id/calls/:callId` — only the agent who logged the call. An empty note clears it. */
+export interface TicketCallUpdate {
+  status?: TicketCallStatus;
+  note?: string;
+}
