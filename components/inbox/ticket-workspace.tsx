@@ -104,9 +104,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     // creation date would bury a ticket that just landed on me. Bot chats have no assignee, so none are in it.
     if (filters.assignee === "mine" && view !== "bot") return ticketConversations;
     if (view === "bot") return allBotConversations;
-    // Newest message first, like a chat list: a driver writing back brings the conversation to the top.
-    return [...ticketConversations, ...allBotConversations].sort((a, b) =>
-      (b.activityAt ?? b.createdAt).localeCompare(a.activityAt ?? a.createdAt),
+    // Not opened yet first (same as the backend's ticket order), then newest message first, like a
+    // chat list: a driver writing back brings the conversation to the top.
+    return [...ticketConversations, ...allBotConversations].sort(
+      (a, b) => Number(b.unread) - Number(a.unread) || (b.activityAt ?? b.createdAt).localeCompare(a.activityAt ?? a.createdAt),
     );
   }, [lockedChannel, view, filters.assignee, ticketConversations, allBotConversations]);
 
