@@ -34,6 +34,9 @@ export interface Attachment {
   key: string;
   name: string;
   kind: AttachmentKind;
+  /** A WhatsApp voice note kept only on WhatsApp (no S3 copy): the logged message's id, which
+   * the backend uses to fetch the audio from Meta when the agent presses play. */
+  voiceMessageId?: string;
 }
 
 /** Extra, kind-specific detail a bot message carries, straight from the WhatsApp payload. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { getBotChat, listBotChats } from "@/lib/services/bot-chats.service";
+import { fetchVoiceNote, getBotChat, listBotChats } from "@/lib/services/bot-chats.service";
 import { botChatKeys } from "./query-keys";
 
 const PER_PAGE = 30;
@@ -28,5 +28,18 @@ export function useBotChatThread(phone: string | null, sessionId: string | null)
     enabled: !!phone,
     refetchInterval: THREAD_POLL_MS,
     refetchIntervalInBackground: false,
+  });
+}
+
+/** A voice note's audio from WhatsApp, fetched only once `enabled` (the agent pressed play) and
+ * kept for the session. No retry: a 410 means WhatsApp has already deleted it. */
+export function useVoiceNote(messageId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...botChatKeys.all, "voice-note", messageId],
+    queryFn: () => fetchVoiceNote(messageId),
+    enabled,
+    staleTime: Infinity,
+    gcTime: 30 * 60_000,
+    retry: false,
   });
 }

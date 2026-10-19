@@ -329,9 +329,13 @@ function botMessage(m: BotChatMessage, customerName: string): Message {
   // icon+text rendering (see MessageBubble's KindLine "media" case).
   const rawS3Key = str(m.meta?.s3Key);
   const s3Key = rawS3Key ? stableSignedUrl(rawS3Key) : rawS3Key;
+  // Voice notes stay on WhatsApp only: no S3 key, played via the backend by message id.
+  const voiceOnWhatsapp = !s3Key && str(m.meta?.mediaKind) === "audio" && !!str(m.meta?.mediaId);
   const attachments: Attachment[] = s3Key
     ? [{ key: s3Key, name: s3Key.split("?")[0].split("/").pop() ?? s3Key, kind: mediaKindOf(str(m.meta?.mediaKind)) }]
-    : [];
+    : voiceOnWhatsapp
+      ? [{ key: `wa-voice:${m.id}`, name: "Voice note", kind: "audio", voiceMessageId: m.id }]
+      : [];
   return {
     id: m.id,
     direction: m.direction === "in" ? "inbound" : "outbound",

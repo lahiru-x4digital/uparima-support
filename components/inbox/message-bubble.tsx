@@ -1,6 +1,7 @@
 import { AlertCircle, Check, Clock, ExternalLink, FileText, Image as ImageIcon, MapPin, MapPinned, Mic, Paperclip } from "lucide-react";
 import { assetUrl, cn } from "@/lib/utils";
 import type { Attachment, Message } from "@/types/inbox";
+import { WhatsappVoiceNote } from "./whatsapp-voice-note";
 
 function StateIcon({ state }: { state?: Message["state"] }) {
   if (state === "sending") return <Clock className="size-3.5 opacity-70" aria-label="Sending" />;
@@ -14,6 +15,7 @@ function Attachments({ items, out }: { items: Attachment[]; out: boolean }) {
   return (
     <div className="mt-2 flex flex-col gap-2">
       {items.map((a) => {
+        if (a.voiceMessageId) return <WhatsappVoiceNote key={a.key} messageId={a.voiceMessageId} out={out} />;
         const url = assetUrl(a.key);
         if (a.kind === "image") {
           return (

@@ -1,4 +1,4 @@
-import { apiGet, apiGetPage, apiPost } from "@/lib/api";
+import { api, apiGet, apiGetPage, apiPost } from "@/lib/api";
 import { voiceFileName } from "@/lib/services/tickets.service";
 import type { BotChatConvertResult, BotChatReplyResult, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
@@ -26,6 +26,11 @@ export function voiceReplyToBotChat(phone: string, recording: Blob) {
     headers: { "Content-Type": undefined },
   });
 }
+
+/** The audio of a logged voice note, fetched by the backend from WhatsApp (voice notes are not
+ * stored in S3). Raw bytes, not the JSON envelope. Fails with 410 once WhatsApp has deleted it. */
+export const fetchVoiceNote = async (messageId: string) =>
+  (await api.get<Blob>(`/support-desk/bot-chats/messages/${messageId}/audio`, { responseType: "blob" })).data;
 
 /** Manually marks a live WhatsApp conversation as a ticket, with no reply
  * sent — for when staff want to track it even though the bot never

@@ -39,7 +39,9 @@ export interface BotChatMessage {
   body: string;
   /** For `kind: "media"`, may include `mediaKind`/`mimeType` and, once the
    * backend has downloaded and stored the file (a few seconds later), an
-   * `s3Key: string` the portal resolves into a real preview/player. */
+   * `s3Key: string` the portal resolves into a real preview/player. Voice notes
+   * (`mediaKind: "audio"`) are not copied to S3; they carry `mediaId` instead and
+   * are played through `fetchVoiceNote`. */
   meta: Record<string, unknown> | null;
   createdAt: string;
 }
