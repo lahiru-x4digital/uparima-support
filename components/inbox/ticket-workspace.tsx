@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CheckCheck, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
-import { assignTicket } from "@/lib/services/tickets.service";
+import { Button } from "@/components/ui/button";
+import { assignTicket, bulkCloseTickets } from "@/lib/services/tickets.service";
 import { useAuth } from "@/lib/auth-context";
 import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
@@ -171,6 +172,35 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const assign = useAssign(ticketId);
   const markContacted = useMarkContacted(ticketId);
 
+  // "Close selected", as on My open tickets: only my own open tickets can be ticked, since the
+  // backend skips anyone else's.
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const canTick = (c: Conversation) => !!c.ticketNumber && c.status !== "completed" && myId != null && c.assignedToUserId === myId;
+  const tickable = visible.filter(canTick);
+  const tickedIds = tickable.filter((c) => ticked.has(c.id)).map((c) => c.id);
+  const allTicked = tickable.length > 0 && tickedIds.length === tickable.length;
+  const bulkClose = useMutation({
+    mutationFn: (ids: string[]) => bulkCloseTickets(ids),
+    onSuccess: ({ closed, skipped }) => {
+      toast.success(`Closed ${closed.length} ticket${closed.length === 1 ? "" : "s"}${skipped.length ? `, skipped ${skipped.length}` : ""}`);
+      setTicked(new Set());
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.all });
+    },
+    onError: (e) => toast.error(`Could not close: ${getErrorMessage(e)}`),
+  });
+  function toggleTick(id: string) {
+    setTicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function closeTicked() {
+    const n = tickedIds.length;
+    if (n && window.confirm(`Close ${n} selected ticket${n === 1 ? "" : "s"}? They will be marked completed.`)) bulkClose.mutate(tickedIds);
+  }
+
   // A live hand-off alert can open its ticket straight away.
   function select(id: string) {
     setActiveId(id);
@@ -222,6 +252,18 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             <span className="font-medium text-primary">Open mailbox</span>
           </button>
         )}
+        {canUpdate && !botView && tickable.length > 0 && (
+          <div className="flex items-center gap-2 border-b px-2 py-1.5">
+            <input type="checkbox" className="mx-1.5" aria-label="Select all my open tickets in this list" checked={allTicked}
+              onChange={() => setTicked(allTicked ? new Set() : new Set(tickable.map((c) => c.id)))} />
+            <span className="flex-1 text-xs text-muted-foreground">
+              {tickedIds.length ? `${tickedIds.length} selected` : "Select my open tickets"}
+            </span>
+            <Button size="sm" disabled={tickedIds.length === 0 || bulkClose.isPending} onClick={closeTicked}>
+              <CheckCheck /> Close selected ({tickedIds.length})
+            </Button>
+          </div>
+        )}
         <ConversationList
           conversations={visible}
           activeId={activeId}
@@ -233,6 +275,9 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
           markOpen={filters.assignee === "mine"}
           meId={myId}
           onSelect={select}
+          canTick={canUpdate && !botView ? canTick : undefined}
+          ticked={ticked}
+          onTick={toggleTick}
           onRetry={() => (botView ? void botList.refetch() : void list.refetch())}
           onLoadMore={() => (botView ? void botList.fetchNextPage() : void list.fetchNextPage())}
         />
@@ -256,7 +301,12 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             onRetry={() => (isBotActive ? void botThread.refetch() : void detail.refetch())}
             onBack={() => setMobilePane("list")}
             onToggleContext={() => setContextOpen((o) => !o)}
-            onStatusChange={(status) => status !== "bot_only" && updateStatus.mutate(status)}
+            closingTicket={updateStatus.isPending}
+            onCloseTicket={() => {
+              if (active && window.confirm(`Close ${active.ticketNumber ?? "this ticket"}? It will be marked completed.`)) {
+                updateStatus.mutate("completed");
+              }
+            }}
             onSend={send}
             onSendEmailTemplate={(templateId, text) => reply.mutateAsync({ message: text, files: [], emailTemplateId: templateId })}
             onMarkContacted={() => markContacted.mutate()}

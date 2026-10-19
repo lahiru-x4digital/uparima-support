@@ -1,6 +1,6 @@
 import { AlertCircle, Loader2, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Conversation, ConversationStatus } from "@/types/inbox";
+import type { Conversation } from "@/types/inbox";
 import { ChatHeader } from "./chat-header";
 import { Composer } from "./composer";
 // Hidden for now — see the commented-out usage below.
@@ -21,10 +21,11 @@ interface Props {
   onReplyAnyway?: () => void;
   markingContacted: boolean;
   convertingToTicket: boolean;
+  closingTicket: boolean;
   onRetry: () => void;
   onBack: () => void;
   onToggleContext: () => void;
-  onStatusChange: (status: ConversationStatus) => void;
+  onCloseTicket: () => void;
   onSend: (text: string, files: File[]) => Promise<unknown>;
   /** Email tickets: send a designed email template as the reply. */
   onSendEmailTemplate: (templateId: number, text: string) => Promise<unknown>;
@@ -35,8 +36,8 @@ interface Props {
 }
 
 export function ChatPane({
-  conversation, loading, error, contextOpen, canReply, canUpdate, movedAway, onReplyAnyway, markingContacted, convertingToTicket,
-  onRetry, onBack, onToggleContext, onStatusChange, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
+  conversation, loading, error, contextOpen, canReply, canUpdate, movedAway, onReplyAnyway, markingContacted, convertingToTicket, closingTicket,
+  onRetry, onBack, onToggleContext, onCloseTicket, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
 }: Props) {
   if (!conversation) {
     return (
@@ -49,7 +50,7 @@ export function ChatPane({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatHeader conversation={conversation} contextOpen={contextOpen} canUpdate={canUpdate} converting={convertingToTicket}
-        onBack={onBack} onToggleContext={onToggleContext} onStatusChange={onStatusChange} onConvertToTicket={onConvertToTicket} />
+        onBack={onBack} onToggleContext={onToggleContext} closing={closingTicket} onCloseTicket={onCloseTicket} onConvertToTicket={onConvertToTicket} />
       {/* Hidden for now — see HandoffBanner.
       {conversation.channel === "whatsapp" && (
         <HandoffBanner conversation={conversation} canUpdate={canUpdate} marking={markingContacted} onMarkContacted={onMarkContacted} />

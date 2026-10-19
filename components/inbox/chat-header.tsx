@@ -1,14 +1,9 @@
-import { ArrowLeft, PanelRight, Ticket } from "lucide-react";
+import { ArrowLeft, CheckCheck, PanelRight, Ticket } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { Conversation, ConversationStatus } from "@/types/inbox";
-import { CHANNELS, STATUSES, initials } from "./meta";
-import { OptionSelect } from "./option-select";
+import type { Conversation } from "@/types/inbox";
+import { CHANNELS, initials } from "./meta";
 import { HeaderCalls, LogCallButton } from "./ticket-calls";
-
-const STATUS_OPTIONS = (Object.keys(STATUSES) as ConversationStatus[])
-  .filter((s) => s !== "bot_only")
-  .map((s) => ({ value: s, label: STATUSES[s].label }));
 
 interface Props {
   conversation: Conversation;
@@ -17,7 +12,9 @@ interface Props {
   converting: boolean;
   onBack: () => void;
   onToggleContext: () => void;
-  onStatusChange: (status: ConversationStatus) => void;
+  closing: boolean;
+  /** Marks the ticket completed. */
+  onCloseTicket: () => void;
   onConvertToTicket: () => void;
 }
 
@@ -28,7 +25,8 @@ export function ChatHeader({
   converting,
   onBack,
   onToggleContext,
-  onStatusChange,
+  closing,
+  onCloseTicket,
   onConvertToTicket,
 }: Props) {
   return (
@@ -62,8 +60,15 @@ export function ChatHeader({
           {canUpdate && <LogCallButton ticketId={c.id} />}
         </div>
       )}
-      {canUpdate && c.ticketNumber && (
-        <OptionSelect label="Status" value={c.status} options={STATUS_OPTIONS} onChange={onStatusChange} />
+      {canUpdate && c.ticketNumber && c.status !== "completed" && (
+        <Button variant="outline" size="sm" onClick={onCloseTicket} disabled={closing}>
+          <CheckCheck /> <span className="hidden sm:inline">Close ticket</span>
+        </Button>
+      )}
+      {c.ticketNumber && c.status === "completed" && (
+        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
+          Closed
+        </span>
       )}
       {canUpdate && !c.ticketNumber && c.channel === "whatsapp" && (
         <Button variant="outline" size="sm" onClick={onConvertToTicket} disabled={converting}>

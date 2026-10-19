@@ -3,7 +3,8 @@ import { AlertCircle, Inbox, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Conversation } from "@/types/inbox";
-import { ConversationItem } from "./conversation-item";
+import { cn } from "@/lib/utils";
+import { ConversationItem, rowHover, rowTint } from "./conversation-item";
 
 interface Props {
   conversations: Conversation[];
@@ -19,6 +20,10 @@ interface Props {
   /** The signed-in agent, to mark tickets that just landed on them. */
   meId?: number | null;
   onSelect: (id: string) => void;
+  /** Tickets that can be ticked for "Close selected"; omit to hide the checkboxes. */
+  canTick?: (c: Conversation) => boolean;
+  ticked?: Set<string>;
+  onTick?: (id: string) => void;
   onRetry: () => void;
   onLoadMore: () => void;
 }
@@ -41,7 +46,7 @@ function Skeleton() {
 }
 
 export function ConversationList({
-  conversations, activeId, loading, error, hasMore, loadingMore, filtered, markOpen, meId, onSelect, onRetry, onLoadMore,
+  conversations, activeId, loading, error, hasMore, loadingMore, filtered, markOpen, meId, onSelect, canTick, ticked, onTick, onRetry, onLoadMore,
 }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -84,9 +89,25 @@ export function ConversationList({
 
   return (
     <ScrollArea className="min-h-0 flex-1">
-      {conversations.map((c) => (
-        <ConversationItem key={c.id} conversation={c} active={c.id === activeId} markOpen={markOpen} meId={meId} onSelect={() => onSelect(c.id)} />
-      ))}
+      {conversations.map((c) => {
+        const item = (
+          <ConversationItem key={c.id} conversation={c} active={c.id === activeId} markOpen={markOpen} meId={meId} onSelect={() => onSelect(c.id)} />
+        );
+        if (!canTick) return item;
+        // The checkbox sits beside the row, not inside it: the row itself is a button.
+        return (
+          <div key={c.id} className="group/row flex">
+            <div className={cn("flex w-8 shrink-0 items-center justify-center border-b transition-colors",
+              rowTint(c, c.id === activeId, meId), rowHover(c.id === activeId))}>
+              {canTick(c) && (
+                <input type="checkbox" aria-label={`Select ${c.ticketNumber ?? c.customerName}`}
+                  checked={!!ticked?.has(c.id)} onChange={() => onTick?.(c.id)} />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">{item}</div>
+          </div>
+        );
+      })}
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center p-3">
           {loadingMore && <Loader2 className="size-4 animate-spin text-muted-foreground" />}

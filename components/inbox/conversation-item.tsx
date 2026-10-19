@@ -28,6 +28,24 @@ interface Props {
   meId?: number | null;
 }
 
+/** The row's background: new-to-me and selected tints. Shared with the checkbox cell beside
+ * the row (conversation-list.tsx) so the two always read as one row. */
+export function rowTint(c: Conversation, active: boolean, meId?: number | null) {
+  return cn(
+    isNewToMe(c, meId) && "bg-primary/5",
+    // Selected: a light primary tint, strong enough to stand out in light mode too.
+    active && "bg-primary/15 dark:bg-primary/25",
+  );
+}
+
+/** Hover for a row wrapped in a `group/row` (the list with checkboxes), so hovering either the
+ * checkbox cell or the row lights up both. A standalone row uses its own `hover:` instead. */
+export function rowHover(active: boolean) {
+  return active
+    ? "group-hover/row:bg-primary/20 dark:group-hover/row:bg-primary/30"
+    : "group-hover/row:bg-muted/60";
+}
+
 export function ConversationItem({ conversation: c, active, onSelect, markOpen, meId }: Props) {
   const channel = CHANNELS[c.channel];
   const ChannelIcon = channel.icon;
@@ -50,8 +68,9 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
       aria-current={active}
       className={cn(
         "flex w-full gap-3 border-b px-3 py-3 text-left transition-colors hover:bg-muted/60",
-        newToMe && "bg-primary/5",
-        active && "bg-muted",
+        rowTint(c, active, meId),
+        active && "hover:bg-primary/20 dark:hover:bg-primary/30",
+        rowHover(active),
       )}
     >
       <div className="relative">
