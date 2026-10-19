@@ -26,6 +26,24 @@ export function MessageList({ conversationId, messages }: Props) {
     if (stick.current) endRef.current?.scrollIntoView({ block: "end" });
   }, [conversationId, messages.length]);
 
+  // Voice notes: one plays at a time, and whatever is playing stops when the agent switches
+  // conversation or leaves. Media events don't bubble, so this listens in the capture phase.
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    let playing: HTMLMediaElement | null = null;
+    const onPlay = (e: Event) => {
+      const media = e.target as HTMLMediaElement;
+      if (playing && playing !== media) playing.pause();
+      playing = media;
+    };
+    el.addEventListener("play", onPlay, true);
+    return () => {
+      el.removeEventListener("play", onPlay, true);
+      playing?.pause();
+    };
+  }, [conversationId]);
+
   return (
     <div
       ref={scroller}

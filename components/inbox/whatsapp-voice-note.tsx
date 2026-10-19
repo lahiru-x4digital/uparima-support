@@ -22,7 +22,9 @@ export function WhatsappVoiceNote({ messageId, out }: { messageId: string; out: 
     return (
       <div className="flex flex-col gap-1">
         <span className="text-xs opacity-80">Voice note</span>
-        <audio controls autoPlay src={url} className="h-9 max-w-full" />
+        {/* Starts by itself only right after the agent pressed Play here — a voice note already
+            loaded earlier (cached) shows paused when the ticket is opened again. */}
+        <audio controls autoPlay={requested} src={url} className="h-9 max-w-full" />
       </div>
     );
   }
