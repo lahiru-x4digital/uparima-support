@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Paperclip, Send, StickyNote, X } from "lucide-react";
+import { Loader2, Mic, Paperclip, Send, Square, StickyNote, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatSeconds, useVoiceRecorder, VOICE_MAX_SECONDS } from "@/lib/hooks/use-voice-recorder";
 
 // TODO(api): quick replies are hard-coded; the backend has no canned-response endpoint yet.
 const QUICK_REPLIES = [
@@ -27,13 +29,30 @@ interface Props {
   renderTemplates?: (insert: (text: string) => void) => React.ReactNode;
   /** Opens the details panel's internal notes (drivers only); without it the button explains why it's off. */
   onInternalNote?: () => void;
+  /** WhatsApp only: shows the mic button. Resolves when sent, rejects on failure (the recording is kept). */
+  onSendVoice?: (recording: Blob) => Promise<unknown>;
 }
 
-export function Composer({ disabled, onSend, renderTemplates, onInternalNote }: Props) {
+export function Composer({ disabled, onSend, renderTemplates, onInternalNote, onSendVoice }: Props) {
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
+  const voice = useVoiceRecorder();
+  const voiceActive = voice.state.status !== "idle";
+
+  async function sendVoice() {
+    if (voice.state.status !== "recorded" || !onSendVoice || sending) return;
+    setSending(true);
+    try {
+      await onSendVoice(voice.state.blob);
+      voice.discard();
+    } catch {
+      // The failure toast comes from the mutation; the recording stays so it can be sent again.
+    } finally {
+      setSending(false);
+    }
+  }
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -111,7 +130,36 @@ export function Composer({ disabled, onSend, renderTemplates, onInternalNote }: 
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      {voice.error && <p className="mb-2 text-xs text-destructive">{voice.error}</p>}
+
+      {voice.state.status === "recording" ? (
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+          <span className="size-2.5 animate-pulse rounded-full bg-destructive" aria-hidden />
+          <span className="flex-1 text-sm tabular-nums">
+            Recording {formatSeconds(voice.state.seconds)}
+            <span className="text-muted-foreground"> / {formatSeconds(VOICE_MAX_SECONDS)}</span>
+          </span>
+          <Button variant="ghost" size="icon" aria-label="Discard recording" onClick={voice.discard}>
+            <Trash2 />
+          </Button>
+          <Button size="icon" aria-label="Stop recording" onClick={voice.stop}>
+            <Square className="fill-current" />
+          </Button>
+        </div>
+      ) : voice.state.status === "recorded" ? (
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-2 py-1.5">
+          <Button variant="ghost" size="icon" aria-label="Discard voice note" disabled={sending} onClick={voice.discard}>
+            <Trash2 />
+          </Button>
+          <audio controls src={voice.state.url} className="h-9 min-w-0 flex-1" />
+          <span className="text-xs tabular-nums text-muted-foreground">{formatSeconds(voice.state.seconds)}</span>
+          <Button size="icon" aria-label="Send voice note" disabled={disabled || sending} onClick={() => void sendVoice()}>
+            {sending ? <Loader2 className="animate-spin" /> : <Send />}
+          </Button>
+        </div>
+      ) : null}
+
+      <div className={cn("flex items-end gap-2", voiceActive && "hidden")}>
         <Textarea
           value={text}
           disabled={disabled || sending}
@@ -131,6 +179,12 @@ export function Composer({ disabled, onSend, renderTemplates, onInternalNote }: 
         <Button variant="ghost" size="icon" aria-label="Attach file" disabled={disabled || sending} onClick={() => picker.current?.click()}>
           <Paperclip />
         </Button>
+        {onSendVoice && voice.supported && (
+          <Button variant="ghost" size="icon" aria-label="Record a voice note" title="Record a voice note"
+            disabled={disabled || sending} onClick={() => void voice.start()}>
+            <Mic />
+          </Button>
+        )}
         <Button size="icon" aria-label="Send" disabled={disabled || sending || !text.trim()} onClick={() => void submit()}>
           {sending ? <Loader2 className="animate-spin" /> : <Send />}
         </Button>

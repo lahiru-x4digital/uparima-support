@@ -1,4 +1,5 @@
 import { apiGet, apiGetPage, apiPost } from "@/lib/api";
+import { voiceFileName } from "@/lib/services/tickets.service";
 import type { BotChatConvertResult, BotChatReplyResult, BotChatRow, BotChatThread } from "@/types/bot-chat";
 
 export const listBotChats = (params: { page: number; perPage: number; search?: string; incompleteDriver?: boolean; toOnboard?: boolean }) =>
@@ -16,6 +17,15 @@ export const getBotChat = (phone: string, sessionId: string | null, limit = 200)
  * WhatsApp. Rejects with 403 once the 23.5h reply window has closed. */
 export const replyToBotChat = (phone: string, message: string) =>
   apiPost<BotChatReplyResult>(`/support-desk/bot-chats/${phone}/replies`, { message });
+
+/** A voice note to a conversation with no ticket yet: opens one and sends it there. */
+export function voiceReplyToBotChat(phone: string, recording: Blob) {
+  const form = new FormData();
+  form.append("audio", recording, voiceFileName(recording));
+  return apiPost<BotChatReplyResult>(`/support-desk/bot-chats/${phone}/voice-replies`, form, {
+    headers: { "Content-Type": undefined },
+  });
+}
 
 /** Manually marks a live WhatsApp conversation as a ticket, with no reply
  * sent — for when staff want to track it even though the bot never

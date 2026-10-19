@@ -13,6 +13,7 @@ import {
   assignTicket,
   markTicketContacted,
   replyToTicket,
+  sendVoiceReply,
   updateTicketPriority,
   updateTicketStatus,
 } from "@/lib/services/tickets.service";
@@ -92,6 +93,16 @@ export const useMarkContacted = (id: string) =>
     () => ({ needsContact: false, contactedAt: new Date().toISOString() }),
     "Couldn't mark as contacted",
   );
+
+/** Sends a recorded voice note on a WhatsApp ticket; rejects on failure so the composer keeps the recording. */
+export function useVoiceReply(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (recording: Blob) => sendVoiceReply(id, recording),
+    onError: (error) => toast.error(`Voice note not sent: ${getErrorMessage(error)}`),
+    onSettled: () => refresh(qc, id),
+  });
+}
 
 /** Sends a reply with an optimistic bubble; rejects on failure so the composer can keep the text. */
 export function useReply(id: string) {

@@ -8,11 +8,11 @@ import { getErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { assignTicket, bulkCloseTickets } from "@/lib/services/tickets.service";
 import { useAuth } from "@/lib/auth-context";
-import { useConvertBotChatToTicket, useReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
+import { useConvertBotChatToTicket, useReplyToBotChat, useVoiceReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
-import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus } from "@/lib/hooks/use-ticket-actions";
+import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus, useVoiceReply } from "@/lib/hooks/use-ticket-actions";
 import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters, reconcileFilters } from "@/lib/inbox/filters";
@@ -166,6 +166,8 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const ticketId = isBotActive ? "" : (activeId ?? "");
   const reply = useReply(ticketId);
   const replyToBot = useReplyToBotChat(activePhone ?? "");
+  const voiceReply = useVoiceReply(ticketId);
+  const voiceReplyToBot = useVoiceReplyToBotChat(activePhone ?? "");
   const convertToTicket = useConvertBotChatToTicket(activePhone ?? "");
   const updateStatus = useUpdateStatus(ticketId);
   const updatePriority = useUpdatePriority(ticketId);
@@ -233,6 +235,12 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   async function send(message: string, files: File[]) {
     if (isBotActive) return replyToBot.mutateAsync(message);
     return reply.mutateAsync({ message, files });
+  }
+
+  // A voice note to a bot-only chat opens a ticket for it, like a typed first reply does.
+  async function sendVoice(recording: Blob) {
+    if (isBotActive) return voiceReplyToBot.mutateAsync(recording);
+    return voiceReply.mutateAsync(recording);
   }
 
   return (
@@ -308,6 +316,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
               }
             }}
             onSend={send}
+            onSendVoice={sendVoice}
             onSendEmailTemplate={(templateId, text) => reply.mutateAsync({ message: text, files: [], emailTemplateId: templateId })}
             onMarkContacted={() => markContacted.mutate()}
             onOpenNotes={() => {

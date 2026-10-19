@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Clock, ExternalLink, FileText, Image as ImageIcon, MapPin, MapPinned, Paperclip } from "lucide-react";
+import { AlertCircle, Check, Clock, ExternalLink, FileText, Image as ImageIcon, MapPin, MapPinned, Mic, Paperclip } from "lucide-react";
 import { assetUrl, cn } from "@/lib/utils";
 import type { Attachment, Message } from "@/types/inbox";
 
@@ -66,7 +66,13 @@ function KindLine({ m }: { m: Message }) {
     case "media":
       return (
         <p className="flex items-center gap-1.5">
-          {m.meta?.mediaKind === "image" ? <ImageIcon className="size-3.5 shrink-0" /> : <FileText className="size-3.5 shrink-0" />}
+          {m.meta?.mediaKind === "image" ? (
+            <ImageIcon className="size-3.5 shrink-0" />
+          ) : m.meta?.mediaKind === "audio" ? (
+            <Mic className="size-3.5 shrink-0" />
+          ) : (
+            <FileText className="size-3.5 shrink-0" />
+          )}
           {m.body}
         </p>
       );

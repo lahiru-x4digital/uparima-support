@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
-import { convertBotChatToTicket, replyToBotChat } from "@/lib/services/bot-chats.service";
+import { convertBotChatToTicket, replyToBotChat, voiceReplyToBotChat } from "@/lib/services/bot-chats.service";
 import { botChatKeys, ticketKeys } from "./query-keys";
 
 /** Replies to a WhatsApp conversation that has no ticket yet (or whose
@@ -21,6 +21,22 @@ export function useReplyToBotChat(phone: string) {
     },
     onError: (error) => {
       toast.error(`Reply not sent: ${getErrorMessage(error)}`);
+    },
+  });
+}
+
+/** Sends a voice note to a WhatsApp conversation with no ticket yet (the backend opens one). */
+export function useVoiceReplyToBotChat(phone: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (recording: Blob) => voiceReplyToBotChat(phone, recording),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: botChatKeys.all });
+      void qc.invalidateQueries({ queryKey: ticketKeys.lists() });
+      void qc.invalidateQueries({ queryKey: ["tickets", "count"] });
+    },
+    onError: (error) => {
+      toast.error(`Voice note not sent: ${getErrorMessage(error)}`);
     },
   });
 }

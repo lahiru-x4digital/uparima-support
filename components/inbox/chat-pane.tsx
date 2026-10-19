@@ -27,6 +27,8 @@ interface Props {
   onToggleContext: () => void;
   onCloseTicket: () => void;
   onSend: (text: string, files: File[]) => Promise<unknown>;
+  /** Sends a recorded voice note (WhatsApp conversations only). */
+  onSendVoice: (recording: Blob) => Promise<unknown>;
   /** Email tickets: send a designed email template as the reply. */
   onSendEmailTemplate: (templateId: number, text: string) => Promise<unknown>;
   onMarkContacted: () => void;
@@ -37,7 +39,7 @@ interface Props {
 
 export function ChatPane({
   conversation, loading, error, contextOpen, canReply, canUpdate, movedAway, onReplyAnyway, markingContacted, convertingToTicket, closingTicket,
-  onRetry, onBack, onToggleContext, onCloseTicket, onSend, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
+  onRetry, onBack, onToggleContext, onCloseTicket, onSend, onSendVoice, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
 }: Props) {
   if (!conversation) {
     return (
@@ -90,7 +92,7 @@ export function ChatPane({
             <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} sendOnly label="Send a template" />
           </div>
         ) : (
-          <Composer onSend={onSend} disabled={conversation.status === "completed" || !!error || loading}
+          <Composer onSend={onSend} onSendVoice={conversation.channel === "whatsapp" ? onSendVoice : undefined} disabled={conversation.status === "completed" || !!error || loading}
             onInternalNote={conversation.submitter?.kind === "driver" ? onOpenNotes : undefined}
             renderTemplates={(insert) => (
               <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} onInsertText={insert} />
