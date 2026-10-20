@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useConvertBotChatToTicket, useReplyToBotChat, useVoiceReplyToBotChat } from "@/lib/hooks/use-bot-chat-actions";
 import { useBotChatList, useBotChatThread } from "@/lib/hooks/use-bot-chats";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
-import { useCan, useMe, useStaff } from "@/lib/hooks/use-desk";
+import { useCan, useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus, useVoiceReply } from "@/lib/hooks/use-ticket-actions";
 import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
 import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
@@ -102,7 +102,9 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     if (lockedChannel || view === "tickets") return ticketConversations;
     // "Assigned to me" is ordered by the backend, newest assignment or message first: re-sorting by
     // creation date would bury a ticket that just landed on me. Bot chats have no assignee, so none are in it.
-    if (filters.assignee === "mine" && view !== "bot") return ticketConversations;
+    if ((filters.assignee === "mine" || filters.assignee.startsWith("user:")) && view !== "bot") return ticketConversations;
+    // "Unassigned" is tickets nobody owns; bot chats aren't tickets.
+    if (filters.assignee === "unassigned" && view !== "bot") return ticketConversations;
     if (view === "bot") return allBotConversations;
     // Not opened yet first (same as the backend's ticket order), then newest message first, like a
     // chat list: a driver writing back brings the conversation to the top.
@@ -159,8 +161,15 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     window.addEventListener(TICKET_TAKEN_EVENT, onTaken);
     return () => window.removeEventListener(TICKET_TAKEN_EVENT, onTaken);
   }, []);
+  // An assigned ticket belongs to its assignee: other agents can read it but not reply or move it
+  // (the backend refuses both). A super admin may do either.
+  const isSuperAdmin = useIsSuperAdmin();
+  const lockedTo =
+    active && !isBotActive && !isSuperAdmin && active.assignedToUserId != null && active.assignedToUserId !== myId
+      ? { to: active.assignedTo }
+      : null;
   const movedAway =
-    active && takenAway === active.id && replyAnywayId !== active.id && active.assignedToUserId !== myId
+    !lockedTo && active && takenAway === active.id && replyAnywayId !== active.id && active.assignedToUserId !== myId
       ? { to: active.assignedTo }
       : null;
 
@@ -303,6 +312,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             contextOpen={contextOpen}
             canReply={canReplyPerm}
             canUpdate={canUpdate}
+            lockedTo={lockedTo}
             movedAway={movedAway}
             onReplyAnyway={() => active && setReplyAnywayId(active.id)}
             markingContacted={markContacted.isPending}
@@ -341,6 +351,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
             conversation={active}
             staff={staff}
             canUpdate={canUpdate}
+            canReassign={isSuperAdmin || active.assignedToUserId == null}
             onAssign={async (userId) => {
               if (isBotActive) {
                 const { ticketId: newTicketId } = await convertToTicket.mutateAsync();

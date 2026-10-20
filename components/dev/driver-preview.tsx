@@ -302,6 +302,7 @@ export function DriverPreview() {
             conversation={PANEL_SCENARIOS[panelId].conversation}
             staff={[{ id: 2, name: "Sachini Fernando" }, { id: 3, name: "Kavindu Silva" }]}
             canUpdate
+            canReassign
             onAssign={() => {}}
             onPriority={() => {}}
             onClose={() => {}}

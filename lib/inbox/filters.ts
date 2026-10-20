@@ -1,6 +1,13 @@
 import type { Conversation, ConversationFilters } from "@/types/inbox";
 import type { TicketListParams } from "@/types/ticket";
 
+/** The staff member an assignee filter points at: me for "mine", the id for `user:<id>`, else null. */
+export function assigneeUserId(assignee: ConversationFilters["assignee"], meId: number | null): number | null {
+  if (assignee === "mine") return meId;
+  if (assignee.startsWith("user:")) return Number(assignee.slice(5)) || null;
+  return null;
+}
+
 /**
  * The part of the filters the backend can apply: ticket status, the WhatsApp
  * and email channels, the "needs contact" queue, assignee and text search. Everything
@@ -29,8 +36,10 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
   }
   // "Assigned to me" / "Unassigned" are applied by the backend so they cover every page.
   // Newest assignment first, so a ticket that just landed on me is on top however old it is.
-  if (filters.assignee === "mine" && meId != null) {
-    params.assignedToUserId = meId;
+  // A super admin's "Assigned to <agent>" works the same way.
+  const assigneeId = assigneeUserId(filters.assignee, meId);
+  if (assigneeId != null) {
+    params.assignedToUserId = assigneeId;
     params.sort = "assigned";
   }
   if (filters.assignee === "unassigned") params.unassigned = true;
@@ -47,8 +56,9 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
  */
 export function reconcileFilters(current: ConversationFilters, patch: Partial<ConversationFilters>): ConversationFilters {
   const next = { ...current, ...patch };
-  if (patch.status === "queued" && next.assignee === "mine") next.assignee = "all";
-  if (patch.assignee === "mine" && next.status === "queued") next.status = "all";
+  const owned = (a: ConversationFilters["assignee"]) => a === "mine" || a.startsWith("user:");
+  if (patch.status === "queued" && owned(next.assignee)) next.assignee = "all";
+  if (patch.assignee && owned(patch.assignee) && next.status === "queued") next.status = "all";
   return next;
 }
 
@@ -80,7 +90,9 @@ export function applyClientFilters(
     if ((filters.status === "queued" || filters.status === "auto_closed") && c.status === "bot_only") return false;
     if (filters.channel !== "all" && c.channel !== filters.channel) return false;
     if (filters.assignee === "mine" && (meId == null || c.assignedToUserId !== meId)) return false;
-    if (filters.assignee === "unassigned" && c.assignedToUserId !== null) return false;
+    if (filters.assignee.startsWith("user:") && c.assignedToUserId !== assigneeUserId(filters.assignee, meId)) return false;
+    // "Unassigned" = tickets nobody owns. A bot-only chat has no owner either, but it isn't a ticket.
+    if (filters.assignee === "unassigned" && (c.assignedToUserId !== null || c.status === "bot_only")) return false;
     return true;
   });
 }

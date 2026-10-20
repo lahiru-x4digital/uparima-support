@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/shared/page-shell";
 import { Pagination } from "@/components/shared/pagination";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { getErrorMessage } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
-import { useCan, useMe } from "@/lib/hooks/use-desk";
+import { useCan, useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { ticketKeys } from "@/lib/hooks/query-keys";
 import { bulkCloseTickets, listTickets } from "@/lib/services/tickets.service";
 import { cn } from "@/lib/utils";
@@ -31,18 +32,29 @@ const AGE_FILTERS = [
 
 const ageDays = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 
-/** The agent's own pending tickets, oldest first, with a way to close finished or abandoned ones. */
+/**
+ * The agent's own pending tickets, oldest first, with a way to close finished or abandoned ones.
+ * A super admin can also pick another agent to see theirs (read-only: bulk close only closes the
+ * caller's own tickets).
+ */
 export function MyTickets() {
   const { data: me } = useMe();
-  const canClose = useCan("support-ticket.update");
+  const isSuperAdmin = useIsSuperAdmin();
+  const { data: staff } = useStaff();
   const qc = useQueryClient();
   const [age, setAge] = useState<(typeof AGE_FILTERS)[number]["key"]>("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /** Whose tickets are shown; null = the signed-in agent. */
+  const [assigneeId, setAssigneeId] = useState<number | null>(null);
+
+  const viewingOther = assigneeId !== null && assigneeId !== me?.id;
+  const assigneeName = viewingOther ? (staff?.find((s) => s.id === assigneeId)?.name ?? `User #${assigneeId}`) : null;
+  const canClose = useCan("support-ticket.update") && !viewingOther;
 
   const olderThanHours = AGE_FILTERS.find((f) => f.key === age)?.hours;
   const params: TicketListParams | null = me
-    ? { status: "pending", assignedToUserId: me.id, sort: "oldest", olderThanHours, page, perPage: PER_PAGE }
+    ? { status: "pending", assignedToUserId: assigneeId ?? me.id, sort: "oldest", olderThanHours, page, perPage: PER_PAGE }
     : null;
 
   const { data, isLoading, error } = useQuery({
@@ -80,8 +92,12 @@ export function MyTickets() {
 
   return (
     <PageShell
-      title="My open tickets"
-      description="Pending tickets assigned to you, oldest first. Close the ones that are finished, or that the customer never answered."
+      title={assigneeName ? `${assigneeName}'s open tickets` : "My open tickets"}
+      description={
+        assigneeName
+          ? `Pending tickets assigned to ${assigneeName}, oldest first. Only they can close them from here.`
+          : "Pending tickets assigned to you, oldest first. Close the ones that are finished, or that the customer never answered."
+      }
       actions={
         canClose && (
           <Button
@@ -94,7 +110,28 @@ export function MyTickets() {
         )
       }
     >
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {isSuperAdmin && (
+          <NativeSelect
+            aria-label="Assigned to"
+            containerClassName="w-56"
+            value={assigneeId ?? ""}
+            onChange={(e) => {
+              setAssigneeId(e.target.value ? Number(e.target.value) : null);
+              setPage(1);
+              setSelected(new Set());
+            }}
+          >
+            <option value="">Assigned to me</option>
+            {staff
+              ?.filter((s) => s.id !== me?.id)
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name ?? `User #${s.id}`}
+                </option>
+              ))}
+          </NativeSelect>
+        )}
         {AGE_FILTERS.map((f) => (
           <Button
             key={f.key}
@@ -186,7 +223,7 @@ export function MyTickets() {
         {isLoading && <p className="p-6 text-center text-sm text-muted-foreground">Loading…</p>}
         {error && <p className="p-6 text-center text-sm text-red-600">{getErrorMessage(error)}</p>}
         {!isLoading && !error && rows.length === 0 && (
-          <p className="p-6 text-center text-sm text-muted-foreground">Nothing here. You have no pending tickets{olderThanHours ? " that old" : ""}.</p>
+          <p className="p-6 text-center text-sm text-muted-foreground">Nothing here. {assigneeName ? `${assigneeName} has` : "You have"} no pending tickets{olderThanHours ? " that old" : ""}.</p>
         )}
       </div>
 

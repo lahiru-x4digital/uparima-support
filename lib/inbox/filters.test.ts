@@ -64,6 +64,16 @@ describe("applyClientFilters", () => {
     expect(ids(applyClientFilters(list, filters({ assignee: "mine" }), null))).toEqual([]);
   });
 
+  it("leaves bot-only chats out of Unassigned: they have no owner but aren't tickets", () => {
+    const withBotOnly = [...list, conv({ id: "bot:94779999999", ticketNumber: "", status: "bot_only" })];
+    expect(ids(applyClientFilters(withBotOnly, filters({ assignee: "unassigned" }), 5))).toEqual(["b"]);
+  });
+
+  it("filters by another agent (a super admin's Assigned to <agent>)", () => {
+    expect(ids(applyClientFilters(list, filters({ assignee: "user:5" }), 9))).toEqual(["a"]);
+    expect(ids(applyClientFilters(list, filters({ assignee: "user:7" }), 9))).toEqual([]);
+  });
+
   it("shows a bot-only (ticketless) row on every status tab, since it has no ticket status to match against", () => {
     const withBotOnly = [...list, conv({ id: "bot:94779999999", ticketNumber: "", status: "bot_only" })];
     expect(ids(applyClientFilters(withBotOnly, filters({ status: "all" }), 5))).toEqual(["a", "b", "bot:94779999999"]);
@@ -88,6 +98,10 @@ describe("toListParams: Assigned to me", () => {
 
   it("does not sort or filter by assignee without a signed-in agent", () => {
     expect(toListParams(filters({ assignee: "mine" }), null)).toEqual({});
+  });
+
+  it("lists another agent's tickets the same way", () => {
+    expect(toListParams(filters({ assignee: "user:7" }), 5)).toEqual({ assignedToUserId: 7, sort: "assigned" });
   });
 
   it("keeps the default newest-created order for every other assignee view", () => {
@@ -119,6 +133,11 @@ describe("reconcileFilters", () => {
       status: "all",
       assignee: "mine",
     });
+  });
+
+  it("treats another agent's tickets like Assigned to me against Waiting for agent", () => {
+    expect(reconcileFilters(filters({ assignee: "user:7" }), { status: "queued" })).toMatchObject({ assignee: "all" });
+    expect(reconcileFilters(filters({ status: "queued" }), { assignee: "user:7" })).toMatchObject({ status: "all" });
   });
 
   it("leaves every other combination alone", () => {

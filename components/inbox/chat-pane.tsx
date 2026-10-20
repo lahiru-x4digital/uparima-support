@@ -16,6 +16,8 @@ interface Props {
   contextOpen: boolean;
   canReply: boolean;
   canUpdate: boolean;
+  /** Someone else owns this ticket and I'm not a super admin: who (null name = unknown). No replies. */
+  lockedTo?: { to: string | null } | null;
   /** The ticket was taken off me while open: who has it now (null = nobody). Replies are held back. */
   movedAway?: { to: string | null } | null;
   onReplyAnyway?: () => void;
@@ -38,7 +40,7 @@ interface Props {
 }
 
 export function ChatPane({
-  conversation, loading, error, contextOpen, canReply, canUpdate, movedAway, onReplyAnyway, markingContacted, convertingToTicket, closingTicket,
+  conversation, loading, error, contextOpen, canReply, canUpdate, lockedTo, movedAway, onReplyAnyway, markingContacted, convertingToTicket, closingTicket,
   onRetry, onBack, onToggleContext, onCloseTicket, onSend, onSendVoice, onSendEmailTemplate, onMarkContacted, onConvertToTicket, onOpenNotes,
 }: Props) {
   if (!conversation) {
@@ -69,7 +71,11 @@ export function ChatPane({
       ) : (
         <MessageList conversationId={conversation.id} messages={conversation.messages} />
       )}
-      {movedAway ? (
+      {lockedTo ? (
+        <p className="border-t bg-muted/50 p-3 text-center text-xs text-muted-foreground">
+          This ticket is assigned to {lockedTo.to ?? "another agent"}. Only they or a super admin can reply.
+        </p>
+      ) : movedAway ? (
         <div className="flex flex-wrap items-center justify-center gap-3 border-t bg-amber-50 p-3 text-center text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">
           <span>
             {movedAway.to ? `This ticket now belongs to ${movedAway.to}.` : "This ticket no longer has an owner."} Replying here could clash

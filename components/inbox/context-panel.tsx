@@ -46,6 +46,8 @@ interface Props {
   conversation: Conversation;
   staff: Staff[];
   canUpdate: boolean;
+  /** False when someone else owns the ticket and I'm not a super admin: only they can move it. */
+  canReassign: boolean;
   onAssign: (userId: number) => void | Promise<void>;
   onPriority: (priority: Priority) => void;
   onClose: () => void;
@@ -282,7 +284,7 @@ function AssignmentNote({ conversation: c }: { conversation: Conversation }) {
   );
 }
 
-export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPriority, onClose, onOpenTicket, focusNotesKey }: Props) {
+export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, onAssign, onPriority, onClose, onOpenTicket, focusNotesKey }: Props) {
   const RoleIcon = c.role === "rider" ? Bike : Car;
   const sla = slaState(c.slaDueAt);
   const topic = topicLabel(c.topic);
@@ -389,7 +391,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, onAssign, onPr
           <Separator />
 
           <Field label="Assigned to">
-            {canUpdate ? (
+            {canUpdate && canReassign ? (
               <OptionSelect label="Assignee" className="w-full" value={assignedValue} options={assignOptions}
                 onChange={(v) => v !== UNASSIGNED && onAssign(Number(v))} />
             ) : (

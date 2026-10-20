@@ -150,5 +150,6 @@ export interface ConversationFilters {
    * the submitter's driver profile status, not a ticket status either. */
   status: ConversationStatus | "to_onboard" | "needs_contact" | "incomplete_driver" | "queued" | "auto_closed" | "all";
   channel: Channel | "all";
-  assignee: "all" | "mine" | "unassigned";
+  /** `user:<id>` = tickets assigned to that staff member (super admins only). */
+  assignee: "all" | "mine" | "unassigned" | `user:${number}`;
 }

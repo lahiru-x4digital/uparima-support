@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import type { Channel, ConversationFilters } from "@/types/inbox";
 import { CHANNELS } from "./meta";
 import { AlertDot, OptionSelect } from "./option-select";
@@ -31,11 +32,21 @@ function mineLabel(pending = 0, inReview = 0) {
 }
 
 export function FilterBar({ filters, needsContactCount, myPendingCount, myInReviewCount, onChange, hideChannel }: Props) {
+  // A super admin can also look at any other agent's tickets.
+  const isSuperAdmin = useIsSuperAdmin();
+  const { data: me } = useMe();
+  const { data: staff } = useStaff();
+  const otherStaff = isSuperAdmin ? (staff ?? []).filter((s) => s.id !== me?.id) : [];
   const assigneeOptions: { value: ConversationFilters["assignee"]; label: string; alert?: boolean }[] = [
     { value: "all", label: "All" },
     { value: "mine", label: mineLabel(myPendingCount, myInReviewCount), alert: !!myPendingCount },
     { value: "unassigned", label: "Unassigned" },
+    ...otherStaff.map((s) => ({ value: `user:${s.id}` as const, label: `Assigned to ${s.name ?? `User #${s.id}`}` })),
   ];
+  // Keep a picked agent selectable while the staff list is still loading.
+  if (filters.assignee.startsWith("user:") && !assigneeOptions.some((o) => o.value === filters.assignee)) {
+    assigneeOptions.push({ value: filters.assignee, label: `Assigned to user #${filters.assignee.slice(5)}` });
+  }
   const statusOptions: { value: ConversationFilters["status"]; label: string }[] = [
     { value: "to_onboard", label: "To onboard" },
     { value: "needs_contact", label: needsContactCount ? `Needs contact (${needsContactCount})` : "Needs contact" },
