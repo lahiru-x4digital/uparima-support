@@ -93,7 +93,11 @@ describe("applyClientFilters", () => {
 
 describe("toListParams: Assigned to me", () => {
   it("orders by the newest assignment so a ticket that just landed on me is on top", () => {
-    expect(toListParams(filters({ assignee: "mine" }), 5)).toEqual({ assignedToUserId: 5, sort: "assigned" });
+    expect(toListParams(filters({ assignee: "mine" }), 5)).toEqual({
+      assignedToUserId: 5,
+      sort: "assigned",
+      excludeCompleted: true,
+    });
   });
 
   it("does not sort or filter by assignee without a signed-in agent", () => {
@@ -149,5 +153,45 @@ describe("reconcileFilters", () => {
       status: "queued",
       assignee: "unassigned",
     });
+  });
+});
+
+describe("Assigned to me / My completed tickets", () => {
+  const mine = [
+    conv({ id: "open", assignedToUserId: 5, status: "pending" }),
+    conv({ id: "review", assignedToUserId: 5, status: "in_review" }),
+    conv({ id: "done", assignedToUserId: 5, status: "completed" }),
+    conv({ id: "other-done", assignedToUserId: 9, status: "completed" }),
+  ];
+  const ids = (cs: Conversation[]) => cs.map((c) => c.id);
+
+  it("Assigned to me asks the backend to leave out completed tickets", () => {
+    expect(toListParams(filters({ assignee: "mine" }), 5)).toMatchObject({ assignedToUserId: 5, excludeCompleted: true });
+  });
+
+  it("Assigned to me hides completed tickets, unless the Done status is picked", () => {
+    expect(ids(applyClientFilters(mine, filters({ assignee: "mine" }), 5))).toEqual(["open", "review"]);
+    expect(ids(applyClientFilters(mine, filters({ assignee: "mine", status: "completed" }), 5))).toEqual([
+      "open",
+      "review",
+      "done",
+    ]);
+  });
+
+  it("My completed tickets asks for my completed tickets only", () => {
+    expect(toListParams(filters({ assignee: "mine_done" }), 5)).toMatchObject({
+      assignedToUserId: 5,
+      status: "completed",
+    });
+    expect(toListParams(filters({ assignee: "mine_done" }), 5).excludeCompleted).toBeUndefined();
+    expect(ids(applyClientFilters(mine, filters({ assignee: "mine_done" }), 5))).toEqual(["done"]);
+  });
+
+  it("choosing My completed tickets resets a status that would hide them, and vice versa", () => {
+    const next = reconcileFilters(filters({ status: "pending", assignee: "mine" }), { assignee: "mine_done" });
+    expect(next).toMatchObject({ assignee: "mine_done", status: "all" });
+    const back = reconcileFilters(filters({ assignee: "mine_done" }), { status: "pending" });
+    expect(back).toMatchObject({ assignee: "all", status: "pending" });
+    expect(reconcileFilters(filters({ assignee: "mine_done" }), { status: "completed" }).assignee).toBe("mine_done");
   });
 });

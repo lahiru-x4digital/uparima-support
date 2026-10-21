@@ -102,7 +102,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     if (lockedChannel || view === "tickets") return ticketConversations;
     // "Assigned to me" is ordered by the backend, newest assignment or message first: re-sorting by
     // creation date would bury a ticket that just landed on me. Bot chats have no assignee, so none are in it.
-    if ((filters.assignee === "mine" || filters.assignee.startsWith("user:")) && view !== "bot") return ticketConversations;
+    if ((filters.assignee === "mine" || filters.assignee === "mine_done" || filters.assignee.startsWith("user:")) && view !== "bot") return ticketConversations;
     // "Unassigned" is tickets nobody owns; bot chats aren't tickets.
     if (filters.assignee === "unassigned" && view !== "bot") return ticketConversations;
     if (view === "bot") return allBotConversations;

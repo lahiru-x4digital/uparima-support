@@ -1,9 +1,9 @@
 import type { Conversation, ConversationFilters } from "@/types/inbox";
 import type { TicketListParams } from "@/types/ticket";
 
-/** The staff member an assignee filter points at: me for "mine", the id for `user:<id>`, else null. */
+/** The staff member an assignee filter points at: me for "mine" / "mine_done", the id for `user:<id>`, else null. */
 export function assigneeUserId(assignee: ConversationFilters["assignee"], meId: number | null): number | null {
-  if (assignee === "mine") return meId;
+  if (assignee === "mine" || assignee === "mine_done") return meId;
   if (assignee.startsWith("user:")) return Number(assignee.slice(5)) || null;
   return null;
 }
@@ -43,6 +43,9 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
     params.sort = "assigned";
   }
   if (filters.assignee === "unassigned") params.unassigned = true;
+  // "Assigned to me" is what is still to be dealt with; finished ones are under "My completed tickets".
+  if (assigneeId != null && filters.assignee === "mine") params.excludeCompleted = true;
+  if (assigneeId != null && filters.assignee === "mine_done") params.status = "completed";
   if (filters.channel === "whatsapp") params.channel = "whatsapp";
   if (filters.channel === "email") params.source = "email";
   const search = filters.search.trim();
@@ -56,9 +59,14 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
  */
 export function reconcileFilters(current: ConversationFilters, patch: Partial<ConversationFilters>): ConversationFilters {
   const next = { ...current, ...patch };
-  const owned = (a: ConversationFilters["assignee"]) => a === "mine" || a.startsWith("user:");
+  const owned = (a: ConversationFilters["assignee"]) => a === "mine" || a === "mine_done" || a.startsWith("user:");
   if (patch.status === "queued" && owned(next.assignee)) next.assignee = "all";
   if (patch.assignee && owned(patch.assignee) && next.status === "queued") next.status = "all";
+  // "My completed tickets" is every completed ticket of mine: a status that excludes them would
+  // leave it blank, so choosing one steps the other back instead.
+  const showsCompleted = (s: ConversationFilters["status"]) => s === "all" || s === "completed";
+  if (patch.assignee === "mine_done" && !showsCompleted(next.status)) next.status = "all";
+  if (patch.status && next.assignee === "mine_done" && !showsCompleted(patch.status)) next.assignee = "all";
   return next;
 }
 
@@ -90,6 +98,9 @@ export function applyClientFilters(
     if ((filters.status === "queued" || filters.status === "auto_closed") && c.status === "bot_only") return false;
     if (filters.channel !== "all" && c.channel !== filters.channel) return false;
     if (filters.assignee === "mine" && (meId == null || c.assignedToUserId !== meId)) return false;
+    // Finished tickets leave "Assigned to me" (unless the Done status is picked explicitly).
+    if (filters.assignee === "mine" && c.status === "completed" && filters.status !== "completed") return false;
+    if (filters.assignee === "mine_done" && (meId == null || c.assignedToUserId !== meId || c.status !== "completed")) return false;
     if (filters.assignee.startsWith("user:") && c.assignedToUserId !== assigneeUserId(filters.assignee, meId)) return false;
     // "Unassigned" = tickets nobody owns. A bot-only chat has no owner either, but it isn't a ticket.
     if (filters.assignee === "unassigned" && (c.assignedToUserId !== null || c.status === "bot_only")) return false;

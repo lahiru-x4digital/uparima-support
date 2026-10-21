@@ -170,6 +170,8 @@ export interface TicketListParams {
   olderThanHours?: number;
   /** Only tickets nobody owns yet. */
   unassigned?: boolean;
+  /** Leaves out completed tickets (an explicit `status` wins). */
+  excludeCompleted?: boolean;
   /** Only tickets the system closed (true) or not (false). */
   autoClosed?: boolean;
   /** "queued" = the routing queue: waiting for a matching agent. */

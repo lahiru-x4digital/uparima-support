@@ -40,6 +40,7 @@ export function FilterBar({ filters, needsContactCount, myPendingCount, myInRevi
   const assigneeOptions: { value: ConversationFilters["assignee"]; label: string; alert?: boolean }[] = [
     { value: "all", label: "All" },
     { value: "mine", label: mineLabel(myPendingCount, myInReviewCount), alert: !!myPendingCount },
+    { value: "mine_done", label: "My completed tickets" },
     { value: "unassigned", label: "Unassigned" },
     ...otherStaff.map((s) => ({ value: `user:${s.id}` as const, label: `Assigned to ${s.name ?? `User #${s.id}`}` })),
   ];

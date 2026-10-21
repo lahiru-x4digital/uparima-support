@@ -151,5 +151,6 @@ export interface ConversationFilters {
   status: ConversationStatus | "to_onboard" | "needs_contact" | "incomplete_driver" | "queued" | "auto_closed" | "all";
   channel: Channel | "all";
   /** `user:<id>` = tickets assigned to that staff member (super admins only). */
-  assignee: "all" | "mine" | "unassigned" | `user:${number}`;
+  /** `mine` = mine, still to deal with (not completed); `mine_done` = my completed tickets. */
+  assignee: "all" | "mine" | "mine_done" | "unassigned" | `user:${number}`;
 }
