@@ -25,9 +25,10 @@ export const listSmsHistory = (params: SmsHistoryParams) =>
 const BULK = "/support-desk/sms/bulk";
 
 // The backend refuses an empty filter value, so only what is set is sent.
-const filterParams = ({ q, segment, from, to }: BulkSmsCustomerFilter) => ({
+const filterParams = ({ q, segment, driverStatus, from, to }: BulkSmsCustomerFilter) => ({
   ...(q.trim() ? { q: q.trim() } : {}),
   ...(segment !== "all" ? { segment } : {}),
+  ...(driverStatus !== "all" ? { driverStatus } : {}),
   ...(from ? { from } : {}),
   ...(to ? { to } : {}),
 });

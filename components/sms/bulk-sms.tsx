@@ -18,17 +18,28 @@ import { getErrorMessage } from "@/lib/api";
 import { useIsSuperAdmin } from "@/lib/hooks/use-desk";
 import { useBulkSmsCustomerIds, useBulkSmsCustomers, useSendBulkSms } from "@/lib/hooks/use-sms";
 import { BULK_SMS_MAX_RECIPIENTS, SMS_MAX_LENGTH, smsParts } from "@/lib/sms";
-import type { BulkSmsCustomerFilter, BulkSmsSegment } from "@/types/sms";
+import type { BulkSmsCustomerFilter, BulkSmsDriverStatus, BulkSmsSegment } from "@/types/sms";
 import { BulkSmsBatches } from "./bulk-sms-batches";
 
 const PER_PAGE = 25;
-const NO_FILTER: BulkSmsCustomerFilter = { q: "", segment: "all", from: "", to: "" };
+const NO_FILTER: BulkSmsCustomerFilter = { q: "", segment: "all", driverStatus: "all", from: "", to: "" };
 
 const SEGMENTS: Array<{ value: BulkSmsSegment; label: string }> = [
   { value: "all", label: "All customers" },
   { value: "riders", label: "Riders (have booked a ride)" },
   { value: "drivers", label: "Drivers" },
 ];
+
+// A driver's registration, in the words staff use. `incomplete` is the one to chase: they started
+// signing up and stopped.
+const DRIVER_STATUSES: Array<{ value: BulkSmsDriverStatus; label: string; tone: "secondary" | "outline" | "destructive" }> = [
+  { value: "incomplete", label: "Incomplete signup", tone: "destructive" },
+  { value: "pending", label: "Awaiting review", tone: "outline" },
+  { value: "approved", label: "Approved", tone: "secondary" },
+  { value: "rejected", label: "Rejected", tone: "outline" },
+  { value: "suspended", label: "Suspended", tone: "outline" },
+];
+const driverStatus = (value: BulkSmsDriverStatus) => DRIVER_STATUSES.find((s) => s.value === value);
 
 const count = (n: number) => n.toLocaleString();
 const plural = (n: number, word: string) => `${count(n)} ${word}${n === 1 ? "" : "s"}`;
@@ -58,13 +69,21 @@ export function BulkSms() {
   const rows = customers.data?.data ?? [];
   const meta = customers.data?.meta;
   const matching = meta?.total ?? 0;
-  const filtered = filter.q !== "" || filter.segment !== "all" || filter.from !== "" || filter.to !== "";
+  const hasFilters = filter.segment !== "all" || filter.driverStatus !== "all" || filter.from !== "" || filter.to !== "";
+  const filtered = filter.q !== "" || hasFilters;
 
   const onPage = rows.filter((c) => selected.has(c.id)).length;
   const allOnPage = rows.length > 0 && onPage === rows.length;
 
   const changeFilter = (patch: Partial<BulkSmsCustomerFilter>) => {
-    setFilter((f) => ({ ...f, ...patch }));
+    setFilter((f) => {
+      const next = { ...f, ...patch };
+      // A registration state only exists for drivers: choosing one narrows to drivers, and
+      // switching to riders drops it.
+      if (patch.driverStatus && patch.driverStatus !== "all") next.segment = "drivers";
+      if (patch.segment && patch.segment !== "drivers" && patch.driverStatus === undefined) next.driverStatus = "all";
+      return next;
+    });
     setPage(1);
   };
 
@@ -133,6 +152,19 @@ export function BulkSms() {
                 </option>
               ))}
             </NativeSelect>
+            <NativeSelect
+              aria-label="Driver registration"
+              value={filter.driverStatus}
+              onChange={(e) => changeFilter({ driverStatus: e.target.value as BulkSmsDriverStatus | "all" })}
+              containerClassName="w-52"
+            >
+              <option value="all">Any driver registration</option>
+              {DRIVER_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </NativeSelect>
             <label className="flex items-center gap-2 text-sm font-medium">
               Joined from
               <Input type="date" value={filter.from} onChange={(e) => changeFilter({ from: e.target.value })} className="w-auto" />
@@ -141,11 +173,11 @@ export function BulkSms() {
               to
               <Input type="date" value={filter.to} onChange={(e) => changeFilter({ to: e.target.value })} className="w-auto" />
             </label>
-            {(filter.segment !== "all" || filter.from || filter.to) && (
+            {hasFilters && (
               <button
                 type="button"
                 className="text-sm font-medium text-primary hover:underline"
-                onClick={() => changeFilter({ segment: "all", from: "", to: "" })}
+                onClick={() => changeFilter({ segment: "all", driverStatus: "all", from: "", to: "" })}
               >
                 Clear filters
               </button>
@@ -238,7 +270,11 @@ export function BulkSms() {
                           <TableCell className="font-mono text-xs">{c.phone}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              {c.isDriver && <Badge variant="secondary">Driver</Badge>}
+                              {c.isDriver && (
+                                <Badge variant={(c.driverStatus && driverStatus(c.driverStatus)?.tone) || "secondary"}>
+                                  {c.driverStatus ? `Driver · ${driverStatus(c.driverStatus)?.label ?? c.driverStatus}` : "Driver"}
+                                </Badge>
+                              )}
                               {c.hasRides && <Badge variant="outline">Rider</Badge>}
                               {!c.isDriver && !c.hasRides && <span className="text-muted-foreground">—</span>}
                             </div>

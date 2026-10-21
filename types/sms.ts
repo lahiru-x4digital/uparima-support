@@ -46,6 +46,9 @@ export interface SendSmsForm {
 /** riders: has requested a ride. drivers: has a driver profile. */
 export type BulkSmsSegment = "all" | "riders" | "drivers";
 
+/** Where a driver's registration stands. `incomplete`: signed up but never finished the application. */
+export type BulkSmsDriverStatus = "incomplete" | "pending" | "approved" | "rejected" | "suspended";
+
 /** A customer who can be texted, as listed by `/support-desk/sms/bulk/customers`. */
 export interface BulkSmsCustomer {
   id: number;
@@ -54,12 +57,16 @@ export interface BulkSmsCustomer {
   joinedAt: string;
   isDriver: boolean;
   hasRides: boolean;
+  /** Registration state of their driver profile; null when they aren't a driver. */
+  driverStatus: BulkSmsDriverStatus | null;
 }
 
 /** Which customers to list. `from` / `to` are joined-on days, YYYY-MM-DD (Sri Lanka time). */
 export interface BulkSmsCustomerFilter {
   q: string;
   segment: BulkSmsSegment;
+  /** "all" = any state. */
+  driverStatus: BulkSmsDriverStatus | "all";
   from: string;
   to: string;
 }

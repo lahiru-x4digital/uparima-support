@@ -2,6 +2,7 @@ import type { TemplateListParams } from "@/types/template-list";
 import type { TicketListParams } from "@/types/ticket";
 import type { BulkSmsCustomerParams, SmsHistoryParams } from "@/types/sms";
 import type { RatingListParams } from "@/types/rating";
+import type { ComplaintListParams } from "@/types/complaint";
 
 export const ticketKeys = {
   all: ["tickets"] as const,
@@ -118,6 +119,11 @@ export const ratingKeys = {
   all: ["ratings"] as const,
   list: (params: RatingListParams) => ["ratings", "list", params] as const,
   detail: (id: number | string) => ["ratings", "detail", id] as const,
+};
+
+export const complaintKeys = {
+  all: ["complaints"] as const,
+  list: (params: ComplaintListParams) => ["complaints", "list", params] as const,
 };
 
 export const sosKeys = {

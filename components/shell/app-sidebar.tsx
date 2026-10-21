@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessageSquareWarning, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PresenceSwitcher } from "@/components/shell/presence-switcher";
 import { useAuth } from "@/lib/auth-context";
@@ -51,6 +51,7 @@ const NAV: NavItem[] = [
   { href: "/rides", label: "Ride History", icon: Route, section: "Rides", sectionIcon: Car, anyPermission: ["ride.view"] },
   { href: "/reviews", label: "Reviews & Ratings", icon: Star, section: "Reviews & Ratings", sectionIcon: Star, anyPermission: ["rating.view"] },
   { href: "/sos", label: "SOS Alerts", icon: Siren, anyPermission: ["sos.view"] },
+  { href: "/complaints", label: "Complaint Report", icon: MessageSquareWarning, anyPermission: ["incident.view"] },
 ];
 
 /** Left navigation: violet gradient rail with the portal brand, nav items and account actions. */
