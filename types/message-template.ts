@@ -96,3 +96,25 @@ export interface UploadedTemplateImage {
   key: string;
   url: string;
 }
+
+// ── Audio ────────────────────────────────────────────────────────────────
+/** A recorded / uploaded voice message, stored as OGG/Opus. `url` is a signed playback link (about an hour). */
+export interface AudioTemplate {
+  id: number;
+  name: string;
+  description: string | null;
+  product: TemplateProduct | null;
+  url: string;
+  durationSeconds: number;
+  sizeBytes: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AudioTemplateInput {
+  name: string;
+  description: string;
+  product: TemplateProduct | null;
+  /** A new recording or file; omitted on edit to keep the current audio. */
+  audio?: Blob;
+}

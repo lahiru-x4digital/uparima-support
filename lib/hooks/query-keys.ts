@@ -63,6 +63,9 @@ export const messageTemplateKeys = {
   whatsappList: (p: TemplateListParams) => ["whatsapp-templates", "list", p] as const,
   whatsappDetail: (id: number) => ["whatsapp-templates", id] as const,
   whatsappMeta: ["whatsapp-templates", "meta-status"] as const,
+  audio: ["audio-templates"] as const,
+  audioList: (p: TemplateListParams) => ["audio-templates", "list", p] as const,
+  audioDetail: (id: number) => ["audio-templates", id] as const,
 };
 
 export const driverKeys = {

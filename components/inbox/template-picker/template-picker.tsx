@@ -1,28 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, FileText, Mail, MessageCircle } from "lucide-react";
+import { ClipboardList, FileText, Mail, MessageCircle, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useMe } from "@/lib/hooks/use-desk";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/inbox";
+import { AudioChooser } from "./audio-chooser";
 import { CareChooser } from "./care-chooser";
 import { EmailChooser } from "./email-chooser";
 import { WhatsappChooser } from "./whatsapp-chooser";
 
-type Kind = "email" | "whatsapp" | "care";
+type Kind = "email" | "whatsapp" | "care" | "audio";
 const KINDS: Record<Kind, { label: string; icon: typeof Mail }> = {
   email: { label: "Email", icon: Mail },
   whatsapp: { label: "WhatsApp", icon: MessageCircle },
   care: { label: "Care", icon: ClipboardList },
+  audio: { label: "Audio", icon: Mic },
 };
 const PICKER_PRODUCTS = ["riders", "drivers", "ads", "hire"];
+const SENDS: Record<Kind | "attachment", string> = {
+  email: "sends the designed email in this thread",
+  whatsapp: "sends on WhatsApp",
+  audio: "sends as a WhatsApp voice note",
+  attachment: "sends the audio as an attachment",
+  care: "",
+};
 
 /**
  * Templates for the reply area of any conversation. A template of the conversation's own channel
  * is sent as that channel's real message (designed email / approved WhatsApp template); every other
- * template is inserted into the reply box as text, to edit and send as a normal reply.
+ * template is inserted into the reply box as text, to edit and send as a normal reply. Audio
+ * templates are always sent: a voice note on WhatsApp, an audio attachment on other channels.
  */
 export function TemplatePicker({ conversation: c, onSendEmailTemplate, onInsertText, sendOnly = false, label = "Templates" }: {
   conversation: Conversation;
@@ -35,9 +45,10 @@ export function TemplatePicker({ conversation: c, onSendEmailTemplate, onInsertT
 }) {
   const [open, setOpen] = useState(false);
   const { data: me } = useMe();
-  const kinds: Kind[] = sendOnly ? ["whatsapp"] : c.channel === "whatsapp" ? ["whatsapp", "email", "care"] : ["email", "whatsapp", "care"];
+  const kinds: Kind[] = sendOnly ? ["whatsapp"] : c.channel === "whatsapp" ? ["whatsapp", "audio", "email", "care"] : ["email", "whatsapp", "care", "audio"];
   const [kind, setKind] = useState<Kind>(kinds[0]);
-  const mode = (k: Kind) => ((k === "email" && c.channel === "email") || (k === "whatsapp" && c.channel === "whatsapp") ? "send" : "insert");
+  const mode = (k: Kind) =>
+    k === "audio" || (k === "email" && c.channel === "email") || (k === "whatsapp" && c.channel === "whatsapp") ? "send" : "insert";
   // Only the conversation's product (plus "any product" templates); everything when it has none.
   const product = c.product && PICKER_PRODUCTS.includes(c.product) ? c.product : undefined;
   const phone = c.phone && c.phone !== "—" ? c.phone : null;
@@ -57,9 +68,7 @@ export function TemplatePicker({ conversation: c, onSendEmailTemplate, onInsertT
         <DialogHeader className="pr-8">
           <DialogTitle>Templates</DialogTitle>
           <DialogDescription>
-            For {c.customerName} · {mode(kind) === "send"
-              ? kind === "email" ? "sends the designed email in this thread" : "sends on WhatsApp"
-              : "inserts the text into your reply"}
+            For {c.customerName} · {mode(kind) === "insert" ? "inserts the text into your reply" : SENDS[kind === "audio" && c.channel !== "whatsapp" ? "attachment" : kind]}
           </DialogDescription>
         </DialogHeader>
         {kinds.length > 1 && (
@@ -88,6 +97,10 @@ export function TemplatePicker({ conversation: c, onSendEmailTemplate, onInsertT
             ticketId={c.ticketNumber ? c.id : undefined} onSent={() => setOpen(false)} onInsert={insert} />
         )}
         {open && kind === "care" && <CareChooser key="care" onInsert={insert} />}
+        {open && kind === "audio" && (
+          <AudioChooser key="audio" product={product} ticketId={c.ticketNumber ? c.id : undefined} phone={phone}
+            whatsapp={c.channel === "whatsapp"} onSent={() => setOpen(false)} />
+        )}
       </DialogContent>
     </Dialog>
   );

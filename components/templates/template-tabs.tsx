@@ -2,21 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Mail, MessageCircle } from "lucide-react";
+import { ClipboardList, Mail, MessageCircle, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/templates", label: "Care", icon: ClipboardList },
   { href: "/templates/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/templates/email", label: "Email", icon: Mail },
+  { href: "/templates/audio", label: "Audio", icon: Mic },
 ] as const;
 
-/** Switch between the three template kinds. Care owns /templates, /templates/new and /templates/:id. */
+/** Switch between the template kinds. Care owns /templates, /templates/new and /templates/:id. */
 export function TemplateTabs() {
   const pathname = usePathname();
   const isActive = (href: string) =>
     href === "/templates"
-      ? !pathname.startsWith("/templates/whatsapp") && !pathname.startsWith("/templates/email")
+      ? !TABS.some((t) => t.href !== "/templates" && pathname.startsWith(t.href))
       : pathname.startsWith(href);
 
   return (
