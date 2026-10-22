@@ -271,6 +271,31 @@ export function driverToFormValues(d: Driver, bankAccount?: DriverBankAccount | 
 
 // ── Payloads of the driver endpoints (`/support-desk/drivers/*`) ─────────────
 
+/**
+ * One of a driver's documents that matches a document already on file under another driver — the
+ * detail behind the "possible reused/shared document" warning. Mirrors
+ * RidesAdminService.getDriverDuplicateDocuments in uparima-backend.
+ */
+export type DuplicateDocumentMatch = {
+  slot: string;
+  documentType: string;
+  label: string;
+  /** "shared-number": both carry the same document number. "unreadable-number": near-identical images, number unreadable. */
+  reason: "shared-number" | "unreadable-number";
+  /** How different the two images are (0 = identical); lower is a closer match. */
+  distance: number;
+  sharedIdentifiers: string[];
+  otherDriver: {
+    id: number;
+    name: string | null;
+    phone: string | null;
+    nicNumber: string | null;
+    status: string;
+  };
+  ownImageUrl: string | null;
+  otherImageUrl: string;
+};
+
 export type AiValidationResult = {
   valid: boolean;
   issues: string[];

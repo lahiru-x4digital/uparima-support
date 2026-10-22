@@ -24,6 +24,7 @@ import {
 } from "@/lib/hooks/use-drivers";
 import type { AiValidationResult } from "@/types/driver";
 import { DriverDetailBody } from "./driver-detail-body";
+import { DriverDuplicateDocuments } from "./driver-duplicate-documents";
 import { DriverFlags } from "./driver-flags";
 
 /** One driver: details, subscription, documents and credit history, with the actions you may take. */
@@ -270,6 +271,12 @@ export function DriverDetail({ id }: { id: string }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Names the driver(s) behind a "possible reused/shared document" warning. Mounted only when a
+          warning says so, because finding the matches scans every other driver's archived documents. */}
+      {[...(aiResult?.issues ?? []), ...(driver.reviewIssues ?? [])].some((issue) =>
+        issue.includes("different driver account"),
+      ) && <DriverDuplicateDocuments driverId={id} />}
 
       <DriverDetailBody
         driverId={id}

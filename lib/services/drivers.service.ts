@@ -10,6 +10,7 @@ import type {
   DriverSubscriptionInfo,
   DriverTermsStatus,
   DocumentExtractionResult,
+  DuplicateDocumentMatch,
   VehicleLookup,
 } from "@/types/driver";
 import { newVehicleModelName } from "@/types/driver";
@@ -72,6 +73,10 @@ export const getDriverSubscription = (id: number | string) =>
 
 export const adjustDriverSubscription = (id: number | string, body: AdjustSubscriptionBody) =>
   apiPatch<DriverSubscriptionInfo>(`${BASE}/${id}/subscription`, body);
+
+/** Other drivers' documents this driver's documents match (the reused/shared document warning). */
+export const getDriverDuplicateDocuments = (id: number | string) =>
+  apiGet<DuplicateDocumentMatch[]>(`${BASE}/${id}/duplicate-documents`);
 
 /** Null for a driver whose app has never reported. */
 export const getDriverDevicePermissions = (id: number | string) =>

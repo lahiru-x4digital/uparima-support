@@ -13,6 +13,7 @@ import {
   deleteDriverPermanently,
   getDriver,
   getDriverDevicePermissions,
+  getDriverDuplicateDocuments,
   getDriverSubscription,
   getDriverTermsStatus,
   listDrivers,
@@ -153,6 +154,20 @@ export function useDriverDevicePermissions(id: string) {
   return useQuery({
     queryKey: driverKeys.devicePermissions(id),
     queryFn: () => getDriverDevicePermissions(id),
+    enabled: !!user,
+    retry: false,
+  });
+}
+
+/**
+ * The matches behind a "possible reused/shared document" warning. Mount its consumer only while
+ * that warning shows: finding the matches scans every other driver's archived documents.
+ */
+export function useDriverDuplicateDocuments(id: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: driverKeys.duplicateDocuments(id),
+    queryFn: () => getDriverDuplicateDocuments(id),
     enabled: !!user,
     retry: false,
   });

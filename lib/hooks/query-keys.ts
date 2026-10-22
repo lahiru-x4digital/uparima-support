@@ -76,6 +76,7 @@ export const driverKeys = {
   subscription: (id: string) => ["drivers", "subscription", id] as const,
   devicePermissions: (id: string) => ["drivers", "device-permissions", id] as const,
   termsStatus: (id: string) => ["drivers", "terms-status", id] as const,
+  duplicateDocuments: (id: string) => ["drivers", "duplicate-documents", id] as const,
   vehicleTypes: ["drivers", "vehicle-types"] as const,
   provinces: ["drivers", "provinces"] as const,
   provinceDistricts: (province: string) => ["drivers", "province-districts", province] as const,
