@@ -6,7 +6,7 @@ import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { listTicketCalls, logTicketCall, updateTicketCall } from "@/lib/services/ticket-calls.service";
 import type { TicketCallInput, TicketCallUpdate } from "@/types/ticket-call";
-import { ticketCallKeys } from "./query-keys";
+import { driverKeys, ticketCallKeys } from "./query-keys";
 
 // A colleague's call is picked up on the next refetch (focus or this poll).
 const POLL_MS = 60_000;
@@ -29,7 +29,12 @@ export function useLogTicketCall(ticketId: string) {
     mutationFn: (input: TicketCallInput) => logTicketCall(ticketId, input),
     onSuccess: () => toast.success("Call logged"),
     onError: (error) => toast.error("Couldn't log the call", { description: getErrorMessage(error) }),
-    onSettled: () => qc.invalidateQueries({ queryKey: ticketCallKeys.list(ticketId) }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ticketCallKeys.list(ticketId) });
+      // A logged call counts as contact, so the Drivers list's "Contacted" filter and
+      // "Contacted via …" line change with it.
+      void qc.invalidateQueries({ queryKey: driverKeys.lists });
+    },
   });
 }
 

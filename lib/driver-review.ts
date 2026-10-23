@@ -65,3 +65,25 @@ export function formatDriverDate(date: string | null | undefined): string {
     ? "—"
     : parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
+
+/**
+ * The issue a review records when the AI service itself couldn't run — the backend's
+ * AUTOMATED_REVIEW_UNAVAILABLE_ISSUE (uparima-backend/src/modules/rides/drivers/desk-approval-policy.ts).
+ */
+export const AUTOMATED_REVIEW_UNAVAILABLE_ISSUE =
+  "Automated review is temporarily unavailable — a staff member will review this application.";
+
+/**
+ * Why support staff can't approve this driver by hand, or null when they can — the backend's
+ * deskApprovalBlocker, which refuses the request too. They approve only what the AI review passed,
+ * or by hand when the AI couldn't run at all. Admins aren't bound by it.
+ */
+export function deskApprovalBlocker(driver: Pick<Driver, "reviewValid" | "reviewIssues">): string | null {
+  if (driver.reviewValid === true) return null;
+  const issues = driver.reviewIssues ?? [];
+  if (driver.reviewValid === null || driver.reviewValid === undefined) {
+    return "Run AI Validate first — a driver is approved only after their documents have been checked.";
+  }
+  if (issues.length > 0 && issues.every((i) => i === AUTOMATED_REVIEW_UNAVAILABLE_ISSUE)) return null;
+  return "The AI review found problems with this driver's documents, so it can't be approved here. Fix them and run AI Validate again, or ask an admin.";
+}

@@ -438,7 +438,7 @@ function CreateWizard({
     revenue: <RevenueSection {...stepProps} />,
     bank: <BankSection {...stepProps} hadBankAccount={false} />,
   };
-  const submitLabel = submitting ? "Saving…" : "Create Driver";
+  const submitLabel = submitting ? "Saving…" : "Submit for review";
 
   return (
     <div className="space-y-4">

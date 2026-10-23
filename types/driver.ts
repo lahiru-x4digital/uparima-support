@@ -1,3 +1,5 @@
+import type { TicketCall } from "./ticket-call";
+
 // "incomplete": a signup that was started but never submitted (e.g. WhatsApp "Drive").
 export type DriverStatus = "incomplete" | "pending" | "approved" | "rejected" | "suspended" | "deleted";
 
@@ -77,6 +79,17 @@ export type Driver = {
   // (status "incomplete") still lacks before it can be reviewed. Empty for
   // every other status. Absent on a response from an older backend.
   missingFields?: string[];
+  // How support staff have reached the driver (list endpoint only), manual work only — bot
+  // messages don't count: "call" for a logged call, otherwise the channel of a ticket an agent
+  // replied on ("whatsapp", "email", "app"). `agents` is who did it. Empty methods = not contacted.
+  contact?: {
+    methods: string[];
+    agents: Array<{ id: number; name: string | null }>;
+    lastContactedAt: string | null;
+  };
+  // The driver's open support ticket (list endpoint only): null = no open ticket; assignedAgent
+  // null = open but nobody has it yet.
+  supportTicket?: DriverSupportTicket | null;
 
   status: DriverStatus;
   creditBalance: number;
@@ -94,6 +107,14 @@ export type Driver = {
   isTestDriver: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+/** A driver's open support ticket, as the Drivers list carries it. Calls are oldest first. */
+export type DriverSupportTicket = {
+  id: string;
+  ticketNumber: string;
+  assignedAgent: { id: number; name: string | null } | null;
+  calls: Omit<TicketCall, "ticketId">[];
 };
 
 export type DriverDocumentKey =
@@ -295,6 +316,9 @@ export type DuplicateDocumentMatch = {
   ownImageUrl: string | null;
   otherImageUrl: string;
 };
+
+/** Add Driver's response: the new driver plus its AI review (null when the review couldn't start). */
+export type CreatedDriver = Driver & { aiValidation: AiValidationResult | null };
 
 export type AiValidationResult = {
   valid: boolean;

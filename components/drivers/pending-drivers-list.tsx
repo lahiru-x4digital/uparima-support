@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,12 +15,15 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBox } from "@/components/shared/search-box";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
-import { signupReadyForReview } from "@/lib/driver-review";
-import { useCan } from "@/lib/hooks/use-desk";
+import { deskApprovalBlocker, signupReadyForReview } from "@/lib/driver-review";
+import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useClientPagination } from "@/lib/hooks/use-client-pagination";
 import { useApproveDriver, usePendingDrivers, useRejectDriver } from "@/lib/hooks/use-drivers";
+import { phoneMatches } from "@/lib/phone-search";
 import type { Driver } from "@/types/driver";
 import { DriverFlags } from "./driver-flags";
+import { DriverFilterBar, useDriverFilters } from "./driver-filters";
+import { DriverCallsCell, DriverContactLine, DriverTicketCell } from "./driver-ticket-cells";
 
 const PAGE_SIZE = 20;
 const SORTS = [
@@ -38,19 +41,28 @@ const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join("
 const awaitingDecision = (d: Driver) => d.status === "pending" || signupReadyForReview(d);
 
 const matchesSearch = (d: Driver, term: string) =>
-  [String(d.id), d.firstName, d.lastName, d.vehicleRegistrationNumber].filter(Boolean).join(" ").toLowerCase().includes(term);
+  [String(d.id), d.firstName, d.lastName, d.phone, d.vehicleRegistrationNumber]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(term) || phoneMatches(d.phone, term);
 
 /**
  * The driver review queue: applications waiting for a decision (look at the documents, then
  * approve or reject) and signups that were started but never submitted (incomplete — nothing to
  * decide yet, but worth chasing). A signup staff have since filled in is decided on like a pending one.
+ * Support staff approve only what the AI review passed, or by hand when it couldn't run.
  */
 export function PendingDriversList() {
-  const canView = useCan("driver.view");
+  const viewDrivers = useCanViewDrivers();
   const canApprove = useCan("driver.approve");
+  const canSeeCalls = useCan("support-ticket.view");
+  const canLogCalls = useCan("support-ticket.update");
+  const isAdmin = useIsAdmin();
 
   const { data, isLoading, error, refetch } = usePendingDrivers();
-  const drivers = data ?? [];
+  const drivers = useMemo(() => data ?? [], [data]);
+  const filters = useDriverFilters(drivers);
   const approve = useApproveDriver();
   const reject = useRejectDriver();
 
@@ -69,7 +81,7 @@ export function PendingDriversList() {
       if (needle && !matchesSearch(d, needle)) return false;
       if (dateFrom && d.createdAt.slice(0, 10) < dateFrom) return false;
       if (dateTo && d.createdAt.slice(0, 10) > dateTo) return false;
-      return true;
+      return filters.matches(d);
     })
     .sort((a, b) => {
       if (sort === "name") return fullName(a).localeCompare(fullName(b));
@@ -80,66 +92,74 @@ export function PendingDriversList() {
   const { page, setPage, totalPages, total, pageItems } = useClientPagination(
     filtered,
     PAGE_SIZE,
-    `${kind}|${needle}|${dateFrom}|${dateTo}|${sort}`,
+    `${kind}|${needle}|${dateFrom}|${dateTo}|${sort}|${filters.key}`,
   );
+  const columns = canSeeCalls ? 8 : 7;
 
-  if (!canView && !canApprove) return <NoAccess what="the pending drivers queue" />;
+  if (!viewDrivers.any && !viewDrivers.pendingOnly && !canApprove) {
+    return <NoAccess what="the pending drivers queue" />;
+  }
 
   return (
     <PageShell
       title="Pending Drivers"
       description="Applications waiting for review, and signups that were started but not finished."
-      actions={<SearchBox placeholder="Search name, ID or reg. no." onSearch={setTerm} />}
+      actions={<SearchBox placeholder="Search name, phone, ID or reg. no." onSearch={setTerm} />}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        {KINDS.map((k) => {
-          const count = k === "all" ? drivers.length : drivers.filter((d) => d.status === k).length;
-          return (
-            <button
-              key={k}
-              onClick={() => setKind(k)}
-              aria-pressed={kind === k}
-              className={`rounded-full border px-3.5 py-1 text-sm font-medium capitalize transition-colors ${
-                kind === k ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-card hover:border-ring hover:bg-accent"
-              }`}
-            >
-              {k} <span className="opacity-70">({count})</span>
-            </button>
-          );
-        })}
-        <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          Started from
-          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-auto" />
-        </label>
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          to
-          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-auto" />
-        </label>
-        <NativeSelect
-          aria-label="Sort"
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortValue)}
-          containerClassName="w-44"
-        >
-          {SORTS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </NativeSelect>
-        {(dateFrom || dateTo || sort !== "newest") && (
-          <button
-            onClick={() => {
-              setDateFrom("");
-              setDateTo("");
-              setSort("newest");
-            }}
-            className="text-xs text-muted-foreground underline hover:text-foreground"
+      <div className="space-y-3 rounded-2xl border bg-card p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {KINDS.map((k) => {
+            const count = k === "all" ? drivers.length : drivers.filter((d) => d.status === k).length;
+            return (
+              <button
+                key={k}
+                onClick={() => setKind(k)}
+                aria-pressed={kind === k}
+                className={`rounded-full border px-3.5 py-1 text-sm font-medium capitalize transition-colors ${
+                  kind === k
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "bg-card hover:border-ring hover:bg-accent"
+                }`}
+              >
+                {k} <span className="opacity-70">({count})</span>
+              </button>
+            );
+          })}
+          <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            Started from
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-auto" />
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            to
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-auto" />
+          </label>
+          <NativeSelect
+            aria-label="Sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortValue)}
+            containerClassName="w-44"
           >
-            Clear filters
-          </button>
-        )}
+            {SORTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </NativeSelect>
+          {(dateFrom || dateTo || sort !== "newest") && (
+            <button
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+                setSort("newest");
+              }}
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+            >
+              Reset dates & sort
+            </button>
+          )}
+        </div>
+        <DriverFilterBar filters={filters} />
       </div>
 
       {error ? (
@@ -159,58 +179,77 @@ export function PendingDriversList() {
                 <TableHead>Status</TableHead>
                 <TableHead>Registration No.</TableHead>
                 <TableHead>Started</TableHead>
+                <TableHead>Support Ticket</TableHead>
+                {canSeeCalls && <TableHead>Calls</TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground">
+                  <TableCell colSpan={columns} className="text-muted-foreground">
                     Loading…
                   </TableCell>
                 </TableRow>
               ) : pageItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground">
+                  <TableCell colSpan={columns} className="text-muted-foreground">
                     {drivers.length === 0
                       ? "All driver applications have been reviewed."
                       : "No drivers match your filters."}
                   </TableCell>
                 </TableRow>
               ) : (
-                pageItems.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">#{d.id}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span>{fullName(d)}</span>
-                        <DriverFlags driver={d} />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge value={d.status} />
-                    </TableCell>
-                    <TableCell>{d.vehicleRegistrationNumber ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(d.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1.5">
-                        <Link href={`/drivers/${d.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-                          {awaitingDecision(d) ? "View docs" : "View"}
-                        </Link>
-                        {canApprove && awaitingDecision(d) && (
-                          <>
-                            <Button size="sm" disabled={approve.isPending} onClick={() => approve.mutate(d.id)}>
-                              <CheckCircle /> Approve
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => setRejectTarget(d)}>
-                              <XCircle /> Reject
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                pageItems.map((d) => {
+                  const approvalBlocker = isAdmin ? null : deskApprovalBlocker(d);
+                  return (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-mono text-xs text-muted-foreground">#{d.id}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span>{fullName(d)}</span>
+                          <DriverFlags driver={d} />
+                          <DriverContactLine driver={d} />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge value={d.status} />
+                      </TableCell>
+                      <TableCell>{d.vehicleRegistrationNumber ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatDate(d.createdAt)}</TableCell>
+                      <TableCell className="text-sm">
+                        <DriverTicketCell driver={d} />
+                      </TableCell>
+                      {canSeeCalls && (
+                        <TableCell>
+                          <DriverCallsCell driver={d} canLog={canLogCalls} />
+                        </TableCell>
+                      )}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1.5">
+                          <Link href={`/drivers/${d.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                            {awaitingDecision(d) ? "View docs" : "View"}
+                          </Link>
+                          {canApprove && awaitingDecision(d) && (
+                            <>
+                              <Button
+                                size="sm"
+                                disabled={approve.isPending || !!approvalBlocker}
+                                title={approvalBlocker ?? undefined}
+                                onClick={() => approve.mutate(d.id)}
+                              >
+                                <CheckCircle /> Approve
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => setRejectTarget(d)}>
+                                <XCircle /> Reject
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

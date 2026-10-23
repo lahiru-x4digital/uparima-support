@@ -20,8 +20,8 @@ import { NoAccess } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
 import { changedDriverFields, type DriverSectionKey } from "@/lib/driver-form-rules";
-import { canAiValidateDriver, canApproveApplication, formatDriverDate } from "@/lib/driver-review";
-import { useCan } from "@/lib/hooks/use-desk";
+import { canAiValidateDriver, canApproveApplication, deskApprovalBlocker, formatDriverDate } from "@/lib/driver-review";
+import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useHotkeys } from "@/lib/hooks/use-hotkeys";
 import {
   useApproveDriver,
@@ -56,9 +56,9 @@ export function DriverDetailsDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const canViewDrivers = useCan("driver.view");
+  const viewDrivers = useCanViewDrivers();
   const canRegister = useCan("driver.manual-register");
-  const canView = canViewDrivers || canRegister;
+  const canView = viewDrivers.any || viewDrivers.pendingOnly || canRegister;
   const [mode, setMode] = useState<Mode>({ kind: "view" });
   // Refreshes on its own (the bot saves documents after this was loaded) — but never underneath an edit.
   const { data, isLoading, error, refetch } = useDriverDetail(driverId, {
@@ -169,6 +169,7 @@ function DriverDialogBody({
   const canSeeFees = useCan("driver-payment.view");
   const canSeeRides = useCan("ride.view");
   const canAiValidate = canRegister || canUpdate || canApprove;
+  const isAdmin = useIsAdmin();
 
   const approve = useApproveDriver();
   const suspend = useSuspendDriver();
@@ -187,6 +188,8 @@ function DriverDialogBody({
   const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—";
   const busy = approve.isPending || suspend.isPending || restore.isPending;
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
+  // Support staff approve only what the AI review passed, or by hand when it couldn't run.
+  const approvalBlocker = isAdmin ? null : deskApprovalBlocker(driver);
   const owed = Number(driver.platformFeeOwedLkr ?? 0);
 
   const edit = useCallback((section?: DriverSectionKey) => setMode({ kind: "edit", section }), [setMode]);
@@ -216,11 +219,21 @@ function DriverDialogBody({
   // The one decision this driver is waiting on, as the primary button.
   const primary =
     canApprove && canApproveApplication(driver) ? (
-      <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
+      <Button
+        size="sm"
+        disabled={busy || !!approvalBlocker}
+        title={approvalBlocker ?? undefined}
+        onClick={() => approve.mutate(driver.id)}
+      >
         Approve
       </Button>
     ) : canApprove && driver.status === "suspended" ? (
-      <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
+      <Button
+        size="sm"
+        disabled={busy || !!approvalBlocker}
+        title={approvalBlocker ?? undefined}
+        onClick={() => approve.mutate(driver.id)}
+      >
         Re-approve
       </Button>
     ) : canApprove && driver.status === "deleted" ? (

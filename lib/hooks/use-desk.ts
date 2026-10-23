@@ -27,6 +27,22 @@ export function useIsSuperAdmin(): boolean {
   return useAuth().user?.type === "super_admin";
 }
 
+/** An admin or super admin — not bound by the support-staff rules (e.g. deskApprovalBlocker). */
+export function useIsAdmin(): boolean {
+  const type = useAuth().user?.type;
+  return type === "admin" || type === "super_admin";
+}
+
+/**
+ * Can open drivers at all: any driver (`driver.view`), or only pending / incomplete ones
+ * (`driver.view-pending`, enforced by the backend's SupportDeskDriverScopeGuard).
+ */
+export function useCanViewDrivers(): { any: boolean; pendingOnly: boolean } {
+  const any = useCan("driver.view");
+  const pending = useCan("driver.view-pending");
+  return { any, pendingOnly: !any && pending };
+}
+
 export function useStaff() {
   const { user } = useAuth();
   return useQuery({ queryKey: deskKeys.staff, queryFn: listStaff, enabled: !!user, staleTime: 5 * 60_000 });

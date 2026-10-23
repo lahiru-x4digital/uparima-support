@@ -2,6 +2,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import type {
   AdjustSubscriptionBody,
   AiValidationResult,
+  CreatedDriver,
   Driver,
   DriverDetail,
   DriverDevicePermissions,
@@ -87,8 +88,12 @@ export const getDriverTermsStatus = (id: number | string) =>
 
 // ── Register & edit ─────────────────────────────────────────────────────────
 
+/**
+ * Add Driver submits for review: the backend saves the driver as pending and runs the AI review at
+ * once, approving it only if the documents pass. The result rides along as `aiValidation`.
+ */
 export const createDriver = (values: DriverFormValues, files: DriverFormFiles) =>
-  apiPost<Driver>(BASE, buildFormData(values, files), MULTIPART);
+  apiPost<CreatedDriver>(BASE, buildFormData(values, files), MULTIPART);
 
 /**
  * Add Driver's "Save as draft": whatever is filled in, saved as an unfinished signup (status

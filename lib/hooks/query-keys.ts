@@ -70,6 +70,8 @@ export const messageTemplateKeys = {
 
 export const driverKeys = {
   all: ["drivers"] as const,
+  /** Every driver list (any status / search), for invalidating them together. */
+  lists: ["drivers", "list"] as const,
   list: (status: string, search = "") => ["drivers", "list", status, search] as const,
   pending: ["drivers", "pending"] as const,
   detail: (id: string) => ["drivers", "detail", id] as const,

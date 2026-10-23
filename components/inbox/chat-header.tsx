@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { Conversation } from "@/types/inbox";
 import { CHANNELS, initials } from "./meta";
-import { HeaderCalls, LogCallButton } from "./ticket-calls";
+import { HeaderCalls, LogCallButton } from "@/components/shared/ticket-calls";
 
 interface Props {
   conversation: Conversation;

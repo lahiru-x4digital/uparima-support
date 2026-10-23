@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { canAiValidateDriver, canApproveApplication, signupGaps, signupReadyForReview } from "./driver-review";
+import {
+  AUTOMATED_REVIEW_UNAVAILABLE_ISSUE,
+  canAiValidateDriver,
+  canApproveApplication,
+  deskApprovalBlocker,
+  signupGaps,
+  signupReadyForReview,
+} from "./driver-review";
 
 type Input = Parameters<typeof canApproveApplication>[0];
 const driver = (over: Partial<Input>): Input => ({
@@ -52,5 +59,32 @@ describe("a submitted driver", () => {
     expect(canAiValidateDriver(driver({ status: "approved", reviewValid: false }))).toBe(true);
     expect(canAiValidateDriver(driver({ status: "approved", missingDocuments: ["license number"] }))).toBe(true);
     expect(canAiValidateDriver(driver({ status: "suspended", reviewValid: false }))).toBe(false);
+  });
+});
+
+describe("deskApprovalBlocker", () => {
+  it("allows a driver the AI review passed", () => {
+    expect(deskApprovalBlocker({ reviewValid: true, reviewIssues: [] })).toBeNull();
+  });
+
+  it("asks for AI Validate before a driver was reviewed", () => {
+    expect(deskApprovalBlocker({ reviewValid: null, reviewIssues: null })).toMatch(/Run AI Validate first/);
+  });
+
+  it("allows approving by hand when the AI couldn't run", () => {
+    expect(deskApprovalBlocker({ reviewValid: false, reviewIssues: [AUTOMATED_REVIEW_UNAVAILABLE_ISSUE] })).toBeNull();
+  });
+
+  it("refuses a driver the AI found problems with", () => {
+    expect(deskApprovalBlocker({ reviewValid: false, reviewIssues: ["licence is expired."] })).toMatch(/found problems/);
+  });
+
+  it("refuses when the AI was down but another problem was still found", () => {
+    expect(
+      deskApprovalBlocker({
+        reviewValid: false,
+        reviewIssues: [AUTOMATED_REVIEW_UNAVAILABLE_ISSUE, "matches a document of a different driver account"],
+      }),
+    ).toMatch(/found problems/);
   });
 });

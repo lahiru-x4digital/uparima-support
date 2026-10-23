@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { History, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +12,8 @@ import { Modal } from "@/components/shared/modal";
 import { NoAccess, PageShell } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
-import { canAiValidateDriver, canApproveApplication, signupGaps } from "@/lib/driver-review";
-import { useCan } from "@/lib/hooks/use-desk";
+import { canAiValidateDriver, canApproveApplication, deskApprovalBlocker, signupGaps } from "@/lib/driver-review";
+import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import {
   useApproveDriver,
   useDeleteDriverPermanently,
@@ -31,7 +32,8 @@ import { DriverFlags } from "./driver-flags";
 export function DriverDetail({ id }: { id: string }) {
   const router = useRouter();
   // Hooks are called unconditionally (no `||` between them); the checks combine afterwards.
-  const canViewDrivers = useCan("driver.view");
+  const viewDrivers = useCanViewDrivers();
+  const isAdmin = useIsAdmin();
   const canRegister = useCan("driver.manual-register");
   const canUpdate = useCan("driver.update");
   const canApprove = useCan("driver.approve");
@@ -53,14 +55,16 @@ export function DriverDetail({ id }: { id: string }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
 
-  const canView = canViewDrivers || canRegister;
+  const canView = viewDrivers.any || viewDrivers.pendingOnly || canRegister;
+  // Pending-only staff (driver.view-pending) come from, and go back to, the review queue.
+  const listHref = viewDrivers.pendingOnly ? "/drivers/pending" : "/drivers";
   const canAiValidate = canRegister || canUpdate || canApprove;
 
   if (!canView) return <NoAccess what="driver details" />;
 
   if (isLoading) {
     return (
-      <PageShell title="Driver" backHref="/drivers">
+      <PageShell title="Driver" backHref={listHref}>
         <div className="flex justify-center p-10 text-muted-foreground">
           <Loader2 className="size-6 animate-spin" />
         </div>
@@ -69,7 +73,7 @@ export function DriverDetail({ id }: { id: string }) {
   }
   if (error || !data) {
     return (
-      <PageShell title="Driver" backHref="/drivers">
+      <PageShell title="Driver" backHref={listHref}>
         <p className="rounded-xl border bg-card p-6 text-center text-sm text-destructive">
           {error ? getErrorMessage(error) : "Driver not found."}
         </p>
@@ -87,13 +91,32 @@ export function DriverDetail({ id }: { id: string }) {
   // RidesAdminService.validateDriverWithAi. A signup staff have finished filling in counts as pending
   // (lib/driver-review).
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
+  // Support staff approve only what the AI review passed, or by hand when it couldn't run — the
+  // backend refuses the rest (SupportDeskDriverReviewService.approve). Admins aren't bound by it.
+  const approvalBlocker = isAdmin ? null : deskApprovalBlocker(driver);
+
+  function approveDriver() {
+    approve.mutate(driver.id, {
+      // An approved driver is outside what pending-only staff can open.
+      onSuccess: () => {
+        if (viewDrivers.pendingOnly) router.push("/drivers/pending");
+      },
+    });
+  }
   // What an unfinished signup still needs; null for any other driver.
   const gaps = signupGaps(driver);
 
   function runAiValidate() {
     setAiResult(null);
     validate.mutate(id, {
-      onSuccess: (result) => setAiResult(result),
+      onSuccess: (result) => {
+        setAiResult(result);
+        // A pass approves the driver, which takes them out of what pending-only staff can open.
+        if (result.approved && viewDrivers.pendingOnly) {
+          toast.success("Driver approved", { description: "The AI review passed every document." });
+          router.push("/drivers/pending");
+        }
+      },
     });
   }
 
@@ -107,7 +130,7 @@ export function DriverDetail({ id }: { id: string }) {
           <DriverFlags driver={driver} />
         </span>
       }
-      backHref="/drivers"
+      backHref={listHref}
       actions={
         <>
           {canUpdate && (
@@ -126,7 +149,7 @@ export function DriverDetail({ id }: { id: string }) {
             </Button>
           )}
           {canApprove && canApproveApplication(driver) && (
-            <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
+            <Button size="sm" disabled={busy || !!approvalBlocker} title={approvalBlocker ?? undefined} onClick={approveDriver}>
               Approve
             </Button>
           )}
@@ -136,7 +159,7 @@ export function DriverDetail({ id }: { id: string }) {
             </Button>
           )}
           {canApprove && driver.status === "suspended" && (
-            <Button size="sm" disabled={busy} onClick={() => approve.mutate(driver.id)}>
+            <Button size="sm" disabled={busy || !!approvalBlocker} title={approvalBlocker ?? undefined} onClick={approveDriver}>
               Re-approve
             </Button>
           )}
@@ -221,6 +244,15 @@ export function DriverDetail({ id }: { id: string }) {
       {/* The live result of the "AI Validate" button takes priority over the stored verdict — both
           read the same reviewValid / reviewIssues columns once the page reloads, so showing both
           would only duplicate the information. */}
+      {/* Why Approve is greyed out for support staff. */}
+      {canApprove && approvalBlocker && (canApproveApplication(driver) || driver.status === "suspended") && (
+        <Card className="ring-amber-400/60">
+          <CardContent>
+            <p className="text-sm text-amber-700 dark:text-amber-400">{approvalBlocker}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {!aiResult && driver.reviewValid === false && (
         <Card className="ring-destructive/40">
           <CardHeader>

@@ -42,7 +42,7 @@ const NAV: NavItem[] = [
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
   { href: "/email/config", label: "Email Config", icon: Settings2 },
   { href: "/drivers", label: "Drivers", icon: Car, section: "Drivers", sectionIcon: Car, anyPermission: ["driver.view"], exact: true },
-  { href: "/drivers/pending", label: "Pending Drivers", icon: UserCheck, anyPermission: ["driver.view", "driver.approve"] },
+  { href: "/drivers/pending", label: "Pending Drivers", icon: UserCheck, anyPermission: ["driver.view", "driver.view-pending", "driver.approve"] },
   { href: "/drivers/add", label: "Add Driver", icon: UserPlus, anyPermission: ["driver.manual-register"] },
   { href: "/drivers/platform-fees", label: "Platform Fees", icon: Receipt, anyPermission: ["driver-payment.view"] },
   { href: "/drivers/promotion-balances", label: "Promotion Balances", icon: BadgePercent, anyPermission: ["driver-payment.view"] },
