@@ -79,6 +79,16 @@ export type Driver = {
   // (status "incomplete") still lacks before it can be reviewed. Empty for
   // every other status. Absent on a response from an older backend.
   missingFields?: string[];
+  // Computed too: documents past their saved expiry date, as labels — "insurance (expired
+  // 2026-09-25)". Absent on a response from an older backend.
+  expiredDocuments?: string[];
+  // The latest AI document check (RidesDriver.lastAiCheckAt): kept even when it failed on an approved
+  // driver, whose reviewValid stays as it was so a possible false positive doesn't knock them
+  // offline. Null until one runs.
+  lastAiCheckAt?: string | null;
+  lastAiCheckValid?: boolean | null;
+  lastAiCheckSummary?: string | null;
+  lastAiCheckIssues?: string[] | null;
   // How support staff have reached the driver (list endpoint only), manual work only — bot
   // messages don't count: "call" for a logged call, otherwise the channel of a ticket an agent
   // replied on ("whatsapp", "email", "app"). `agents` is who did it. Empty methods = not contacted.

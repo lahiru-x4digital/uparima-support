@@ -12,6 +12,7 @@ import { Modal } from "@/components/shared/modal";
 import { NoAccess, PageShell } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
+import { formatDateTime } from "@/lib/format";
 import { canAiValidateDriver, canApproveApplication, deskApprovalBlocker, signupGaps } from "@/lib/driver-review";
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import {
@@ -249,6 +250,28 @@ export function DriverDetail({ id }: { id: string }) {
         <Card className="ring-amber-400/60">
           <CardContent>
             <p className="text-sm text-amber-700 dark:text-amber-400">{approvalBlocker}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* The latest AI check failed on a driver whose stored verdict it didn't change (an approved
+          driver re-checked) — kept so it survives a refresh. */}
+      {!aiResult && driver.reviewValid !== false && driver.lastAiCheckValid === false && (
+        <Card className="ring-amber-400/60">
+          <CardHeader>
+            <CardTitle className="text-amber-700 dark:text-amber-400">
+              Last AI Check Found Problems{driver.lastAiCheckAt ? ` — ${formatDateTime(driver.lastAiCheckAt)}` : ""}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{driver.lastAiCheckSummary}</p>
+            {(driver.lastAiCheckIssues ?? []).length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {(driver.lastAiCheckIssues ?? []).map((issue, i) => (
+                  <li key={i}>{issue}</li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       )}

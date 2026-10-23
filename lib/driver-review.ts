@@ -3,7 +3,8 @@
 
 import type { Driver } from "@/types/driver";
 
-type Reviewed = Pick<Driver, "status" | "missingFields" | "missingDocuments" | "reviewValid">;
+type Reviewed = Pick<Driver, "status" | "missingFields" | "missingDocuments" | "reviewValid"> &
+  Partial<Pick<Driver, "lastAiCheckValid" | "expiredDocuments">>;
 
 /**
  * What an unfinished signup (status "incomplete", e.g. started on WhatsApp) still needs before it
@@ -35,7 +36,12 @@ export function canApproveApplication(driver: Reviewed): boolean {
 export function canAiValidateDriver(driver: Reviewed): boolean {
   return (
     canApproveApplication(driver) ||
-    (driver.status === "approved" && (driver.reviewValid === false || (driver.missingDocuments ?? []).length > 0))
+    (driver.status === "approved" &&
+      (driver.reviewValid === false ||
+        // The last check failed, or a document has lapsed: re-check once it's been fixed.
+        driver.lastAiCheckValid === false ||
+        (driver.expiredDocuments ?? []).length > 0 ||
+        (driver.missingDocuments ?? []).length > 0))
   );
 }
 
@@ -78,7 +84,22 @@ export const AUTOMATED_REVIEW_UNAVAILABLE_ISSUE =
  * deskApprovalBlocker, which refuses the request too. They approve only what the AI review passed,
  * or by hand when the AI couldn't run at all. Admins aren't bound by it.
  */
-export function deskApprovalBlocker(driver: Pick<Driver, "reviewValid" | "reviewIssues">): string | null {
+export function deskApprovalBlocker(
+  driver: Pick<Driver, "reviewValid" | "reviewIssues"> &
+    Partial<Pick<Driver, "licenseExpiryDate" | "insuranceExpiryDate" | "revenueLicenseExpiryDate">>,
+): string | null {
+  // An expired document blocks approval whatever the AI said earlier (it may have passed before the
+  // date ran out) — the driver couldn't go online anyway.
+  const expired = (
+    [
+      ["driving licence", driver.licenseExpiryDate],
+      ["insurance", driver.insuranceExpiryDate],
+      ["revenue licence", driver.revenueLicenseExpiryDate],
+    ] as const
+  ).filter(([, date]) => !!date && expiryStatus(date).status === "expired");
+  if (expired.length > 0) {
+    return `This driver has expired documents (${expired.map(([label]) => label).join(", ")}). The driver must upload the renewed document and its new expiry date before they can be approved.`;
+  }
   if (driver.reviewValid === true) return null;
   const issues = driver.reviewIssues ?? [];
   if (driver.reviewValid === null || driver.reviewValid === undefined) {

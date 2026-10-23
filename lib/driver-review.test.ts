@@ -88,3 +88,15 @@ describe("deskApprovalBlocker", () => {
     ).toMatch(/found problems/);
   });
 });
+
+describe("deskApprovalBlocker with expiry dates", () => {
+  it("refuses a driver with an expired document even after a passed review (driver #1915)", () => {
+    expect(
+      deskApprovalBlocker({ reviewValid: true, reviewIssues: [], insuranceExpiryDate: "2020-09-25", revenueLicenseExpiryDate: "2020-10-13" }),
+    ).toMatch(/expired documents \(insurance, revenue licence\)/);
+  });
+
+  it("allows a passed review whose documents are in date", () => {
+    expect(deskApprovalBlocker({ reviewValid: true, reviewIssues: [], insuranceExpiryDate: "2099-01-01" })).toBeNull();
+  });
+});
