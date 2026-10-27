@@ -303,6 +303,7 @@ export function detailToConversation(
   ]);
   return {
     ...base(ticket, staff, now, canReply),
+    lastCustomerMessageAt: detail.lastCustomerMessageAt ?? null,
     // Fetching detail is what marks a ticket seen server-side, so the
     // conversation being viewed is never shown as unread.
     unread: false,

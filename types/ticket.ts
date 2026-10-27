@@ -114,6 +114,8 @@ export interface TicketDetail {
    * window from the customer's last message). Always true for non-WhatsApp
    * tickets, which deliver in-app instead. */
   canReply: boolean;
+  /** When the customer last wrote on WhatsApp (the reply window counts from here). */
+  lastCustomerMessageAt?: string | null;
   /** For a whatsapp-channel ticket: the actual bot conversation (prompts,
    * taps, photos, voice notes) that led to this hand-off, so the thread
    * mirrors WhatsApp itself instead of just the ticket's stored message.
