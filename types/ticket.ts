@@ -123,6 +123,13 @@ export interface TicketDetail {
   /** This customer's other tickets, newest first (empty for an
    * agent-logged ticket with no matched account). */
   previousTickets: PreviousTicketSummary[];
+  /** The customer's few earlier tickets with their conversations, oldest first, so the thread
+   * can show them above this one. */
+  earlierConversations?: Array<{
+    ticket: Ticket;
+    replies: TicketReply[];
+    whatsappSession: BotChatMessage[] | null;
+  }>;
 }
 
 /** One row of a customer's ticket history, for the desk's context panel. */

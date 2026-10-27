@@ -54,9 +54,17 @@ export function MessageList({ conversationId, messages }: Props) {
       className="min-h-0 flex-1 overflow-y-auto bg-muted/30"
     >
       <div className="flex flex-col gap-3 p-4">
-        {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} />
-        ))}
+        {messages.map((m) =>
+          m.kind === "divider" ? (
+            <div key={m.id} role="separator" className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              <span className="shrink-0">{m.body}</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          ) : (
+            <MessageBubble key={m.id} message={m} />
+          ),
+        )}
         <div ref={endRef} />
       </div>
     </div>

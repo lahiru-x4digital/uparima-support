@@ -206,6 +206,52 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
   };
 }
 
+/** One ticket's conversation: the WhatsApp session (or the ticket's own first message) followed by
+ * the staff and customer replies. */
+function ticketThread(
+  ticket: Ticket,
+  replies: TicketReply[],
+  whatsappSession: TicketDetail["whatsappSession"],
+  customerName: string,
+  staff: Staff[],
+  now: Date,
+): Message[] {
+  const leadMessages = whatsappSession?.length
+    ? whatsappSession.map((m) => botMessage(m, customerName))
+    : [firstMessage(ticket, customerName, now)];
+  // A WhatsApp template sent from the portal is logged both in the bot session and as a staff
+  // reply; show it once (the bot-session copy) by dropping the reply that mirrors it.
+  const mirroredReply = (r: TicketReply) =>
+    !r.id.startsWith("tmp-") &&
+    r.isStaffReply &&
+    !!whatsappSession?.some(
+      (m) =>
+        m.direction === "out" &&
+        m.body.trim() === r.message.trim() &&
+        Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000,
+    );
+  return [
+    ...leadMessages,
+    ...replies
+      .filter((r) => !mirroredReply(r))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map((r) => replyMessage(r, customerName, staff, now)),
+  ];
+}
+
+/** A rule between two tickets' chats: "TKT-… · 12 Oct · Closed". */
+function ticketDivider(ticket: Ticket, now: Date): Message {
+  return {
+    id: `${ticket.id}:divider`,
+    direction: "inbound",
+    kind: "divider",
+    body: [ticket.ticketNumber, formatTime(ticket.createdAt, now), ticket.status === "completed" ? "Closed" : "Open"].join(" · "),
+    time: "",
+    sender: "",
+    attachments: [],
+  };
+}
+
 /** The full ticket: for a WhatsApp hand-off whose linked session is known,
  * the actual bot conversation (mirroring WhatsApp itself) followed by staff
  * replies; otherwise the ticket's own stored first message plus replies, as
@@ -228,21 +274,12 @@ export function detailToConversation(
     "Unknown caller";
   const phone =
     row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
-  const leadMessages = whatsappSession?.length
-    ? whatsappSession.map((m) => botMessage(m, customerName))
-    : [firstMessage(ticket, customerName, now)];
-  // A WhatsApp template sent from the portal is logged both in the bot session and as a staff
-  // reply; show it once (the bot-session copy) by dropping the reply that mirrors it.
-  const mirroredReply = (r: TicketReply) =>
-    !r.id.startsWith("tmp-") &&
-    r.isStaffReply &&
-    !!whatsappSession?.some(
-      (m) =>
-        m.direction === "out" &&
-        m.body.trim() === r.message.trim() &&
-        Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000,
-    );
-  const visibleReplies = replies.filter((r) => !mirroredReply(r));
+  const thread = (t: Ticket, r: TicketReply[], session: TicketDetail["whatsappSession"]) =>
+    ticketThread(t, r, session, customerName, staff, now);
+  const earlier = (detail.earlierConversations ?? []).flatMap((e) => [
+    ticketDivider(e.ticket, now),
+    ...thread(e.ticket, e.replies, e.whatsappSession),
+  ]);
   return {
     ...base(ticket, staff, now, canReply),
     // Fetching detail is what marks a ticket seen server-side, so the
@@ -257,11 +294,11 @@ export function detailToConversation(
     phone,
     email: ticket.reporterEmail ?? row?.reporterEmail ?? null,
     submitter,
+    // Earlier tickets' chats first, each under a divider, then this one.
     messages: [
-      ...leadMessages,
-      ...[...visibleReplies]
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-        .map((r) => replyMessage(r, customerName, staff, now)),
+      ...earlier,
+      ...(earlier.length ? [ticketDivider(ticket, now)] : []),
+      ...thread(ticket, replies, whatsappSession),
     ],
     attachments: (ticket.attachments ?? []).map(attachmentOf),
     previousTickets,

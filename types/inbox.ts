@@ -26,7 +26,7 @@ export type MessageDirection = "inbound" | "outbound";
  * can render it the way WhatsApp itself does — a menu's option chips, a
  * tapped choice as its own small bubble, a location/media/link marker.
  */
-export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template";
+export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template" | "divider";
 export type MessageState = "sending" | "sent" | "failed";
 export type AttachmentKind = "image" | "audio" | "file";
 

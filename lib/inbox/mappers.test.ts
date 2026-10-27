@@ -124,6 +124,31 @@ describe("detailToConversation", () => {
     expect(c.submitter).toMatchObject({ kind: "driver", vehicleRegistrationNumber: "CAB-1234" });
   });
 
+  it("shows earlier tickets' chats above the current one, each under a divider", () => {
+    const r = row();
+    const earlier = { ...row(), id: "t0", ticketNumber: "TKT-OLD", message: "old question", status: "completed" as const, createdAt: "2026-10-01T09:00:00Z" };
+    const detail: TicketDetail = {
+      ticket: r,
+      submitter: null,
+      replies: [],
+      canReply: true,
+      whatsappSession: null,
+      previousTickets: [],
+      earlierConversations: [
+        {
+          ticket: earlier,
+          replies: [{ id: "o1", ticketId: "t0", authorId: 5, isStaffReply: true, message: "Sorted", attachments: null, createdAt: "2026-10-01T10:00:00Z" }],
+          whatsappSession: null,
+        },
+      ],
+    };
+    const c = detailToConversation(detail, r, staff, NOW);
+    expect(c.messages.map((m) => m.id)).toEqual(["t0:divider", "t0:first", "o1", "t1:divider", "t1:first"]);
+    expect(c.messages[0]).toMatchObject({ kind: "divider" });
+    expect(c.messages[0].body).toContain("TKT-OLD");
+    expect(c.messages[0].body).toContain("Closed");
+  });
+
   it("mirrors the real WhatsApp session instead of the ticket's placeholder message, when one is linked", () => {
     const r = row();
     const detail: TicketDetail = {
