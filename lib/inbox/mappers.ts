@@ -229,6 +229,18 @@ function ticketThread(
             Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000,
         )
       : undefined;
+  // The customer's follow-ups are also saved as replies (so the ticket moves up the list and shows
+  // as unread). When the session log has the same message, the reply is a duplicate: drop it.
+  const MEDIA_MARKERS = new Set(["[Photo]", "[Voice note]", "[Document]", "[Location]"]);
+  const mirrorsInbound = (r: TicketReply) =>
+    !r.isStaffReply &&
+    !!whatsappSession?.some(
+      (m) =>
+        m.direction === "in" &&
+        Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000 &&
+        (m.body.trim() === r.message.trim() ||
+          (MEDIA_MARKERS.has(r.message) && (m.kind === "media" || m.kind === "location"))),
+    );
   const mirrored = new Set<string>();
   const timed: Array<{ at: string; message: Message }> = whatsappSession?.length
     ? whatsappSession.map((m) => {
@@ -242,7 +254,7 @@ function ticketThread(
       })
     : [{ at: ticket.createdAt, message: firstMessage(ticket, customerName, now) }];
   for (const r of replies) {
-    if (!mirrored.has(r.id)) timed.push({ at: r.createdAt, message: replyMessage(r, customerName, staff, now) });
+    if (!mirrored.has(r.id) && !mirrorsInbound(r)) timed.push({ at: r.createdAt, message: replyMessage(r, customerName, staff, now) });
   }
   // Chronological, so a customer's message after an agent's reply sits below it.
   return timed.sort((x, y) => x.at.localeCompare(y.at)).map((t) => t.message);

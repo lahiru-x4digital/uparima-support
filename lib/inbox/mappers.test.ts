@@ -206,6 +206,28 @@ describe("agent replies in a WhatsApp session", () => {
   });
 });
 
+describe("customer follow-ups saved as replies", () => {
+  it("shows a follow-up once when the WhatsApp session log already has it", () => {
+    const r = row();
+    const detail: TicketDetail = {
+      ticket: r,
+      submitter: null,
+      replies: [
+        { id: "c1", ticketId: "t1", authorId: 9, isStaffReply: false, message: "any news?", attachments: null, createdAt: "2026-10-06T11:41:01Z" },
+        { id: "c2", ticketId: "t1", authorId: 9, isStaffReply: false, message: "[Photo]", attachments: null, createdAt: "2026-10-06T11:42:00Z" },
+      ],
+      canReply: true,
+      whatsappSession: [
+        { id: "1", direction: "in", kind: "text", body: "any news?", meta: {}, createdAt: "2026-10-06T11:41:00Z" },
+        { id: "2", direction: "in", kind: "media", body: "Photo", meta: {}, createdAt: "2026-10-06T11:42:00Z" },
+      ],
+      previousTickets: [],
+    };
+    const c = detailToConversation(detail, r, staff, NOW);
+    expect(c.messages.map((m) => m.id)).toEqual(["1", "2"]);
+  });
+});
+
 describe("botChatId / botChatRefFromId", () => {
   it("round-trips a phone and session through the synthetic id", () => {
     expect(botChatId("94771234567", "s1")).toBe("bot:94771234567:s1");
