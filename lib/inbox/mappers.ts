@@ -216,27 +216,36 @@ function ticketThread(
   staff: Staff[],
   now: Date,
 ): Message[] {
-  const leadMessages = whatsappSession?.length
-    ? whatsappSession.map((m) => botMessage(m, customerName))
-    : [firstMessage(ticket, customerName, now)];
-  // A WhatsApp template sent from the portal is logged both in the bot session and as a staff
-  // reply; show it once (the bot-session copy) by dropping the reply that mirrors it.
-  const mirroredReply = (r: TicketReply) =>
-    !r.id.startsWith("tmp-") &&
-    r.isStaffReply &&
-    !!whatsappSession?.some(
-      (m) =>
-        m.direction === "out" &&
-        m.body.trim() === r.message.trim() &&
-        Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000,
-    );
-  return [
-    ...leadMessages,
-    ...replies
-      .filter((r) => !mirroredReply(r))
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-      .map((r) => replyMessage(r, customerName, staff, now)),
-  ];
+  // Everything sent over WhatsApp, including a staff reply from the portal, is also logged in the
+  // bot session as an outbound message. Show it once: the session copy (it keeps the rich bubble)
+  // labelled with the agent who wrote it, and drop the ticket reply that mirrors it.
+  const mirrorOf = (m: NonNullable<TicketDetail["whatsappSession"]>[number]) =>
+    m.direction === "out"
+      ? replies.find(
+          (r) =>
+            !r.id.startsWith("tmp-") &&
+            r.isStaffReply &&
+            m.body.trim() === r.message.trim() &&
+            Math.abs(new Date(m.createdAt).getTime() - new Date(r.createdAt).getTime()) < 2 * 60_000,
+        )
+      : undefined;
+  const mirrored = new Set<string>();
+  const timed: Array<{ at: string; message: Message }> = whatsappSession?.length
+    ? whatsappSession.map((m) => {
+        const reply = mirrorOf(m);
+        if (reply) mirrored.add(reply.id);
+        const message = botMessage(m, customerName);
+        return {
+          at: m.createdAt,
+          message: reply ? { ...message, sender: staffName(staff, reply.authorId) ?? "Support" } : message,
+        };
+      })
+    : [{ at: ticket.createdAt, message: firstMessage(ticket, customerName, now) }];
+  for (const r of replies) {
+    if (!mirrored.has(r.id)) timed.push({ at: r.createdAt, message: replyMessage(r, customerName, staff, now) });
+  }
+  // Chronological, so a customer's message after an agent's reply sits below it.
+  return timed.sort((x, y) => x.at.localeCompare(y.at)).map((t) => t.message);
 }
 
 /** A rule between two tickets' chats: "TKT-… · 12 Oct · Closed". */

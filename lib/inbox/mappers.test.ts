@@ -183,6 +183,29 @@ describe("detailToConversation", () => {
   });
 });
 
+describe("agent replies in a WhatsApp session", () => {
+  it("shows an agent's reply once, labelled with the agent, in time order with the customer's messages", () => {
+    const r = row();
+    const detail: TicketDetail = {
+      ticket: r,
+      submitter: null,
+      replies: [
+        { id: "r1", ticketId: "t1", authorId: 5, isStaffReply: true, message: "Calling you", attachments: null, createdAt: "2026-10-06T11:40:00Z" },
+      ],
+      canReply: true,
+      whatsappSession: [
+        { id: "1", direction: "in", kind: "text", body: "help", meta: {}, createdAt: "2026-10-06T11:30:00Z" },
+        { id: "2", direction: "out", kind: "text", body: "Calling you", meta: {}, createdAt: "2026-10-06T11:40:01Z" },
+        { id: "3", direction: "in", kind: "text", body: "ok thanks", meta: {}, createdAt: "2026-10-06T11:41:00Z" },
+      ],
+      previousTickets: [],
+    };
+    const c = detailToConversation(detail, r, staff, NOW);
+    expect(c.messages.map((m) => m.id)).toEqual(["1", "2", "3"]);
+    expect(c.messages[1]).toMatchObject({ direction: "outbound", sender: "Nimal" });
+  });
+});
+
 describe("botChatId / botChatRefFromId", () => {
   it("round-trips a phone and session through the synthetic id", () => {
     expect(botChatId("94771234567", "s1")).toBe("bot:94771234567:s1");
