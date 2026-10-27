@@ -24,7 +24,7 @@ import {
   useStartCreateAll,
 } from "@/lib/hooks/use-whatsapp-incoming";
 import { useQueryClient } from "@tanstack/react-query";
-import { NO_FILTER, chatKey, isFiltered, needsTicket, ticketsToCreate } from "@/lib/whatsapp-incoming/filters";
+import { NO_FILTER, chatKey, finishedText, isFiltered, needsTicket, progressText, ticketsToCreate } from "@/lib/whatsapp-incoming/filters";
 import type { IncomingChat, IncomingFilter, IncomingTicketFilter } from "@/types/whatsapp-incoming";
 
 const PER_PAGE = 25;
@@ -114,7 +114,7 @@ export function WhatsappChats() {
     setConfirmingAll(false);
     try {
       let status = await startAll.mutateAsync(filter);
-      setProgress(`Working… opened ${status.created} ticket(s) so far`);
+      setProgress(progressText(status));
       while (status.state === "running") {
         await new Promise((resolve) => setTimeout(resolve, POLL_MS));
         const next = await getCreateAllStatus();
@@ -123,14 +123,13 @@ export function WhatsappChats() {
           return;
         }
         status = next;
-        setProgress(`Working… opened ${status.created} ticket(s) so far`);
+        setProgress(progressText(status));
       }
       if (status.state === "failed") {
         toast.error(`Stopped after ${status.created} ticket(s): ${status.error ?? "something went wrong"}`);
       } else {
-        toast.success(
-          `Opened ${status.created} ticket(s)${status.assigned ? `, ${status.assigned} more assigned from the waiting queue` : ""}.`,
-        );
+        // A run can finish with some conversations still ticketless: say why.
+        (status.failed ? toast.warning : toast.success)(finishedText(status), { duration: status.failed ? 15000 : 5000 });
       }
       setTicked(new Set());
       refreshIncoming(qc);

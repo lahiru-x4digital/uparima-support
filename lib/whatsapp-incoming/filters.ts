@@ -1,4 +1,5 @@
 import type {
+  CreateAllStatus,
   CreateTicketsSummary,
   IncomingChat,
   IncomingChatRef,
@@ -58,4 +59,16 @@ export function summaryText(s: CreateTicketsSummary): string {
   }
   if (s.failed > 0) parts.push(`${s.failed} failed`);
   return parts.join(" · ") || "Nothing to do";
+}
+
+/** How far the "create for all" run is: "Working… opened 40 ticket(s) so far, 2 failed". */
+export const progressText = (s: Pick<CreateAllStatus, "created" | "failed">) =>
+  `Working… opened ${s.created} ticket(s) so far${s.failed ? `, ${s.failed} failed` : ""}`;
+
+/** What the run ended with, including why some conversations got no ticket. */
+export function finishedText(s: CreateAllStatus): string {
+  const made = `Opened ${s.created} ticket(s)${s.assigned ? `, ${s.assigned} more assigned from the waiting queue` : ""}.`;
+  if (!s.failed) return made;
+  const why = s.errors?.length ? ` (${s.errors.join("; ")})` : "";
+  return `${made} ${s.failed} conversation(s) got no ticket${why}.`;
 }

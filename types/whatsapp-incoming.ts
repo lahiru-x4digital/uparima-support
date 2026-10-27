@@ -68,6 +68,9 @@ export interface CreateAllStatus {
   created: number;
   /** Waiting tickets given an agent by the final pass. */
   assigned: number;
+  /** Conversations that could not get a ticket, and the distinct reasons. */
+  failed?: number;
+  errors?: string[];
   startedAt: string;
   finishedAt?: string;
   error?: string;

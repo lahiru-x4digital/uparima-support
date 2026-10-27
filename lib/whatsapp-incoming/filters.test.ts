@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CreateTicketsSummary, IncomingChat } from "@/types/whatsapp-incoming";
-import { NO_FILTER, allBody, chatKey, isFiltered, listParams, summaryText, ticketsToCreate } from "./filters";
+import { NO_FILTER, allBody, chatKey, finishedText, isFiltered, listParams, progressText, summaryText, ticketsToCreate } from "./filters";
 
 const chat = (over: Partial<IncomingChat> = {}): IncomingChat => ({
   phone: "94771234567",
@@ -92,5 +92,21 @@ describe("summaryText", () => {
 
   it("says so when nothing happened", () => {
     expect(summaryText(base)).toBe("Nothing to do");
+  });
+});
+
+describe("run progress text", () => {
+  const status = { state: "done", created: 40, assigned: 3, startedAt: "2026-10-27T08:00:00Z" } as const;
+
+  it("shows progress, with failures when there are some", () => {
+    expect(progressText({ created: 12 })).toBe("Working… opened 12 ticket(s) so far");
+    expect(progressText({ created: 12, failed: 2 })).toBe("Working… opened 12 ticket(s) so far, 2 failed");
+  });
+
+  it("says why conversations got no ticket", () => {
+    expect(finishedText(status)).toBe("Opened 40 ticket(s), 3 more assigned from the waiting queue.");
+    expect(finishedText({ ...status, assigned: 0, failed: 2, errors: ["No account for this phone"] })).toBe(
+      "Opened 40 ticket(s). 2 conversation(s) got no ticket (No account for this phone).",
+    );
   });
 });
