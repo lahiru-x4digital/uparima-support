@@ -24,6 +24,7 @@ import {
   rejectDriver,
   removeDriverDocument,
   restoreDriver,
+  softDeleteDriver,
   suspendDriver,
   updateDriver,
   validateDriverWithAi,
@@ -219,6 +220,9 @@ export const useRemoveDriverDocument = () =>
     ({ id, slot }: { id: string; slot: string }) => removeDriverDocument(id, slot),
     "Document removed — the driver must re-upload it",
   );
+
+export const useSoftDeleteDriver = () =>
+  useDriverMutation((id: string) => softDeleteDriver(id), "Driver deleted — can be restored");
 
 export const useDeleteDriverPermanently = () =>
   useDriverMutation((id: string) => deleteDriverPermanently(id), "Driver permanently deleted");

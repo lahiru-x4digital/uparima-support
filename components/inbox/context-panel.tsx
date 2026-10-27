@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Bike, Bookmark, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Bike, Bookmark, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, Trash2, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/shared/modal";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -14,7 +15,7 @@ import { DriverFollowup } from "@/components/drivers/driver-followup";
 import { DriverNotes } from "@/components/drivers/driver-notes";
 import { useDriverFollowups } from "@/lib/hooks/use-driver-followups";
 import { useDriverNotes } from "@/lib/hooks/use-driver-notes";
-import { useDriverDetail } from "@/lib/hooks/use-drivers";
+import { useDriverDetail, useSoftDeleteDriver } from "@/lib/hooks/use-drivers";
 import { useCan, useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
@@ -111,16 +112,21 @@ function IncompleteSignupNote({ driverId }: { driverId: number }) {
  * attention — why the account is blocked, an unfinished signup, a balance owed (most drivers
  * have none) — followed by the two actions in one row. */
 function DriverStats({
+  name,
   submitter,
   onViewDriver,
   onEditLocation,
 }: {
+  name: string;
   submitter: Extract<Conversation["submitter"], { kind: "driver" }>;
   onViewDriver: () => void;
   /** Omitted when the agent may not edit drivers. */
   onEditLocation?: () => void;
 }) {
   const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
+  const canDelete = useCan("driver.delete");
+  const softDelete = useSoftDeleteDriver();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   // platformFeeOwedLkr/creditBalance are Postgres `decimal` columns that TypeORM can return as
   // strings — coerce before formatting so a string value never crashes `.toLocaleString`.
   const platformFeeOwedLkr = Number(submitter.platformFeeOwedLkr);
@@ -149,7 +155,44 @@ function DriverStats({
             <MapPin className="size-3.5" /> <span className="truncate">Location</span>
           </Button>
         )}
+        {canDelete && submitter.status !== "deleted" && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 text-destructive hover:text-destructive"
+            title="Delete driver (can be restored)"
+            aria-label="Delete driver"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 className="size-3.5" /> Delete
+          </Button>
+        )}
       </div>
+      <Modal
+        open={confirmDelete}
+        onClose={() => !softDelete.isPending && setConfirmDelete(false)}
+        title="Delete driver?"
+        className="sm:max-w-sm"
+      >
+        <div className="space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            <span className="font-medium text-foreground">{name || "This driver"}</span> (driver #{submitter.driverId}) will be taken offline and marked Deleted. Nothing is removed — they can
+            be restored to Pending review later.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" disabled={softDelete.isPending} onClick={() => setConfirmDelete(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={softDelete.isPending}
+              onClick={() => softDelete.mutate(String(submitter.driverId), { onSettled: () => setConfirmDelete(false) })}
+            >
+              {softDelete.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -345,6 +388,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
 
           {c.submitter?.kind === "driver" ? (
             <DriverStats
+              name={c.customerName}
               submitter={c.submitter}
               onViewDriver={() => setDriverDialogOpen(true)}
               onEditLocation={canEditDriver ? () => setLocationDialogOpen(true) : undefined}

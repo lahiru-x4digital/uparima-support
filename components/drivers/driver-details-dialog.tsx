@@ -26,6 +26,7 @@ import { useHotkeys } from "@/lib/hooks/use-hotkeys";
 import {
   useApproveDriver,
   useDeleteDriverPermanently,
+  useSoftDeleteDriver,
   useDriverDetail,
   useRemoveDriverDocument,
   useRestoreDriver,
@@ -177,12 +178,14 @@ function DriverDialogBody({
   const validate = useValidateDriverWithAi();
   const removeDocument = useRemoveDriverDocument();
   const deleteDriver = useDeleteDriverPermanently();
+  const softDelete = useSoftDeleteDriver();
   const update = useUpdateDriver();
 
   const [tab, setTab] = useDriverTab();
   const [aiResult, setAiResult] = useState<AiValidationResult | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
+  const [confirmSoftDelete, setConfirmSoftDelete] = useState(false);
 
   const { driver } = data;
   const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—";
@@ -248,6 +251,7 @@ function DriverDialogBody({
     ) : null;
 
   const showSuspend = canSuspend && driver.status === "approved";
+  const showSoftDelete = canDelete && driver.status !== "deleted";
 
   const header = (
     <DialogHeader className="gap-1 pr-8">
@@ -332,6 +336,15 @@ function DriverDialogBody({
                 </DropdownMenuItem>
               )}
               {showSuspend && canDelete && <DropdownMenuSeparator />}
+              {showSoftDelete && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={busy || softDelete.isPending}
+                  onClick={() => setConfirmSoftDelete(true)}
+                >
+                  <Trash2 /> Delete driver…
+                </DropdownMenuItem>
+              )}
               {canDelete && (
                 <DropdownMenuItem
                   variant="destructive"
@@ -370,6 +383,37 @@ function DriverDialogBody({
           onEditSection={canUpdate ? edit : undefined}
         />
       </div>
+
+      <Modal
+        open={confirmSoftDelete}
+        onClose={() => !softDelete.isPending && setConfirmSoftDelete(false)}
+        title="Delete driver?"
+        className="sm:max-w-sm"
+      >
+        <div className="space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            <span className="font-medium text-foreground">{name}</span> (driver #{driver.id}) will be taken offline and
+            marked Deleted. Nothing is removed — use Restore to put them back to Pending review.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" disabled={softDelete.isPending} onClick={() => setConfirmSoftDelete(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={softDelete.isPending}
+              onClick={() =>
+                softDelete.mutate(driverId, {
+                  onSuccess: () => setConfirmSoftDelete(false),
+                  onError: () => setConfirmSoftDelete(false),
+                })
+              }
+            >
+              {softDelete.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         open={confirmDelete}

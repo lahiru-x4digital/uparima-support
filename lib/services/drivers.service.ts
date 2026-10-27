@@ -148,6 +148,9 @@ export const restoreDriver = (id: number | string) => apiPost<void>(`${BASE}/${i
 export const removeDriverDocument = (id: number | string, slot: string) =>
   apiDelete<void>(`${BASE}/${id}/documents/${slot}`);
 
+/** Soft delete: the driver is marked Deleted and taken offline, nothing is removed. Undo with Restore. */
+export const softDeleteDriver = (id: number | string) => apiPost<void>(`${BASE}/${id}/soft-delete`);
+
 /**
  * Emergency, irreversible removal of the driver and all their rides-side data (the shared user
  * account and riders' ride history are kept). Refused while the driver has a ride in progress.
