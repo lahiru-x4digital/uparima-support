@@ -14,14 +14,15 @@ export interface TicketCall {
 
 export interface TicketCallInput {
   status: TicketCallStatus;
-  note?: string;
+  /** Required — a call can't be saved without a note. */
+  note: string;
   /** ISO time the call was made; omitted = now. */
   calledAt?: string;
 }
 
 export const TICKET_CALL_NOTE_MAX_LENGTH = 1000;
 
-/** `PATCH /support-desk/tickets/:id/calls/:callId` — only the agent who logged the call. An empty note clears it. */
+/** `PATCH /support-desk/tickets/:id/calls/:callId` — only the agent who logged the call. The note can't be emptied. */
 export interface TicketCallUpdate {
   status?: TicketCallStatus;
   note?: string;
