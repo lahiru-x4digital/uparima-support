@@ -171,6 +171,7 @@ function EditCallDialog({ ticketId, call, onClose }: { ticketId: string; call: T
   const [note, setNote] = useState(call.note ?? "");
   const update = useUpdateTicketCall(ticketId);
   const unchanged = status === call.status && note.trim() === (call.note ?? "");
+  const noteMissing = !note.trim();
 
   function save() {
     update.mutate({ callId: call.id, status, note: note.trim() }, { onSuccess: onClose });
@@ -194,11 +195,12 @@ function EditCallDialog({ ticketId, call, onClose }: { ticketId: string; call: T
         >
           <OutcomePicker value={status} onChange={setStatus} />
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Note
+            Note <span className="text-destructive">*</span>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={TICKET_CALL_NOTE_MAX_LENGTH}
+              required
               placeholder="What was said, what happens next…"
               className="min-h-24 text-xs md:text-xs"
             />
@@ -207,7 +209,7 @@ function EditCallDialog({ ticketId, call, onClose }: { ticketId: string; call: T
             <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={update.isPending}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={update.isPending || unchanged}>
+            <Button type="submit" size="sm" disabled={update.isPending || unchanged || noteMissing}>
               {update.isPending && <Loader2 className="animate-spin" />} Save changes
             </Button>
           </DialogFooter>
@@ -241,7 +243,7 @@ export function LogCallButton({ ticketId }: { ticketId: string }) {
     log.mutate(
       {
         status,
-        note: note.trim() || undefined,
+        note: note.trim(),
         calledAt: Number.isNaN(when.getTime()) ? undefined : when.toISOString(),
       },
       { onSuccess: () => setOpen(false) },
@@ -277,11 +279,12 @@ export function LogCallButton({ ticketId }: { ticketId: string }) {
           </label>
 
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Note <span className="sr-only">(optional)</span>
+            Note <span className="text-destructive">*</span>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={TICKET_CALL_NOTE_MAX_LENGTH}
+              required
               placeholder="What was said, what happens next…"
               className="min-h-20 text-xs md:text-xs"
             />
@@ -291,7 +294,7 @@ export function LogCallButton({ ticketId }: { ticketId: string }) {
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={log.isPending}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={log.isPending || !calledAt}>
+            <Button type="submit" size="sm" disabled={log.isPending || !calledAt || !note.trim()}>
               {log.isPending && <Loader2 className="animate-spin" />} Save call
             </Button>
           </div>

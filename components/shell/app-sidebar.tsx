@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageSquare, MessageSquareWarning, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageCircle, MessageSquare, MessageSquareWarning, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PresenceSwitcher } from "@/components/shell/presence-switcher";
 import { useAuth } from "@/lib/auth-context";
@@ -26,6 +26,8 @@ interface NavItem {
   anyPermission?: string[];
   /** Shown only to a super admin — for what no permission grants (bulk SMS). */
   superAdminOnly?: boolean;
+  /** Shown only to an admin or super admin. */
+  adminOnly?: boolean;
   /** Active only on exactly this path, not on the pages beneath it. */
   exact?: boolean;
 }
@@ -33,6 +35,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Message", icon: MessageSquare },
+  { href: "/whatsapp-chats", label: "WhatsApp Chats", icon: MessageCircle, adminOnly: true },
   { href: "/my-tickets", label: "My Open Tickets", icon: ListChecks },
   { href: "/my-performance", label: "My Performance", icon: Gauge },
   { href: "/templates", label: "Templates", icon: ClipboardList },
@@ -66,6 +69,7 @@ export function AppSidebar() {
   const visibleNav = NAV.filter(
     (item) =>
       (!item.superAdminOnly || user?.type === "super_admin") &&
+      (!item.adminOnly || user?.type === "admin" || user?.type === "super_admin") &&
       (!item.anyPermission || item.anyPermission.some((p) => permissions.includes(p))),
   );
   // Bank-transfer plan payments waiting for someone to check the slip.

@@ -15,7 +15,7 @@ import { DriverNotes } from "@/components/drivers/driver-notes";
 import { useDriverFollowups } from "@/lib/hooks/use-driver-followups";
 import { useDriverNotes } from "@/lib/hooks/use-driver-notes";
 import { useDriverDetail } from "@/lib/hooks/use-drivers";
-import { useCan, useRide } from "@/lib/hooks/use-desk";
+import { useCan, useCanViewDrivers, useRide } from "@/lib/hooks/use-desk";
 import { formatTime, slaState } from "@/lib/inbox/mappers";
 import { assetUrl, cn } from "@/lib/utils";
 import { EMPTY_DRIVER_FORM } from "@/types/driver";
@@ -297,7 +297,10 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const canEditDriver = useCan("driver.update");
-  const canSeeDriver = useCan("driver.view");
+  // Mirrors the backend's note/follow-up permissions: pending-only and manual-register staff
+  // (not just `driver.view`) can read and write them.
+  const viewDrivers = useCanViewDrivers();
+  const canSeeDriver = viewDrivers.any || viewDrivers.pendingOnly || useCan("driver.manual-register");
   const [createDriverOpen, setCreateDriverOpen] = useState(false);
   // A driver created from a ticket with no existing driver record — shown
   // in the detail dialog right after registration, by id (not c.submitter,

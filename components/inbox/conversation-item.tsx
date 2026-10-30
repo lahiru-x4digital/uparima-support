@@ -1,6 +1,7 @@
-import { MessageSquare, PhoneCall } from "lucide-react";
+import { MessageSquare, PhoneCall, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useIsAdmin } from "@/lib/hooks/use-desk";
 import { isNewToMe, slaState, timeAgo } from "@/lib/inbox/mappers";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/inbox";
@@ -47,6 +48,7 @@ export function rowHover(active: boolean) {
 }
 
 export function ConversationItem({ conversation: c, active, onSelect, markOpen, meId }: Props) {
+  const isAdmin = useIsAdmin();
   const channel = CHANNELS[c.channel];
   const ChannelIcon = channel.icon;
   const topic = topicLabel(c.topic);
@@ -136,6 +138,19 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
             <span className={cn("size-1.5 rounded-full", STATUSES[c.status].dot)} />
             {STATUSES[c.status].label}
           </span>
+          {/* Admins see whose chat it is at a glance (a finished ticket still shows who had it). */}
+          {isAdmin && c.ticketNumber && (
+            <span
+              title={c.assignedTo ? `Assigned to ${c.assignedTo}` : "Not assigned to anyone"}
+              className={cn(
+                "inline-flex h-4 max-w-40 items-center gap-1 rounded px-1.5 text-[10px] font-medium",
+                c.assignedTo ? "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200" : "bg-muted text-muted-foreground",
+              )}
+            >
+              <UserRound className="size-2.5 shrink-0" />
+              <span className="truncate">{c.assignedTo ?? "Unassigned"}</span>
+            </span>
+          )}
           {assignedAt && <span className="text-xs text-muted-foreground">Assigned {timeAgo(assignedAt)}</span>}
           {(c.priority === "urgent" || c.priority === "high") && (
             <Badge variant="secondary" className={cn("h-4 px-1.5 text-[10px]", PRIORITIES[c.priority].className)}>

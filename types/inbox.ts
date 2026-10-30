@@ -26,7 +26,7 @@ export type MessageDirection = "inbound" | "outbound";
  * can render it the way WhatsApp itself does — a menu's option chips, a
  * tapped choice as its own small bubble, a location/media/link marker.
  */
-export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template";
+export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template" | "divider";
 export type MessageState = "sending" | "sent" | "failed";
 export type AttachmentKind = "image" | "audio" | "file";
 
@@ -112,6 +112,8 @@ export interface Conversation {
   /** Whether a reply can still be delivered over WhatsApp right now (23.5h
    * window). Always true for a non-WhatsApp conversation. */
   canReply: boolean;
+  /** WhatsApp: when the customer last wrote; null when unknown. */
+  lastCustomerMessageAt?: string | null;
   /** For a bot-only conversation: whether this is the phone's *current*
    * session — a reply always reaches the person now, so it is only offered
    * from the current session, never from one that already ended. Always

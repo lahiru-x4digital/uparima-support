@@ -1,6 +1,7 @@
 import { AlertCircle, Loader2, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Conversation } from "@/types/inbox";
+import { timeAgo } from "@/lib/inbox/mappers";
 import { ChatHeader } from "./chat-header";
 import { Composer } from "./composer";
 // Hidden for now — see the commented-out usage below.
@@ -94,7 +95,12 @@ export function ChatPane({
         ) : conversation.channel === "whatsapp" && !conversation.canReply ? (
           // Outside the 24-hour window only an approved template can reach the customer.
           <div className="flex flex-wrap items-center justify-center gap-3 border-t p-3 text-center text-xs text-muted-foreground">
-            <span>The customer&apos;s last WhatsApp message was over 23 hours 58 minutes ago — free text can&apos;t be sent, but an approved template can.</span>
+            <span>
+              {conversation.lastCustomerMessageAt
+                ? `The customer's last WhatsApp message was ${timeAgo(conversation.lastCustomerMessageAt)}`
+                : "The customer's last WhatsApp message was over 23 hours 58 minutes ago"}
+              {" "}— free text can&apos;t be sent, but an approved template can.
+            </span>
             <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} sendOnly label="Send a template" />
           </div>
         ) : (

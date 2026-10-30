@@ -124,6 +124,31 @@ describe("detailToConversation", () => {
     expect(c.submitter).toMatchObject({ kind: "driver", vehicleRegistrationNumber: "CAB-1234" });
   });
 
+  it("shows earlier tickets' chats above the current one, each under a divider", () => {
+    const r = row();
+    const earlier = { ...row(), id: "t0", ticketNumber: "TKT-OLD", message: "old question", status: "completed" as const, createdAt: "2026-10-01T09:00:00Z" };
+    const detail: TicketDetail = {
+      ticket: r,
+      submitter: null,
+      replies: [],
+      canReply: true,
+      whatsappSession: null,
+      previousTickets: [],
+      earlierConversations: [
+        {
+          ticket: earlier,
+          replies: [{ id: "o1", ticketId: "t0", authorId: 5, isStaffReply: true, message: "Sorted", attachments: null, createdAt: "2026-10-01T10:00:00Z" }],
+          whatsappSession: null,
+        },
+      ],
+    };
+    const c = detailToConversation(detail, r, staff, NOW);
+    expect(c.messages.map((m) => m.id)).toEqual(["t0:divider", "t0:first", "o1", "t1:divider", "t1:first"]);
+    expect(c.messages[0]).toMatchObject({ kind: "divider" });
+    expect(c.messages[0].body).toContain("TKT-OLD");
+    expect(c.messages[0].body).toContain("Closed");
+  });
+
   it("mirrors the real WhatsApp session instead of the ticket's placeholder message, when one is linked", () => {
     const r = row();
     const detail: TicketDetail = {
@@ -155,6 +180,51 @@ describe("detailToConversation", () => {
     expect(c.messages.map((m) => m.id)).toEqual(["1", "2", "r1"]);
     expect(c.messages[0]).toMatchObject({ kind: "options", direction: "outbound" });
     expect(c.messages[1]).toMatchObject({ kind: "tap", direction: "inbound", body: "Talk to a person" });
+  });
+});
+
+describe("agent replies in a WhatsApp session", () => {
+  it("shows an agent's reply once, labelled with the agent, in time order with the customer's messages", () => {
+    const r = row();
+    const detail: TicketDetail = {
+      ticket: r,
+      submitter: null,
+      replies: [
+        { id: "r1", ticketId: "t1", authorId: 5, isStaffReply: true, message: "Calling you", attachments: null, createdAt: "2026-10-06T11:40:00Z" },
+      ],
+      canReply: true,
+      whatsappSession: [
+        { id: "1", direction: "in", kind: "text", body: "help", meta: {}, createdAt: "2026-10-06T11:30:00Z" },
+        { id: "2", direction: "out", kind: "text", body: "Calling you", meta: {}, createdAt: "2026-10-06T11:40:01Z" },
+        { id: "3", direction: "in", kind: "text", body: "ok thanks", meta: {}, createdAt: "2026-10-06T11:41:00Z" },
+      ],
+      previousTickets: [],
+    };
+    const c = detailToConversation(detail, r, staff, NOW);
+    expect(c.messages.map((m) => m.id)).toEqual(["1", "2", "3"]);
+    expect(c.messages[1]).toMatchObject({ direction: "outbound", sender: "Nimal" });
+  });
+});
+
+describe("customer follow-ups saved as replies", () => {
+  it("shows a follow-up once when the WhatsApp session log already has it", () => {
+    const r = row();
+    const detail: TicketDetail = {
+      ticket: r,
+      submitter: null,
+      replies: [
+        { id: "c1", ticketId: "t1", authorId: 9, isStaffReply: false, message: "any news?", attachments: null, createdAt: "2026-10-06T11:41:01Z" },
+        { id: "c2", ticketId: "t1", authorId: 9, isStaffReply: false, message: "[Photo]", attachments: null, createdAt: "2026-10-06T11:42:00Z" },
+      ],
+      canReply: true,
+      whatsappSession: [
+        { id: "1", direction: "in", kind: "text", body: "any news?", meta: {}, createdAt: "2026-10-06T11:41:00Z" },
+        { id: "2", direction: "in", kind: "media", body: "Photo", meta: {}, createdAt: "2026-10-06T11:42:00Z" },
+      ],
+      previousTickets: [],
+    };
+    const c = detailToConversation(detail, r, staff, NOW);
+    expect(c.messages.map((m) => m.id)).toEqual(["1", "2"]);
   });
 });
 

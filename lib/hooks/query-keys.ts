@@ -37,6 +37,11 @@ export const botChatKeys = {
     ["bot-chats", "thread", phone, sessionId ?? "legacy"] as const,
 };
 
+export const whatsappIncomingKeys = {
+  all: ["whatsapp-incoming"] as const,
+  list: (filter: object, page: number) => ["whatsapp-incoming", "list", filter, page] as const,
+};
+
 export const emailAccountKeys = {
   all: ["email-accounts"] as const,
   providers: ["email-accounts", "providers"] as const,
