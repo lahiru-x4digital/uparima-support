@@ -15,11 +15,10 @@ export const signInSchema = z.object({
     .trim()
     .min(1, "Enter your email address")
     .email("Enter a valid email address"),
-  // The backend refuses anything shorter than 8 with a generic validation error; say it plainly here.
+  // No minimum length: older accounts may have passwords shorter than today's 8-character rule.
   password: z
     .string()
     .min(1, "Enter your password")
-    .min(8, "Passwords are at least 8 characters")
     .max(100, "Passwords are at most 100 characters"),
 });
 

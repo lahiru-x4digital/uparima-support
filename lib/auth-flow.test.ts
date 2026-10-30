@@ -23,6 +23,10 @@ describe("validateSignIn", () => {
     expect(validateSignIn({ email: "agent@uparima.lk", password: "Passw0rd!" })).toEqual({});
   });
 
+  it("accepts a short password, so older accounts can still sign in", () => {
+    expect(validateSignIn({ email: "agent@uparima.lk", password: "short" })).toEqual({});
+  });
+
   it("says what to fix, one message per field", () => {
     expect(validateSignIn({ email: "", password: "" })).toEqual({
       email: "Enter your email address",
@@ -30,7 +34,6 @@ describe("validateSignIn", () => {
     });
     expect(validateSignIn({ email: "agent@", password: "short" })).toEqual({
       email: "Enter a valid email address",
-      password: "Passwords are at least 8 characters",
     });
   });
 });
@@ -83,7 +86,7 @@ describe("loginPath", () => {
 describe("signInNotice", () => {
   it("explains a known reason and ignores anything else in the address bar", () => {
     expect(signInNotice("expired")).toMatch(/session ended/);
-    expect(signInNotice("two-factor-on")).toMatch(/email you a code/);
+    expect(signInNotice("two-factor-on")).toMatch(/send you a code/);
     expect(signInNotice("<script>")).toBeNull();
     expect(signInNotice(undefined)).toBeNull();
   });
