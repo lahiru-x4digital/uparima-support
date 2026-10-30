@@ -56,7 +56,7 @@ export function safeNextPath(next: unknown, fallback: string = DEFAULT_LANDING):
 export const SIGN_IN_REASONS = {
   expired: "Your session ended. Sign in again to continue.",
   verify: "Sign in again with your email and password to continue.",
-  "two-factor-on": "Two-factor sign-in is on. Sign in again — we'll email you a code.",
+  "two-factor-on": "Two-factor sign-in is on. Sign in again — we'll send you a code.",
 } as const;
 
 export type SignInReason = keyof typeof SIGN_IN_REASONS;

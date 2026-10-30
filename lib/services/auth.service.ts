@@ -27,6 +27,16 @@ export const startTwoFactorEnable = () => apiPost<TwoFactorChallenge>("/auth/2fa
 export const resendTwoFactorEnable = (challengeId: string) =>
   apiPost<TwoFactorChallenge>("/auth/2fa/email/enable/resend", { challengeId });
 
+/** Texts a code to `phone`; confirming it makes that number the one sign-in codes go to. */
+export const startTwoFactorPhone = (phone: string) =>
+  apiPost<TwoFactorChallenge>("/auth/2fa/phone", { phone });
+
+export const resendTwoFactorPhone = (challengeId: string) =>
+  apiPost<TwoFactorChallenge>("/auth/2fa/phone/resend", { challengeId });
+
+export const confirmTwoFactorPhone = (challengeId: string, code: string) =>
+  apiPost<TwoFactorStatus>("/auth/2fa/phone/confirm", { challengeId, code });
+
 /** Switches two-factor on. The backend ends every session for the account, this one included. */
 export const confirmTwoFactorEnable = (challengeId: string, code: string) =>
   apiPost<{ enabled: true }>("/auth/2fa/email/enable/confirm", { challengeId, code });

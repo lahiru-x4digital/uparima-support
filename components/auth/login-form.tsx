@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, MailCheck } from "lucide-react";
+import { Loader2, MailCheck, Smartphone } from "lucide-react";
 import { AuthAlert } from "@/components/auth/auth-alert";
 import { activate, CodeForm, type ActiveChallenge } from "@/components/auth/code-form";
 import { CredentialsForm } from "@/components/auth/credentials-form";
@@ -58,11 +58,19 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
       <div className="flex flex-col gap-6">
         <header className="flex flex-col gap-3">
           <span className="flex size-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-            <MailCheck className="size-5" aria-hidden />
+            {challenge.channel === "sms" ? (
+              <Smartphone className="size-5" aria-hidden />
+            ) : (
+              <MailCheck className="size-5" aria-hidden />
+            )}
           </span>
           <div className="flex flex-col gap-1.5">
             <h1 className="font-heading text-2xl font-bold">
-              {challenge.emailSent === false ? "Enter your sign-in code" : "Check your email"}
+              {challenge.emailSent === false
+                ? "Enter your sign-in code"
+                : challenge.channel === "sms"
+                  ? "Check your phone"
+                  : "Check your email"}
             </h1>
             {challenge.emailSent === false ? (
               <p className="text-sm text-muted-foreground">
@@ -78,7 +86,7 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
         </header>
         {challenge.emailSent === false && (
           <AuthAlert>
-            We couldn&apos;t email your code to {challenge.emailHint}. Ask a super admin for it — they can see it in
+            We couldn&apos;t send your code to {challenge.emailHint}. Ask a super admin for it — they can see it in
             the admin dashboard under Sign-in Codes.
           </AuthAlert>
         )}

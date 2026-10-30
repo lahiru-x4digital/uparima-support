@@ -62,7 +62,9 @@ export function CodeForm({
   async function verify(value: string) {
     if (busy || expired) return;
     if (value.length !== CODE_LENGTH) {
-      setError(`Enter the ${CODE_LENGTH}-digit code from the email.`);
+      setError(
+        `Enter the ${CODE_LENGTH}-digit code from the ${challenge.channel === "sms" ? "text message" : "email"}.`,
+      );
       inputRef.current?.focus();
       return;
     }
