@@ -39,6 +39,15 @@ export interface TwoFactorStatus {
   available: boolean;
   enabled: boolean;
   emailHint: string | null;
-  /** Codes go by SMS to this masked number ("+94 77*****67"); null = by email. Absent on older backends. */
+  /** How codes are sent (when on). Absent on older backends (email). */
+  channel?: "sms" | "email";
+  /** The masked number SMS codes go to ("+94 77*****67") — the account's phone, or a number kept
+   * just for codes; null when it has neither (choosing SMS then asks for one). */
   phoneHint?: string | null;
+}
+
+/** How sign-in codes should be sent. `phone` — only for SMS on an account with no number. */
+export interface TwoFactorChoice {
+  channel: "sms" | "email";
+  phone?: string;
 }

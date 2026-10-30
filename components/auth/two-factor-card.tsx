@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, MailCheck, ShieldCheck, ShieldOff, Smartphone } from "lucide-react";
 import { toast } from "sonner";
@@ -15,14 +15,14 @@ import { useAuth } from "@/lib/auth-context";
 import { describeAuthFailure } from "@/lib/auth-flow";
 import { accountKeys } from "@/lib/hooks/query-keys";
 import { useTwoFactorStatus } from "@/lib/hooks/use-two-factor";
+import { cn } from "@/lib/utils";
 import * as authService from "@/lib/services/auth.service";
-import type { TwoFactorStatus } from "@/types/auth";
+import type { TwoFactorChoice, TwoFactorStatus } from "@/types/auth";
 
-/** Two-factor sign-in for the signed-in account: what it is, whether it's on, switching it on, and the mobile codes go to. */
+/** Two-factor sign-in for the signed-in account: what it is, whether it's on, switching it on, and how codes are sent. */
 export function TwoFactorCard() {
   const status = useTwoFactorStatus();
-  const [setupOpen, setSetupOpen] = useState(false);
-  const [phoneOpen, setPhoneOpen] = useState(false);
+  const [dialog, setDialog] = useState<"enable" | "channel" | null>(null);
   const data = status.data;
 
   return (
@@ -39,45 +39,27 @@ export function TwoFactorCard() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            After your password, we send a 6-digit code — by text message to your mobile, or by email if you
-            haven&apos;t added one — and ask for it before you&apos;re let in. Someone who learns your password
-            still can&apos;t sign in without your phone or inbox.
+            After your password, we send a 6-digit code — by text message or email, as you choose — and ask for it
+            before you&apos;re let in. Someone who learns your password still can&apos;t sign in without your phone or
+            inbox.
           </p>
           <Details status={status.isPending ? "loading" : status.isError ? "error" : data!} onRetry={() => void status.refetch()} />
         </div>
         {data?.available && !data.enabled && (
-          <Button size="lg" onClick={() => setSetupOpen(true)}>
+          <Button size="lg" onClick={() => setDialog("enable")}>
             Turn on
+          </Button>
+        )}
+        {data?.available && data.enabled && (
+          <Button variant="outline" onClick={() => setDialog("channel")}>
+            Change how codes are sent
           </Button>
         )}
       </div>
 
-      {data?.available && (
-        <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-4">
-          <Smartphone className="size-4 text-muted-foreground" aria-hidden />
-          <p className="min-w-0 flex-1 text-sm">
-            <span className="font-medium">Mobile for codes:</span>{" "}
-            {data.phoneHint ? (
-              <span className="text-foreground">{data.phoneHint}</span>
-            ) : (
-              <span className="text-muted-foreground">not added — codes go by email</span>
-            )}
-          </p>
-          <Button variant="outline" onClick={() => setPhoneOpen(true)}>
-            {data.phoneHint ? "Change mobile" : "Add mobile"}
-          </Button>
-        </div>
+      {data?.available && dialog && (
+        <ChooseDialog mode={dialog} status={data} onClose={() => setDialog(null)} />
       )}
-
-      {data?.available && !data.enabled && (
-        <EnableDialog
-          open={setupOpen}
-          onClose={() => setSetupOpen(false)}
-          destinationHint={data.phoneHint ?? data.emailHint}
-          bySms={!!data.phoneHint}
-        />
-      )}
-      {data?.available && <PhoneDialog open={phoneOpen} onClose={() => setPhoneOpen(false)} />}
     </section>
   );
 }
@@ -109,56 +91,63 @@ function Details({ status, onRetry }: { status: "loading" | "error" | TwoFactorS
       </p>
     );
   }
-  const where = status.phoneHint ? (
-    <>
-      by SMS to <span className="font-medium text-foreground">{status.phoneHint}</span> (by email to{" "}
-      {status.emailHint} if a text can&apos;t be sent)
-    </>
-  ) : (
-    <>
-      to <span className="font-medium text-foreground">{status.emailHint}</span>
-    </>
-  );
-  return status.enabled ? (
+  if (!status.enabled) return null;
+  return (
     <p className="text-sm text-muted-foreground">
-      Codes go {where}. To turn it off, ask an administrator — it&apos;s switched off in Staff Management.
+      Codes go{" "}
+      {status.channel === "sms" && status.phoneHint ? (
+        <>
+          by SMS to <span className="font-medium text-foreground">{status.phoneHint}</span> (by email if a text
+          can&apos;t be sent)
+        </>
+      ) : (
+        <>
+          by email to <span className="font-medium text-foreground">{status.emailHint}</span>
+        </>
+      )}
+      . To turn it off, ask an administrator — it&apos;s switched off in Staff Management.
     </p>
-  ) : (
-    <p className="text-sm text-muted-foreground">Codes will go {where}.</p>
   );
 }
 
 /**
- * Two steps: say what will happen and send the code, then enter it. Entering it proves the code
- * arrives before sign-in starts depending on it.
+ * Choose SMS or email, get a code that way, enter it. Entering it proves the code arrives before
+ * sign-in starts depending on it. `enable` switches two-factor on; `channel` changes how codes are
+ * sent while it's on.
  */
-function EnableDialog({
-  open,
+function ChooseDialog({
+  mode,
+  status,
   onClose,
-  destinationHint,
-  bySms,
 }: {
-  open: boolean;
+  mode: "enable" | "channel";
+  status: TwoFactorStatus;
   onClose: () => void;
-  destinationHint: string | null;
-  bySms: boolean;
 }) {
   const { endSession } = useAuth();
+  const queryClient = useQueryClient();
+  const current = status.channel ?? "email";
+  const [channel, setChannel] = useState<"sms" | "email">(
+    mode === "channel" ? (current === "sms" ? "email" : "sms") : status.phoneHint ? "sms" : "email",
+  );
+  const [phone, setPhone] = useState("");
   const [challenge, setChallenge] = useState<ActiveChallenge | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function close() {
-    setChallenge(null);
-    setError(null);
-    onClose();
-  }
+  const needsNumber = channel === "sms" && !status.phoneHint;
 
   async function sendCode() {
     setSending(true);
     setError(null);
+    const choice: TwoFactorChoice = needsNumber ? { channel, phone: phone.trim() } : { channel };
     try {
-      setChallenge(activate(await authService.startTwoFactorEnable()));
+      setChallenge(
+        activate(
+          await (mode === "enable"
+            ? authService.startTwoFactorEnable(choice)
+            : authService.startTwoFactorChannel(choice)),
+        ),
+      );
     } catch (err) {
       setError(describeAuthFailure(err).message);
     } finally {
@@ -168,25 +157,78 @@ function EnableDialog({
 
   async function confirm(code: string) {
     if (!challenge) return;
-    await authService.confirmTwoFactorEnable(challenge.challengeId, code);
-    // The backend has just ended every session for this account, this one included.
-    toast.success("Two-factor sign-in is on");
-    endSession("two-factor-on");
+    if (mode === "enable") {
+      await authService.confirmTwoFactorEnable(challenge.challengeId, code);
+      // The backend has just ended every session for this account, this one included.
+      toast.success("Two-factor sign-in is on");
+      endSession("two-factor-on");
+      return;
+    }
+    const next = await authService.confirmTwoFactorChannel(challenge.challengeId, code);
+    queryClient.setQueryData(accountKeys.twoFactor, next);
+    toast.success(next.channel === "sms" ? "Sign-in codes will now come by SMS" : "Sign-in codes will now be emailed");
+    onClose();
   }
 
+  const option = (value: "sms" | "email", title: string, detail: ReactNode, icon: ReactNode) => (
+    <label
+      className={cn(
+        "flex cursor-pointer items-start gap-3 rounded-lg border p-3",
+        channel === value ? "border-primary bg-accent" : "border-border",
+      )}
+    >
+      <input
+        type="radio"
+        name="two-factor-channel"
+        className="mt-1"
+        checked={channel === value}
+        onChange={() => setChannel(value)}
+      />
+      <span className="mt-0.5 text-muted-foreground">{icon}</span>
+      <span className="text-sm">
+        <span className="block font-medium">{title}</span>
+        <span className="text-muted-foreground">{detail}</span>
+      </span>
+    </label>
+  );
+
   return (
-    <Modal open={open} onClose={close} title="Turn on two-factor sign-in" className="sm:max-w-md">
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === "enable" ? "Turn on two-factor sign-in" : "How sign-in codes are sent"}
+      className="sm:max-w-md"
+    >
       {challenge ? (
         <div className="flex flex-col gap-4 p-0.5">
-          <SentNotice challenge={challenge} action="switch two-factor sign-in on" />
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+              {challenge.channel === "sms" ? (
+                <Smartphone className="size-5" aria-hidden />
+              ) : (
+                <MailCheck className="size-5" aria-hidden />
+              )}
+            </span>
+            <p className="text-sm text-muted-foreground">
+              We {challenge.channel === "sms" ? "texted" : "emailed"} a 6-digit code to{" "}
+              <span className="font-medium text-foreground">{challenge.emailHint}</span>. Enter it to{" "}
+              {mode === "enable" ? "switch two-factor sign-in on" : "get your codes this way"}.
+            </p>
+          </div>
           <CodeForm
             challenge={challenge}
-            submitLabel="Turn on"
-            busyLabel="Turning on…"
+            submitLabel={mode === "enable" ? "Turn on" : "Save"}
+            busyLabel={mode === "enable" ? "Turning on…" : "Saving…"}
             restartLabel="Start again"
             onVerify={confirm}
             onResend={async () =>
-              setChallenge(activate(await authService.resendTwoFactorEnable(challenge.challengeId)))
+              setChallenge(
+                activate(
+                  await (mode === "enable"
+                    ? authService.resendTwoFactorEnable(challenge.challengeId)
+                    : authService.resendTwoFactorChannel(challenge.challengeId)),
+                ),
+              )
             }
             onRestart={(message) => {
               setChallenge(null);
@@ -197,19 +239,46 @@ function EnableDialog({
       ) : (
         <div className="flex flex-col gap-4 p-0.5">
           {error && <AuthAlert>{error}</AuthAlert>}
-          <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
-            <li>
-              We&apos;ll {bySms ? "text" : "email"} a 6-digit code to{" "}
-              <span className="font-medium text-foreground">{destinationHint}</span> — make sure you can get it.
-            </li>
-            <li>Once it&apos;s on, you&apos;re signed out on every device and sign in again with a code.</li>
-            <li>Only an administrator can turn it off again.</li>
-          </ul>
+          <p className="text-sm text-muted-foreground">How should we send your sign-in codes?</p>
+          <div className="flex flex-col gap-2">
+            {option(
+              "sms",
+              "SMS",
+              status.phoneHint ? <>Text message to {status.phoneHint}</> : <>Your account has no mobile number — enter one below.</>,
+              <Smartphone className="size-4" aria-hidden />,
+            )}
+            {option("email", "Email", <>Email to {status.emailHint}</>, <MailCheck className="size-4" aria-hidden />)}
+          </div>
+          {needsNumber && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="two-factor-phone">Mobile number</Label>
+              <Input
+                id="two-factor-phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="e.g. 0771234567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+          )}
+          {mode === "enable" && (
+            <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              <li>We&apos;ll send a code now — make sure you can get it.</li>
+              <li>Once it&apos;s on, you&apos;re signed out on every device and sign in again with a code.</li>
+              <li>Only an administrator can turn it off again.</li>
+            </ul>
+          )}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" size="lg" onClick={close} disabled={sending}>
+            <Button variant="outline" size="lg" onClick={onClose} disabled={sending}>
               Cancel
             </Button>
-            <Button size="lg" onClick={() => void sendCode()} disabled={sending}>
+            <Button
+              size="lg"
+              onClick={() => void sendCode()}
+              disabled={sending || (needsNumber && !phone.trim()) || (mode === "channel" && channel === current)}
+            >
               {sending && <Loader2 className="animate-spin" aria-hidden />}
               {sending ? "Sending…" : "Send me a code"}
             </Button>
@@ -217,110 +286,5 @@ function EnableDialog({
         </div>
       )}
     </Modal>
-  );
-}
-
-/** Adding or changing the mobile for codes: the number is saved only once a code texted to it comes back. */
-function PhoneDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const queryClient = useQueryClient();
-  const [phone, setPhone] = useState("");
-  const [challenge, setChallenge] = useState<ActiveChallenge | null>(null);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function close() {
-    setChallenge(null);
-    setError(null);
-    setPhone("");
-    onClose();
-  }
-
-  async function sendCode(e: FormEvent) {
-    e.preventDefault();
-    setSending(true);
-    setError(null);
-    try {
-      setChallenge(activate(await authService.startTwoFactorPhone(phone.trim())));
-    } catch (err) {
-      setError(describeAuthFailure(err).message);
-    } finally {
-      setSending(false);
-    }
-  }
-
-  async function confirm(code: string) {
-    if (!challenge) return;
-    const status = await authService.confirmTwoFactorPhone(challenge.challengeId, code);
-    queryClient.setQueryData(accountKeys.twoFactor, status);
-    toast.success("Sign-in codes will now come by SMS");
-    close();
-  }
-
-  return (
-    <Modal open={open} onClose={close} title="Mobile for sign-in codes" className="sm:max-w-md">
-      {challenge ? (
-        <div className="flex flex-col gap-4 p-0.5">
-          <SentNotice challenge={challenge} action="use this number for sign-in codes" />
-          <CodeForm
-            challenge={challenge}
-            submitLabel="Save number"
-            busyLabel="Saving…"
-            restartLabel="Use a different number"
-            onVerify={confirm}
-            onResend={async () =>
-              setChallenge(activate(await authService.resendTwoFactorPhone(challenge.challengeId)))
-            }
-            onRestart={(message) => {
-              setChallenge(null);
-              setError(message ?? null);
-            }}
-          />
-        </div>
-      ) : (
-        <form onSubmit={sendCode} className="flex flex-col gap-4 p-0.5">
-          {error && <AuthAlert>{error}</AuthAlert>}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="two-factor-phone">Mobile number</Label>
-            <Input
-              id="two-factor-phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="e.g. 0771234567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              We&apos;ll text a code to this number. Once you enter it, sign-in codes come here instead of your email.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="outline" size="lg" onClick={close} disabled={sending}>
-              Cancel
-            </Button>
-            <Button type="submit" size="lg" disabled={sending || !phone.trim()}>
-              {sending && <Loader2 className="animate-spin" aria-hidden />}
-              {sending ? "Sending…" : "Text me a code"}
-            </Button>
-          </div>
-        </form>
-      )}
-    </Modal>
-  );
-}
-
-function SentNotice({ challenge, action }: { challenge: ActiveChallenge; action: string }) {
-  const bySms = challenge.channel === "sms";
-  return (
-    <div className="flex items-start gap-3">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-        {bySms ? <Smartphone className="size-5" aria-hidden /> : <MailCheck className="size-5" aria-hidden />}
-      </span>
-      <p className="text-sm text-muted-foreground">
-        We {bySms ? "texted" : "sent"} a 6-digit code to{" "}
-        <span className="font-medium text-foreground">{challenge.emailHint}</span>. Enter it to {action}.
-      </p>
-    </div>
   );
 }

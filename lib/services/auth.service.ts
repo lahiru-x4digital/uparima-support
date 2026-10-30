@@ -1,5 +1,11 @@
 import { apiGet, apiPost } from "@/lib/api";
-import type { AuthTokens, LoginResult, TwoFactorChallenge, TwoFactorStatus } from "@/types/auth";
+import type {
+  AuthTokens,
+  LoginResult,
+  TwoFactorChallenge,
+  TwoFactorChoice,
+  TwoFactorStatus,
+} from "@/types/auth";
 
 export const login = (email: string, password: string) =>
   apiPost<LoginResult>("/auth/login", { email, password });
@@ -21,21 +27,22 @@ export const refreshTokens = (refreshToken: string) =>
 
 export const getTwoFactorStatus = () => apiGet<TwoFactorStatus>("/auth/2fa/email");
 
-/** Emails a code to the account's own address; confirming it switches two-factor on. */
-export const startTwoFactorEnable = () => apiPost<TwoFactorChallenge>("/auth/2fa/email/enable");
+/** Sends a code the chosen way (SMS or email); confirming it switches two-factor on. */
+export const startTwoFactorEnable = (choice: TwoFactorChoice) =>
+  apiPost<TwoFactorChallenge>("/auth/2fa/email/enable", choice);
 
 export const resendTwoFactorEnable = (challengeId: string) =>
   apiPost<TwoFactorChallenge>("/auth/2fa/email/enable/resend", { challengeId });
 
-/** Texts a code to `phone`; confirming it makes that number the one sign-in codes go to. */
-export const startTwoFactorPhone = (phone: string) =>
-  apiPost<TwoFactorChallenge>("/auth/2fa/phone", { phone });
+/** While two-factor is on: sends a code the new way; confirming it switches codes to it. */
+export const startTwoFactorChannel = (choice: TwoFactorChoice) =>
+  apiPost<TwoFactorChallenge>("/auth/2fa/channel", choice);
 
-export const resendTwoFactorPhone = (challengeId: string) =>
-  apiPost<TwoFactorChallenge>("/auth/2fa/phone/resend", { challengeId });
+export const resendTwoFactorChannel = (challengeId: string) =>
+  apiPost<TwoFactorChallenge>("/auth/2fa/channel/resend", { challengeId });
 
-export const confirmTwoFactorPhone = (challengeId: string, code: string) =>
-  apiPost<TwoFactorStatus>("/auth/2fa/phone/confirm", { challengeId, code });
+export const confirmTwoFactorChannel = (challengeId: string, code: string) =>
+  apiPost<TwoFactorStatus>("/auth/2fa/channel/confirm", { challengeId, code });
 
 /** Switches two-factor on. The backend ends every session for the account, this one included. */
 export const confirmTwoFactorEnable = (challengeId: string, code: string) =>
