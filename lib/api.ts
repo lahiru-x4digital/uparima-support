@@ -86,6 +86,15 @@ api.interceptors.response.use(
       original.headers.Authorization = `Bearer ${data.data.accessToken}`;
       return api(original);
     } catch {
+      // Another tab (tokens are shared through localStorage) may have rotated this refresh token
+      // a moment earlier — the backend then refuses ours, but the session is fine. Use the pair
+      // that tab saved instead of signing out, which would also wipe it for every other tab.
+      const rotated = getToken();
+      if (rotated && getRefreshToken() && getRefreshToken() !== refreshToken) {
+        drainQueue(rotated);
+        original.headers.Authorization = `Bearer ${rotated}`;
+        return api(original);
+      }
       redirectToLogin("expired");
       return Promise.reject(error);
     } finally {
