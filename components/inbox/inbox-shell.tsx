@@ -22,8 +22,8 @@ const TABS: { key: InboxView; label: string }[] = [
 // Agents start on their own work, on the chats that still need onboarding; "Everyone" in the Status
 // filter and "All" in the Assignee filter are one click away.
 const ADMIN_DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "mine" };
-// Support agents start on the chats that still need onboarding, from everyone; the quick-view chips narrow it to their own work.
-const AGENT_DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "all", quick: null };
+// Support agents start on "To onboard" among their own tickets; the Status filter and the quick-view chips change it.
+const AGENT_DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "mine", quick: null };
 // Everything on my list, any status, newest assignment first: where "N tickets assigned to you" leads.
 const MINE_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine", quick: null };
 
