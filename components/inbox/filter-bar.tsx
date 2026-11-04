@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useIsAdmin, useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import type { Channel, ConversationFilters } from "@/types/inbox";
 import { cn } from "@/lib/utils";
+import { describeFilters } from "@/lib/inbox/filters";
 import { CHANNELS } from "./meta";
 import { AlertDot, OptionSelect } from "./option-select";
 
@@ -89,6 +90,7 @@ export function FilterBar({ filters, needsContactCount, myPendingCount, myInRevi
           )}
         </div>}
       </div>
+      <p className="text-xs text-muted-foreground" aria-live="polite">Showing: {describeFilters(filters)}</p>
     </div>
   );
 }

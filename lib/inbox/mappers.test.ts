@@ -7,8 +7,11 @@ import {
   botChatRefFromId,
   botChatRowToConversation,
   botChatThreadToConversation,
+  byChatOrder,
   channelOf,
+  chatPreview,
   detailToConversation,
+  formatChatTime,
   isNewToMe,
   productOf,
   rowToConversation,
@@ -544,5 +547,54 @@ describe("isNewToMe", () => {
 
   it("needs a recorded assignment time", () => {
     expect(isNewToMe(ticket({ routing: { assignedAt: null as unknown as string, firstOpenedAt: null } }), 5)).toBe(false);
+  });
+});
+
+describe("formatChatTime (WhatsApp style)", () => {
+  // Local noon, so "today" and "yesterday" are the same in every time zone.
+  const now = new Date(2026, 9, 14, 12, 0, 0); // Wednesday 14 Oct 2026
+  const at = (day: number, h = 9, m = 5) => new Date(2026, 9, day, h, m).toISOString();
+
+  it("shows the time for today", () => {
+    expect(formatChatTime(at(14, 9, 5), now)).toBe("09:05");
+  });
+
+  it("says Yesterday, then the weekday for the rest of the week, then the date", () => {
+    expect(formatChatTime(at(13), now)).toBe("Yesterday");
+    expect(formatChatTime(at(12), now)).toBe(new Date(2026, 9, 12).toLocaleDateString([], { weekday: "long" }));
+    expect(formatChatTime(at(8), now)).toBe(new Date(2026, 9, 8).toLocaleDateString([], { weekday: "long" }));
+    expect(formatChatTime(at(7), now)).toBe(new Date(2026, 9, 7).toLocaleDateString([], { day: "2-digit", month: "2-digit", year: "numeric" }));
+  });
+
+  it("is empty for a bad date", () => {
+    expect(formatChatTime("nope", now)).toBe("");
+  });
+});
+
+describe("chat list order and preview", () => {
+  it("puts pinned chats first, then the newest message first, whatever was opened", () => {
+    const list = [
+      { id: "old", activityAt: "2026-10-01T10:00:00Z", createdAt: "x", pinned: false },
+      { id: "new", activityAt: "2026-10-05T10:00:00Z", createdAt: "x", pinned: false },
+      { id: "pinnedOld", activityAt: "2026-09-01T10:00:00Z", createdAt: "x", pinned: true },
+      { id: "pinnedNew", activityAt: "2026-09-20T10:00:00Z", createdAt: "x", pinned: true },
+    ];
+    expect([...list].sort(byChatOrder).map((c) => c.id)).toEqual(["pinnedNew", "pinnedOld", "new", "old"]);
+  });
+
+  it("shows the newest message, with You: or Agent: before staff replies", () => {
+    expect(chatPreview(row())).toBe("My payment is missing");
+    expect(chatPreview(row({ lastMessageText: "Thanks, any update?", lastMessageFrom: "customer" }), 5)).toBe("Thanks, any update?");
+    expect(chatPreview(row({ lastMessageText: "We are checking", lastMessageFrom: "staff", lastMessageAuthorId: 5 }), 5)).toBe("You: We are checking");
+    expect(chatPreview(row({ lastMessageText: "We are checking", lastMessageFrom: "staff", lastMessageAuthorId: 8 }), 5)).toBe("Agent: We are checking");
+  });
+
+  it("uses the per-agent unread count and the pin flag when the server sends them", () => {
+    const c = rowToConversation(row({ unseen: true, unreadCount: 0, pinned: true }), staff, NOW, 5);
+    expect(c).toMatchObject({ unread: false, unreadCount: 0, pinned: true });
+    const d = rowToConversation(row({ unseen: false, unreadCount: 3 }), staff, NOW, 5);
+    expect(d).toMatchObject({ unread: true, unreadCount: 3, pinned: false });
+    // Without a count (a list asked for without a signed-in agent) the shared flag still works.
+    expect(rowToConversation(row({ unseen: true }), staff, NOW).unread).toBe(true);
   });
 });

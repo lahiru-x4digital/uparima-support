@@ -20,6 +20,8 @@ interface Props {
   /** The signed-in agent, to mark tickets that just landed on them. */
   meId?: number | null;
   onSelect: (id: string) => void;
+  /** Pins or unpins a ticket on my list; omit to hide the pin button. */
+  onTogglePin?: (c: Conversation) => void;
   /** Tickets that can be ticked for "Close selected"; omit to hide the checkboxes. */
   canTick?: (c: Conversation) => boolean;
   ticked?: Set<string>;
@@ -46,7 +48,7 @@ function Skeleton() {
 }
 
 export function ConversationList({
-  conversations, activeId, loading, error, hasMore, loadingMore, filtered, markOpen, meId, onSelect, canTick, ticked, onTick, onRetry, onLoadMore,
+  conversations, activeId, loading, error, hasMore, loadingMore, filtered, markOpen, meId, onSelect, onTogglePin, canTick, ticked, onTick, onRetry, onLoadMore,
 }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -91,7 +93,7 @@ export function ConversationList({
     <ScrollArea className="min-h-0 flex-1">
       {conversations.map((c) => {
         const item = (
-          <ConversationItem key={c.id} conversation={c} active={c.id === activeId} markOpen={markOpen} meId={meId} onSelect={() => onSelect(c.id)} />
+          <ConversationItem key={c.id} conversation={c} active={c.id === activeId} markOpen={markOpen} meId={meId} onSelect={() => onSelect(c.id)} onTogglePin={onTogglePin && c.pinned !== undefined && c.ticketNumber ? () => onTogglePin(c) : undefined} />
         );
         if (!canTick) return item;
         // The checkbox sits beside the row, not inside it: the row itself is a button.

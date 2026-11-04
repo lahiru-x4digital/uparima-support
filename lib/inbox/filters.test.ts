@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Conversation, ConversationFilters } from "@/types/inbox";
-import { applyClientFilters, reconcileFilters, toListParams } from "./filters";
+import { applyClientFilters, describeFilters, reconcileFilters, toListParams } from "./filters";
 
 const filters = (over: Partial<ConversationFilters> = {}): ConversationFilters => ({
   search: "",
@@ -232,5 +232,28 @@ describe("quick views", () => {
     const rows = [conv({ id: "t", status: "pending", assignedToUserId: 7 }), conv({ id: "b", status: "bot_only" })];
     const kept = applyClientFilters(rows, filters({ quick: "unread", assignee: "mine" }), 7);
     expect(kept.map((c) => c.id)).toEqual(["t"]);
+  });
+});
+
+describe("recently opened", () => {
+  it("asks for the chats I opened lately, whatever their status or owner", () => {
+    expect(toListParams(filters({ quick: "recent", assignee: "mine" }), 7)).toEqual({ recentlyViewed: true, sort: "recent" });
+    expect(toListParams(filters({ quick: "recent", search: " x " }), 7)).toEqual({ recentlyViewed: true, sort: "recent", search: "x" });
+  });
+
+  it("keeps whatever the server returned, including finished chats, but not bot-only rows", () => {
+    const rows = [conv({ id: "a", status: "completed", assignedToUserId: 9 }), conv({ id: "b", status: "pending", assignedToUserId: 7 }), conv({ id: "bot", status: "bot_only" })];
+    const kept = applyClientFilters(rows, filters({ quick: "recent", assignee: "mine" }), 7);
+    expect(kept.map((c) => c.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("describeFilters", () => {
+  it("says in plain words what the list holds", () => {
+    expect(describeFilters(filters({ status: "to_onboard", assignee: "mine" }))).toBe("Drivers still to onboard assigned to you");
+    expect(describeFilters(filters({ status: "all", assignee: "all" }))).toBe("All chats from everyone");
+    expect(describeFilters(filters({ status: "pending", assignee: "unassigned" }))).toBe("Pending chats that nobody has taken yet");
+    expect(describeFilters(filters({ quick: "needs_reply" }))).toMatch(/customer wrote last/);
+    expect(describeFilters(filters({ quick: "recent" }))).toMatch(/opened in the last 7 days/);
   });
 });
