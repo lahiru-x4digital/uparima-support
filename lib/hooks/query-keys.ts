@@ -19,7 +19,9 @@ export const deskKeys = {
   routing: ["desk", "routing"] as const,
 };
 
-export const accountKeys = { twoFactor: ["account", "two-factor"] as const };
+export const settingsKeys = { routing: ["settings", "routing"] as const };
+
+export const accountKeys ={ twoFactor: ["account", "two-factor"] as const };
 
 export const rideKeys = { detail: (id: string) => ["ride", id] as const };
 
