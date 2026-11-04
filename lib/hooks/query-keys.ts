@@ -23,6 +23,10 @@ export const botKeys = {
   all: ["bot"] as const,
   texts: (p: object) => ["bot", "texts", p] as const,
   history: (key: string) => ["bot", "texts", "history", key] as const,
+  flows: ["bot", "flows"] as const,
+  meta: ["bot", "flows", "meta"] as const,
+  flow: (flow: string) => ["bot", "flows", flow] as const,
+  issues: (flow: string, graph: unknown) => ["bot", "flows", flow, "issues", graph] as const,
 };
 
 export const settingsKeys ={ routing: ["settings", "routing"] as const };

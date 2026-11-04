@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { History, RotateCcw, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/shared/page-shell";
+import { Formatted } from "./formatted";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -240,16 +241,6 @@ function Editor({ text }: { text: BotText }) {
       </div>
       {showHistory && <HistoryList keyName={text.key} />}
     </section>
-  );
-}
-
-/** Renders WhatsApp's *bold* so the preview matches what people see. */
-function Formatted({ text }: { text: string }) {
-  const parts = text.split(/(\*[^*\n]+\*)/g);
-  return (
-    <>
-      {parts.map((p, i) => (p.length > 2 && p.startsWith("*") && p.endsWith("*") ? <strong key={i}>{p.slice(1, -1)}</strong> : <span key={i}>{p}</span>))}
-    </>
   );
 }
 
