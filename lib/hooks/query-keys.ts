@@ -19,7 +19,13 @@ export const deskKeys = {
   routing: ["desk", "routing"] as const,
 };
 
-export const settingsKeys = { routing: ["settings", "routing"] as const };
+export const botKeys = {
+  all: ["bot"] as const,
+  texts: (p: object) => ["bot", "texts", p] as const,
+  history: (key: string) => ["bot", "texts", "history", key] as const,
+};
+
+export const settingsKeys ={ routing: ["settings", "routing"] as const };
 
 export const accountKeys ={ twoFactor: ["account", "two-factor"] as const };
 
