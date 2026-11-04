@@ -195,3 +195,42 @@ describe("Assigned to me / My completed tickets", () => {
     expect(reconcileFilters(filters({ assignee: "mine_done" }), { status: "completed" }).assignee).toBe("mine_done");
   });
 });
+
+describe("quick views", () => {
+  it("narrow to my open tickets and ask the backend for the matching filter", () => {
+    expect(toListParams(filters({ quick: "needs_reply", assignee: "mine" }), 7)).toMatchObject({
+      assignedToUserId: 7,
+      excludeCompleted: true,
+      awaitingReply: true,
+      sort: "waiting",
+    });
+    expect(toListParams(filters({ quick: "new_to_me" }), 7)).toMatchObject({ unopened: true, sort: "assigned" });
+    expect(toListParams(filters({ quick: "sla_risk" }), 7)).toMatchObject({ slaDueWithinMinutes: 30, sort: "sla" });
+    expect(toListParams(filters({ quick: "unread" }), 7)).toMatchObject({ unread: true });
+    expect(toListParams(filters({ quick: "pending" }), 7)).toMatchObject({ status: "pending" });
+    expect(toListParams(filters({ quick: "waiting_customer" }), 7)).toMatchObject({ waitingOnCustomer: true });
+  });
+
+  it("keep search and channel, and fall back to the normal filters until my id is known", () => {
+    expect(toListParams(filters({ quick: "unread", search: " 123 ", channel: "whatsapp" }), 7)).toMatchObject({
+      search: "123",
+      channel: "whatsapp",
+    });
+    expect(toListParams(filters({ quick: "unread", status: "pending" }), null)).toEqual({ status: "pending" });
+  });
+
+  it("picking one sets status and assignee; choosing a status or assignee by hand leaves it", () => {
+    const picked = reconcileFilters(filters({ status: "pending", assignee: "all" }), { quick: "unread" });
+    expect(picked).toMatchObject({ quick: "unread", status: "all", assignee: "mine" });
+    expect(reconcileFilters(picked, { status: "completed" }).quick).toBeNull();
+    expect(reconcileFilters(picked, { assignee: "unassigned" }).quick).toBeNull();
+    expect(reconcileFilters(picked, { search: "x" }).quick).toBe("unread");
+    expect(reconcileFilters(picked, { quick: null }).quick).toBeNull();
+  });
+
+  it("hide bot-only chats, which have no owner or reply state", () => {
+    const rows = [conv({ id: "t", status: "pending", assignedToUserId: 7 }), conv({ id: "b", status: "bot_only" })];
+    const kept = applyClientFilters(rows, filters({ quick: "unread", assignee: "mine" }), 7);
+    expect(kept.map((c) => c.id)).toEqual(["t"]);
+  });
+});

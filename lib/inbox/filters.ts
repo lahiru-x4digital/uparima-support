@@ -15,6 +15,7 @@ export function assigneeUserId(assignee: ConversationFilters["assignee"], meId: 
  */
 export function toListParams(filters: ConversationFilters, meId: number | null = null): TicketListParams {
   const params: TicketListParams = {};
+  if (filters.quick && meId != null) return quickListParams(filters, meId);
   if (filters.status === "needs_contact") {
     params.needsContact = true;
     // "bot_only" is a synthetic, client-only status for ticketless WhatsApp
@@ -53,12 +54,59 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
   return params;
 }
 
+/** A quick view: my own open tickets, narrowed and ordered by what the view is about. */
+function quickListParams(filters: ConversationFilters, meId: number): TicketListParams {
+  const params: TicketListParams = { assignedToUserId: meId, excludeCompleted: true, sort: "assigned" };
+  switch (filters.quick) {
+    case "needs_reply":
+      // The customer wrote last: longest-waiting first.
+      params.awaitingReply = true;
+      params.sort = "waiting";
+      break;
+    case "new_to_me":
+      params.unopened = true;
+      break;
+    case "sla_risk":
+      params.slaDueWithinMinutes = SLA_RISK_MINUTES;
+      params.sort = "sla";
+      break;
+    case "unread":
+      params.unread = true;
+      break;
+    case "pending":
+      params.status = "pending";
+      break;
+    case "waiting_customer":
+      params.waitingOnCustomer = true;
+      params.sort = "waiting";
+      break;
+    default:
+      break;
+  }
+  if (filters.channel === "whatsapp") params.channel = "whatsapp";
+  if (filters.channel === "email") params.source = "email";
+  const search = filters.search.trim();
+  if (search) params.search = search;
+  return params;
+}
+
+/** "SLA at risk" = due within this many minutes, or already overdue. */
+export const SLA_RISK_MINUTES = 30;
+
 /**
  * Applies a filter change. A queued ticket has no owner, so "Waiting for agent" with "Assigned to me"
  * would always be empty: choosing one steps the other back to "all" instead of showing a blank list.
  */
 export function reconcileFilters(current: ConversationFilters, patch: Partial<ConversationFilters>): ConversationFilters {
   const next = { ...current, ...patch };
+  // Picking a quick view means "my open tickets, narrowed by this": it replaces the status and assignee.
+  if (patch.quick) {
+    next.status = "all";
+    next.assignee = "mine";
+  } else if (patch.status !== undefined || patch.assignee !== undefined) {
+    // Choosing a status or assignee by hand leaves the quick view.
+    next.quick = null;
+  }
   const owned = (a: ConversationFilters["assignee"]) => a === "mine" || a === "mine_done" || a.startsWith("user:");
   if (patch.status === "queued" && owned(next.assignee)) next.assignee = "all";
   if (patch.assignee && owned(patch.assignee) && next.status === "queued") next.status = "all";
@@ -86,6 +134,8 @@ export function applyClientFilters(
   // Text search is applied by the backend (see toListParams), so it reaches
   // every page; filtering it again here could only hide rows it matched.
   return conversations.filter((c) => {
+    // Quick views are about tickets; a bot-only chat has no owner, SLA or reply state.
+    if (filters.quick && c.status === "bot_only") return false;
     if (filters.status === "needs_contact" && c.status === "bot_only" && !c.needsContact) return false;
     // Ticket rows are already server-filtered to incompleteDriver=true for
     // this tab (see toListParams), but bot rows bypass that server filter

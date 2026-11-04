@@ -1,5 +1,6 @@
 import { apiGet, apiGetPage, apiPatch, apiPost } from "@/lib/api";
 import type {
+  AgentTicketCounts,
   AssignmentStep,
   Ticket,
   TicketDetail,
@@ -12,6 +13,9 @@ import type {
 
 export const listTickets = (params: TicketListParams) =>
   apiGetPage<TicketRow>("/support-desk/tickets", { params });
+
+/** My open tickets split by what needs doing, in one request. */
+export const getAgentTicketCounts = () => apiGet<AgentTicketCounts>("/support-desk/tickets/counts");
 
 export const getTicket = (id: string) => apiGet<TicketDetail>(`/support-desk/tickets/${id}`);
 

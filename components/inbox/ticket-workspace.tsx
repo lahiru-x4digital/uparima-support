@@ -14,7 +14,7 @@ import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useCan, useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus, useVoiceReply } from "@/lib/hooks/use-ticket-actions";
 import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
-import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
+import { flattenRows, useAgentTicketCounts, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters, reconcileFilters } from "@/lib/inbox/filters";
 import {
   botChatRefFromId,
@@ -31,6 +31,7 @@ import { ChatPane } from "./chat-pane";
 import { ContextPanel } from "./context-panel";
 import { ConversationList } from "./conversation-list";
 import { FilterBar } from "./filter-bar";
+import { QuickViews } from "./quick-views";
 import { FollowupsStrip } from "./followups-strip";
 
 const NO_STAFF: never[] = [];
@@ -85,6 +86,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const myId = me?.id ?? user?.id ?? null;
   const myPending = useTicketCount("mine-pending", { assignedToUserId: myId ?? undefined, status: "pending" }, myId != null);
   const myInReview = useTicketCount("mine-in-review", { assignedToUserId: myId ?? undefined, status: "in_review" }, myId != null);
+  const agentCounts = useAgentTicketCounts(myId != null);
   const botList = useBotChatList(
     search.trim(),
     view === "bot" && filters.status === "incomplete_driver",
@@ -257,6 +259,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     <div className="flex min-h-0 flex-1">
       <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
         <FollowupsStrip onOpenTicket={select} />
+        {!botView && (
+          <QuickViews active={filters.quick} counts={agentCounts.data}
+            onSelect={(quick) => onFiltersChange(reconcileFilters(given, { quick }))} />
+        )}
         {!botView && (
           <FilterBar filters={filters} needsContactCount={needsContact.data} myPendingCount={myPending.data}
             myInReviewCount={myInReview.data} hideChannel={!!lockedChannel}

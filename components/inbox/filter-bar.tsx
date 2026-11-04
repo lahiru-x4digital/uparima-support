@@ -2,8 +2,9 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
+import { useIsAdmin, useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import type { Channel, ConversationFilters } from "@/types/inbox";
+import { cn } from "@/lib/utils";
 import { CHANNELS } from "./meta";
 import { AlertDot, OptionSelect } from "./option-select";
 
@@ -20,6 +21,8 @@ interface Props {
   hideChannel?: boolean;
 }
 
+const COLS: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3" };
+
 const CHANNEL_OPTIONS: { value: Channel | "all"; label: string }[] = [
   { value: "all", label: "All channels" },
   ...(Object.keys(CHANNELS) as Channel[]).map((c) => ({ value: c, label: CHANNELS[c].label })),
@@ -34,6 +37,8 @@ function mineLabel(pending = 0, inReview = 0) {
 export function FilterBar({ filters, needsContactCount, myPendingCount, myInReviewCount, onChange, hideChannel }: Props) {
   // A super admin can also look at any other agent's tickets.
   const isSuperAdmin = useIsSuperAdmin();
+  // Support agents only ever work their own tickets, so they get no assignee picker.
+  const isAdmin = useIsAdmin();
   const { data: me } = useMe();
   const { data: staff } = useStaff();
   const otherStaff = isSuperAdmin ? (staff ?? []).filter((s) => s.id !== me?.id) : [];
@@ -71,18 +76,18 @@ export function FilterBar({ filters, needsContactCount, myPendingCount, myInRevi
           className="pl-8"
         />
       </div>
-      <div className={hideChannel ? "grid grid-cols-2 gap-2" : "grid grid-cols-3 gap-2"}>
+      <div className={cn("grid gap-2", COLS[1 + (hideChannel ? 0 : 1) + (isAdmin ? 1 : 0)])}>
         <OptionSelect label="Status" value={filters.status} options={statusOptions}
           onChange={(status) => onChange({ status })} className="w-full" />
         {!hideChannel && <OptionSelect label="Channel" value={filters.channel} options={CHANNEL_OPTIONS}
           onChange={(channel) => onChange({ channel })} className="w-full" />}
-        <div className="relative">
+        {isAdmin && <div className="relative">
           <OptionSelect label="Assignee" value={filters.assignee} options={assigneeOptions}
             onChange={(assignee) => onChange({ assignee })} className="w-full" />
           {!!myPendingCount && filters.assignee !== "mine" && (
             <AlertDot className="pointer-events-none absolute -top-1.5 -right-1.5 ring-2 ring-background" />
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

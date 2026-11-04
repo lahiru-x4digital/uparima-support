@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Bot, Inbox, Mail } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { useCan, useMe } from "@/lib/hooks/use-desk";
 import { SHOW_MINE_EVENT, SHOW_MINE_PARAM } from "@/components/realtime/desk-realtime-provider";
 import { useTicketCount } from "@/lib/hooks/use-tickets";
@@ -20,9 +21,11 @@ const TABS: { key: InboxView; label: string }[] = [
 
 // Agents start on their own work, on the chats that still need onboarding; "Everyone" in the Status
 // filter and "All" in the Assignee filter are one click away.
-const DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "mine" };
+const ADMIN_DEFAULT_FILTERS: ConversationFilters = { search: "", status: "to_onboard", channel: "all", assignee: "mine" };
+// Support agents start on what needs an answer from them, among their own tickets only.
+const AGENT_DEFAULT_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine", quick: "needs_reply" };
 // Everything on my list, any status, newest assignment first: where "N tickets assigned to you" leads.
-const MINE_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine" };
+const MINE_FILTERS: ConversationFilters = { search: "", status: "all", channel: "all", assignee: "mine", quick: null };
 
 const mineFromUrl = () =>
   typeof window !== "undefined" && new URLSearchParams(window.location.search).has(SHOW_MINE_PARAM);
@@ -33,7 +36,11 @@ const mineFromUrl = () =>
  */
 export function InboxShell() {
   // An assignment toast on another page links to /inbox?mine=1.
-  const [filters, setFilters] = useState<ConversationFilters>(() => (mineFromUrl() ? MINE_FILTERS : DEFAULT_FILTERS));
+  const { user } = useAuth();
+  const isAdmin = user?.type === "admin" || user?.type === "super_admin";
+  const [filters, setFilters] = useState<ConversationFilters>(() =>
+    mineFromUrl() ? MINE_FILTERS : isAdmin ? ADMIN_DEFAULT_FILTERS : AGENT_DEFAULT_FILTERS,
+  );
   const [view, setView] = useState<InboxView>("all");
   const showMine = useCallback(() => {
     setView("all");
