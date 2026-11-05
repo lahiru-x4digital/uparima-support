@@ -11,6 +11,7 @@ import {
   createDriver,
   createDriverDraft,
   deleteDriverPermanently,
+  deleteIncompleteDriver,
   getDriver,
   getDriverDevicePermissions,
   getDriverDuplicateDocuments,
@@ -28,8 +29,13 @@ import {
   updateDriver,
   validateDriverWithAi,
 } from "@/lib/services/drivers.service";
-import type { AdjustSubscriptionBody, DriverFormFiles, DriverFormValues } from "@/types/driver";
-import { driverKeys } from "./query-keys";
+import type {
+  AdjustSubscriptionBody,
+  DeleteIncompleteDriverInput,
+  DriverFormFiles,
+  DriverFormValues,
+} from "@/types/driver";
+import { driverKeys, ticketKeys } from "./query-keys";
 
 // ── Reads ───────────────────────────────────────────────────────────────────
 
@@ -247,3 +253,17 @@ export const useAdjustDriverSubscription = () =>
     ({ id, body }: { id: string; body: AdjustSubscriptionBody }) => adjustDriverSubscription(id, body),
     "Subscription updated",
   );
+
+/** Deletes an unfinished signup and closes its tickets, so the ticket data refreshes too. */
+export function useDeleteIncompleteDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: DeleteIncompleteDriverInput }) => deleteIncompleteDriver(id, input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: driverKeys.all });
+      void qc.invalidateQueries({ queryKey: ticketKeys.all });
+      toast.success("Driver deleted and ticket closed");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+}

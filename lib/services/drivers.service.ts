@@ -10,6 +10,7 @@ import type {
   DriverFormValues,
   DriverSubscriptionInfo,
   DriverTermsStatus,
+  DeleteIncompleteDriverInput,
   DocumentExtractionResult,
   DuplicateDocumentMatch,
   VehicleLookup,
@@ -110,6 +111,10 @@ export function updateDriver(id: number | string, values: Partial<DriverFormValu
   delete editable.phone;
   return apiPatch<Driver>(`${BASE}/${id}`, buildFormData(editable, files), MULTIPART);
 }
+
+/** Removes an unfinished signup and closes the person's open tickets; the reason is mandatory. */
+export const deleteIncompleteDriver = (id: number | string, body: DeleteIncompleteDriverInput) =>
+  apiPost<{ driverId: number; closedTickets: number }>(`${BASE}/${id}/delete-incomplete`, body);
 
 /** Live per-document AI extraction for the form's upload tiles; no driver needed yet. */
 export function extractDriverDocument(slot: string, file: File, isTemporaryLicense?: boolean) {
