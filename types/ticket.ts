@@ -72,6 +72,30 @@ export interface TicketRow extends Ticket {
   /** True when this ticket has activity newer than the current staff
    * member's last-seen pointer for it (or they've never opened it). */
   unseen: boolean;
+  lastCustomerMessageAt?: string | null;
+  lastStaffReplyAt?: string | null;
+  lastMessageFrom?: "customer" | "staff";
+  /** The newest message as the list shows it (first 140 characters). */
+  lastMessageText?: string | null;
+  lastMessageAuthorId?: number | null;
+  /** Customer messages the signed-in agent has not opened yet. Absent when the list was asked without a signed-in agent. */
+  unreadCount?: number;
+  /** The signed-in agent pinned this chat. */
+  pinned?: boolean;
+}
+
+/** `GET /support-desk/tickets/counts`: the numbers on an agent's quick views. */
+export interface AgentTicketCounts {
+  openTotal: number;
+  pending: number;
+  awaitingReply: number;
+  waitingOnCustomer: number;
+  unopened: number;
+  slaBreached: number;
+  slaSoon: number;
+  unread: number;
+  queue: number;
+  doneToday: number;
 }
 
 export interface TicketReply {
@@ -174,7 +198,21 @@ export interface TicketListParams {
    * "assigned" = most recently assigned first, pending before in review (the "Assigned to me" view);
    * "queue" = closest response deadline first, the order the routing queue is drained in.
    */
-  sort?: "assigned" | "queue" | "oldest";
+  sort?: "assigned" | "queue" | "oldest" | "sla" | "waiting" | "recent";
+  /** Chats I opened in the last 7 days (with sort "recent", the latest first). */
+  recentlyViewed?: boolean;
+  /** Assigned, and the assignee has not opened it yet. */
+  unopened?: boolean;
+  /** The customer wrote last and nobody has answered. */
+  awaitingReply?: boolean;
+  /** A staff reply is the last message: waiting on the customer. */
+  waitingOnCustomer?: boolean;
+  /** Unanswered and past the response deadline. */
+  slaBreached?: boolean;
+  /** Unanswered and due within this many minutes, or already overdue. */
+  slaDueWithinMinutes?: number;
+  /** A customer message the signed-in agent has not opened yet. */
+  unread?: boolean;
   /** Only tickets created more than this many hours ago. */
   olderThanHours?: number;
   /** Only tickets nobody owns yet. */

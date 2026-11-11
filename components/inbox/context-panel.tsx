@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Bike, Bookmark, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Bike, Bookmark, Car, ExternalLink, Mail, MapPin, Paperclip, Phone, Star, StickyNote, Trash2, UserPlus, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { DriverCreateDialog } from "@/components/drivers/driver-create-dialog";
+import { DeleteIncompleteDriverDialog } from "@/components/inbox/delete-incomplete-driver-dialog";
 import { DriverDetailsDialog } from "@/components/drivers/driver-details-dialog";
 import { DriverLocationDialog } from "@/components/drivers/driver-location-dialog";
 import { DriverFollowup } from "@/components/drivers/driver-followup";
@@ -114,9 +115,12 @@ function DriverStats({
   submitter,
   onViewDriver,
   onEditLocation,
+  onDelete,
 }: {
   submitter: Extract<Conversation["submitter"], { kind: "driver" }>;
   onViewDriver: () => void;
+  /** Only passed for an unfinished signup the agent may edit. */
+  onDelete?: () => void;
   /** Omitted when the agent may not edit drivers. */
   onEditLocation?: () => void;
 }) {
@@ -147,6 +151,18 @@ function DriverStats({
         {onEditLocation && (
           <Button size="sm" variant="outline" className="min-w-0 flex-1" title="Change location" onClick={onEditLocation}>
             <MapPin className="size-3.5" /> <span className="truncate">Location</span>
+          </Button>
+        )}
+        {onDelete && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive hover:text-destructive"
+            title="Delete incomplete driver and close ticket"
+            aria-label="Delete incomplete driver"
+            onClick={onDelete}
+          >
+            <Trash2 className="size-3.5" />
           </Button>
         )}
       </div>
@@ -302,6 +318,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
   const viewDrivers = useCanViewDrivers();
   const canSeeDriver = viewDrivers.any || viewDrivers.pendingOnly || useCan("driver.manual-register");
   const [createDriverOpen, setCreateDriverOpen] = useState(false);
+  const [deleteDriverOpen, setDeleteDriverOpen] = useState(false);
   // A driver created from a ticket with no existing driver record — shown
   // in the detail dialog right after registration, by id (not c.submitter,
   // which still reflects the conversation's stale pre-registration state).
@@ -351,6 +368,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
               submitter={c.submitter}
               onViewDriver={() => setDriverDialogOpen(true)}
               onEditLocation={canEditDriver ? () => setLocationDialogOpen(true) : undefined}
+              onDelete={canEditDriver && c.submitter.status === "incomplete" ? () => setDeleteDriverOpen(true) : undefined}
             />
           ) : c.submitter?.kind !== "hire_tenant" ? (
             <Button size="sm" variant="outline" className="w-fit" onClick={() => setCreateDriverOpen(true)}>
@@ -435,6 +453,16 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
           driverId={String(c.submitter.driverId)}
           open={locationDialogOpen}
           onClose={() => setLocationDialogOpen(false)}
+        />
+      )}
+
+      {c.submitter?.kind === "driver" && deleteDriverOpen && (
+        <DeleteIncompleteDriverDialog
+          open={deleteDriverOpen}
+          onOpenChange={setDeleteDriverOpen}
+          driverId={c.submitter.driverId}
+          ticketNumber={c.ticketNumber || undefined}
+          onDeleted={onClose}
         />
       )}
 

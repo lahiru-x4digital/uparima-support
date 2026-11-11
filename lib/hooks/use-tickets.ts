@@ -1,8 +1,8 @@
 "use client";
 
-import { useInfiniteQuery, useQuery, type InfiniteData } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { toListParams } from "@/lib/inbox/filters";
-import { getAssignmentHistory, getTicket, listTickets } from "@/lib/services/tickets.service";
+import { getAgentTicketCounts, getAssignmentHistory, getTicket, listTickets, pinTicket, unpinTicket } from "@/lib/services/tickets.service";
 import type { ConversationFilters } from "@/types/inbox";
 import type { Paginated, TicketListParams, TicketRow } from "@/types/ticket";
 import { ticketKeys } from "./query-keys";
@@ -46,6 +46,26 @@ export function useAssignmentHistory(id: string | null) {
     queryKey: ticketKeys.assignmentHistory(id ?? ""),
     queryFn: () => getAssignmentHistory(id as string),
     enabled: !!id,
+  });
+}
+
+/** Pins or unpins a chat on my own list; the lists refresh so it moves at once. */
+export function useTogglePin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) => (pinned ? pinTicket(id) : unpinTicket(id)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ticketKeys.lists() }),
+  });
+}
+
+/** The numbers on the agent's quick-view chips (one request instead of one per chip). */
+export function useAgentTicketCounts(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ticketKeys.count("agent-counts"),
+    queryFn: getAgentTicketCounts,
+    refetchInterval: LIST_POLL_MS,
+    refetchIntervalInBackground: false,
   });
 }
 

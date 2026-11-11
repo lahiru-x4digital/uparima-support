@@ -404,3 +404,30 @@ export type DriverTermsStatus = {
     platform: string | null;
   } | null;
 };
+
+/** Why staff removed an unfinished signup (mirrors the backend's INCOMPLETE_DELETE_REASONS). */
+export type IncompleteDeleteReason =
+  | "contacted_by_mistake"
+  | "not_a_driver"
+  | "rider_only"
+  | "duplicate_signup"
+  | "test_signup"
+  | "other";
+
+export const INCOMPLETE_DELETE_NOTE_MAX_LENGTH = 500;
+
+export const INCOMPLETE_DELETE_REASONS: { key: IncompleteDeleteReason; label: string }[] = [
+  { key: "contacted_by_mistake", label: "Contacted support by mistake" },
+  { key: "not_a_driver", label: "Not a driver / doesn't want to drive" },
+  { key: "rider_only", label: "Rider only" },
+  { key: "duplicate_signup", label: "Duplicate signup" },
+  { key: "test_signup", label: "Test signup" },
+  { key: "other", label: "Other" },
+];
+
+export interface DeleteIncompleteDriverInput {
+  reason: IncompleteDeleteReason;
+  /** Required when the reason is "other". */
+  note?: string;
+  ticketNumber?: string;
+}

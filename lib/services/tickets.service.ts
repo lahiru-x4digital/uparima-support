@@ -1,5 +1,6 @@
-import { apiGet, apiGetPage, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiGetPage, apiPatch, apiPost, apiPut } from "@/lib/api";
 import type {
+  AgentTicketCounts,
   AssignmentStep,
   Ticket,
   TicketDetail,
@@ -12,6 +13,9 @@ import type {
 
 export const listTickets = (params: TicketListParams) =>
   apiGetPage<TicketRow>("/support-desk/tickets", { params });
+
+/** My open tickets split by what needs doing, in one request. */
+export const getAgentTicketCounts = () => apiGet<AgentTicketCounts>("/support-desk/tickets/counts");
 
 export const getTicket = (id: string) => apiGet<TicketDetail>(`/support-desk/tickets/${id}`);
 
@@ -57,6 +61,10 @@ export const updateTicketPriority = (id: string, priority: TicketPriority) =>
 /** Completes several of my own tickets at once; ids not assigned to me come back as `skipped`. */
 export const bulkCloseTickets = (ids: string[]) =>
   apiPost<{ closed: string[]; skipped: string[] }>("/support-desk/tickets/bulk-close", { ids });
+
+/** Pins the chat to the top of my own list (3 at most). */
+export const pinTicket = (id: string) => apiPut<{ pinned: boolean }>(`/support-desk/tickets/${id}/pin`);
+export const unpinTicket = (id: string) => apiDelete<{ pinned: boolean }>(`/support-desk/tickets/${id}/pin`);
 
 export const assignTicket = (id: string, assignedToUserId: number) =>
   apiPatch<Ticket>(`/support-desk/tickets/${id}/assign`, { assignedToUserId });

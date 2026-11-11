@@ -102,6 +102,10 @@ export interface Conversation {
   /** True when this conversation has activity the current staff member
    * hasn't seen yet. Always false once its detail has been opened. */
   unread: boolean;
+  /** How many customer messages this agent has not opened yet (undefined when only a yes/no is known). */
+  unreadCount?: number;
+  /** The signed-in agent pinned this chat to the top of their list. */
+  pinned?: boolean;
   /** WhatsApp hand-off fields. */
   needsContact: boolean;
   contactPreference: ContactPreference | null;
@@ -146,8 +150,13 @@ export interface ConversationRouting {
   queuedReason: QueuedReason | null;
 }
 
+/** One-click views of an agent's own work, each backed by a server filter (see lib/inbox/filters.ts). */
+export type QuickView = "recent" | "needs_reply" | "new_to_me" | "sla_risk" | "unread" | "pending" | "waiting_customer" | "all_mine";
+
 export interface ConversationFilters {
   search: string;
+  /** When set it decides status and assignee: my own open tickets, narrowed by this view. */
+  quick?: QuickView | null;
   /** "needs_contact" is the WhatsApp hand-off queue; "incomplete_driver" is
    * the submitter's driver profile status, not a ticket status either. */
   status: ConversationStatus | "to_onboard" | "needs_contact" | "incomplete_driver" | "queued" | "auto_closed" | "all";

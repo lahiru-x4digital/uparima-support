@@ -48,6 +48,34 @@ export const roleOf = (t: Pick<Ticket, "submitterType">): CustomerRole =>
   t.submitterType === "driver" ? "driver" : "rider";
 
 /** "10:42" for today, "12 Oct" for earlier days. */
+/**
+ * A chat-list time the way WhatsApp writes it: the time today, "Yesterday", the weekday for the
+ * rest of the last week, then the date.
+ */
+export function formatChatTime(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOf(now) - startOf(date)) / 86_400_000);
+  if (days <= 0) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  if (days === 1) return "Yesterday";
+  if (days < 7) return date.toLocaleDateString([], { weekday: "long" });
+  return date.toLocaleDateString([], { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+/** The list's order, like WhatsApp: pinned chats first, then the newest message first. */
+export function byChatOrder(a: Pick<Conversation, "pinned" | "activityAt" | "createdAt">, b: Pick<Conversation, "pinned" | "activityAt" | "createdAt">): number {
+  return Number(!!b.pinned) - Number(!!a.pinned) || (b.activityAt ?? b.createdAt).localeCompare(a.activityAt ?? a.createdAt);
+}
+
+/** What the row says: the newest message, with "You:" before the agent's own reply (WhatsApp style). */
+export function chatPreview(row: TicketRow, meId?: number | null): string {
+  const text = row.lastMessageText?.trim();
+  if (!text) return row.message;
+  if (row.lastMessageFrom !== "staff") return text;
+  return `${meId != null && row.lastMessageAuthorId === meId ? "You" : "Agent"}: ${text}`;
+}
+
 export function formatTime(iso: string, now: Date = new Date()): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
@@ -189,11 +217,16 @@ function replyMessage(reply: TicketReply, customerName: string, staff: Staff[], 
 }
 
 /** A list row: no replies yet, so the thread holds just the customer's first message. */
-export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = new Date()): Conversation {
+export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = new Date(), meId?: number | null): Conversation {
   const customerName = row.submitterName ?? row.submitterPhone ?? row.reporterPhone ?? row.reporterEmail ?? "Unknown caller";
   return {
     ...base(row, staff, now),
-    unread: row.unseen,
+    lastAt: formatChatTime(row.lastActivityAt ?? row.updatedAt ?? row.createdAt, now),
+    preview: chatPreview(row, meId),
+    // Per agent when the server knows who is asking; otherwise the shared "nobody has opened it" flag.
+    unread: row.unreadCount != null ? row.unreadCount > 0 : row.unseen,
+    unreadCount: row.unreadCount,
+    pinned: !!row.pinned,
     incompleteDriver: row.submitterDriverStatus === "incomplete",
     toOnboard: isToOnboard(row.submitterDriverStatus, row.userId == null && !!row.reporterPhone),
     customerName,
@@ -437,7 +470,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
     unread: row.unseen,
     assignedToUserId: null,
     assignedTo: null,
-    lastAt: formatTime(row.lastAt, now),
+    lastAt: formatChatTime(row.lastAt, now),
     activityAt: row.lastAt,
     createdAt: row.lastAt,
     subject: "WhatsApp conversation",

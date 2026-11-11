@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Conversation, ConversationFilters } from "@/types/inbox";
-import { applyClientFilters, reconcileFilters, toListParams } from "./filters";
+import { applyClientFilters, describeFilters, reconcileFilters, toListParams } from "./filters";
 
 const filters = (over: Partial<ConversationFilters> = {}): ConversationFilters => ({
   search: "",
@@ -193,5 +193,67 @@ describe("Assigned to me / My completed tickets", () => {
     const back = reconcileFilters(filters({ assignee: "mine_done" }), { status: "pending" });
     expect(back).toMatchObject({ assignee: "all", status: "pending" });
     expect(reconcileFilters(filters({ assignee: "mine_done" }), { status: "completed" }).assignee).toBe("mine_done");
+  });
+});
+
+describe("quick views", () => {
+  it("narrow to my open tickets and ask the backend for the matching filter", () => {
+    expect(toListParams(filters({ quick: "needs_reply", assignee: "mine" }), 7)).toMatchObject({
+      assignedToUserId: 7,
+      excludeCompleted: true,
+      awaitingReply: true,
+      sort: "waiting",
+    });
+    expect(toListParams(filters({ quick: "new_to_me" }), 7)).toMatchObject({ unopened: true, sort: "assigned" });
+    expect(toListParams(filters({ quick: "sla_risk" }), 7)).toMatchObject({ slaDueWithinMinutes: 30, sort: "sla" });
+    expect(toListParams(filters({ quick: "unread" }), 7)).toMatchObject({ unread: true });
+    expect(toListParams(filters({ quick: "pending" }), 7)).toMatchObject({ status: "pending" });
+    expect(toListParams(filters({ quick: "waiting_customer" }), 7)).toMatchObject({ waitingOnCustomer: true });
+  });
+
+  it("keep search and channel, and fall back to the normal filters until my id is known", () => {
+    expect(toListParams(filters({ quick: "unread", search: " 123 ", channel: "whatsapp" }), 7)).toMatchObject({
+      search: "123",
+      channel: "whatsapp",
+    });
+    expect(toListParams(filters({ quick: "unread", status: "pending" }), null)).toEqual({ status: "pending" });
+  });
+
+  it("picking one sets status and assignee; choosing a status or assignee by hand leaves it", () => {
+    const picked = reconcileFilters(filters({ status: "pending", assignee: "all" }), { quick: "unread" });
+    expect(picked).toMatchObject({ quick: "unread", status: "all", assignee: "mine" });
+    expect(reconcileFilters(picked, { status: "completed" }).quick).toBeNull();
+    expect(reconcileFilters(picked, { assignee: "unassigned" }).quick).toBeNull();
+    expect(reconcileFilters(picked, { search: "x" }).quick).toBe("unread");
+    expect(reconcileFilters(picked, { quick: null }).quick).toBeNull();
+  });
+
+  it("hide bot-only chats, which have no owner or reply state", () => {
+    const rows = [conv({ id: "t", status: "pending", assignedToUserId: 7 }), conv({ id: "b", status: "bot_only" })];
+    const kept = applyClientFilters(rows, filters({ quick: "unread", assignee: "mine" }), 7);
+    expect(kept.map((c) => c.id)).toEqual(["t"]);
+  });
+});
+
+describe("recently opened", () => {
+  it("asks for the chats I opened lately, whatever their status or owner", () => {
+    expect(toListParams(filters({ quick: "recent", assignee: "mine" }), 7)).toEqual({ recentlyViewed: true, sort: "recent" });
+    expect(toListParams(filters({ quick: "recent", search: " x " }), 7)).toEqual({ recentlyViewed: true, sort: "recent", search: "x" });
+  });
+
+  it("keeps whatever the server returned, including finished chats, but not bot-only rows", () => {
+    const rows = [conv({ id: "a", status: "completed", assignedToUserId: 9 }), conv({ id: "b", status: "pending", assignedToUserId: 7 }), conv({ id: "bot", status: "bot_only" })];
+    const kept = applyClientFilters(rows, filters({ quick: "recent", assignee: "mine" }), 7);
+    expect(kept.map((c) => c.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("describeFilters", () => {
+  it("says in plain words what the list holds", () => {
+    expect(describeFilters(filters({ status: "to_onboard", assignee: "mine" }))).toBe("Drivers still to onboard assigned to you");
+    expect(describeFilters(filters({ status: "all", assignee: "all" }))).toBe("All chats from everyone");
+    expect(describeFilters(filters({ status: "pending", assignee: "unassigned" }))).toBe("Pending chats that nobody has taken yet");
+    expect(describeFilters(filters({ quick: "needs_reply" }))).toMatch(/customer wrote last/);
+    expect(describeFilters(filters({ quick: "recent" }))).toMatch(/opened in the last 7 days/);
   });
 });

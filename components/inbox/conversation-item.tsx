@@ -1,4 +1,4 @@
-import { MessageSquare, PhoneCall, UserRound } from "lucide-react";
+import { MessageSquare, Pin, PhoneCall, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useIsAdmin } from "@/lib/hooks/use-desk";
@@ -27,6 +27,8 @@ interface Props {
   markOpen?: boolean;
   /** The signed-in agent, to tell which tickets just landed on them. */
   meId?: number | null;
+  /** Pins or unpins this chat on my list; omit when it cannot be pinned (a bot chat has no ticket). */
+  onTogglePin?: () => void;
 }
 
 /** The row's background: new-to-me and selected tints. Shared with the checkbox cell beside
@@ -47,7 +49,7 @@ export function rowHover(active: boolean) {
     : "group-hover/row:bg-muted/60";
 }
 
-export function ConversationItem({ conversation: c, active, onSelect, markOpen, meId }: Props) {
+export function ConversationItem({ conversation: c, active, onSelect, markOpen, meId, onTogglePin }: Props) {
   const isAdmin = useIsAdmin();
   const channel = CHANNELS[c.channel];
   const ChannelIcon = channel.icon;
@@ -62,8 +64,11 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
   const assignedAt = mine ? (c.routing?.assignedAt ?? null) : null;
   const newToMe = isNewToMe(c, meId);
   const PreferenceIcon = c.contactPreference === "message" ? MessageSquare : PhoneCall;
+  // WhatsApp style: a number for how many messages are waiting; just the NEW mark when only a yes/no is known.
+  const unreadN = c.unreadCount ?? 0;
 
   return (
+    <div className="group/item relative">
     <button
       type="button"
       onClick={onSelect}
@@ -81,7 +86,7 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
         </Avatar>
         {/* One corner for every "look at me" mark: the red "!" (waiting for contact, or assigned to me
             and not finished) and the blue NEW for a ticket/message nobody has opened yet. */}
-        {(showHelpAlert || showMineAlert || c.unread) && (
+        {(showHelpAlert || showMineAlert || (c.unread && c.unreadCount === undefined)) && (
           <div className="absolute -top-1 -left-1 flex items-center gap-0.5">
             {showHelpAlert && (
               <span title="Waiting for contact"
@@ -95,7 +100,7 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
                 <span className="text-xs leading-none font-bold">!</span>
               </span>
             )}
-            {c.unread && (
+            {c.unread && c.unreadCount === undefined && (
               <span className="flex h-4 items-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-background">
                 NEW
               </span>
@@ -110,9 +115,17 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className={cn("truncate text-sm", c.needsContact || c.unread ? "font-semibold" : "font-medium")}>{c.customerName}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">{c.lastAt}</span>
+          <span className={cn("shrink-0 text-xs", unreadN > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>{c.lastAt}</span>
         </div>
-        <p className="mt-0.5 truncate text-sm text-muted-foreground">{topic ? `${topic} · ${c.preview}` : c.preview}</p>
+        <div className={cn("mt-0.5 flex items-center gap-2", onTogglePin && "pr-6")}>
+          <p className={cn("min-w-0 flex-1 truncate text-sm", unreadN > 0 ? "font-medium text-foreground" : "text-muted-foreground")}>{topic ? `${topic} · ${c.preview}` : c.preview}</p>
+          {unreadN > 0 && (
+            <span aria-label={`${unreadN} unread message${unreadN === 1 ? "" : "s"}`}
+              className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 px-1.5 text-[11px] font-semibold text-white tabular-nums">
+              {unreadN > 99 ? "99+" : unreadN}
+            </span>
+          )}
+        </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {/* Where it came from and which product it is about, so mixed lists read at a glance. */}
           <span className={cn("inline-flex h-4 items-center gap-1 rounded px-1.5 text-[10px] font-medium", channel.className)}>
@@ -193,5 +206,23 @@ export function ConversationItem({ conversation: c, active, onSelect, markOpen, 
         </div>
       </div>
     </button>
+    {onTogglePin && (
+      // A sibling of the row, not inside it: a button cannot sit inside a button. Always shown when pinned,
+      // on hover or keyboard focus otherwise, and always on touch screens where there is no hover.
+      <button
+        type="button"
+        onClick={onTogglePin}
+        aria-pressed={!!c.pinned}
+        aria-label={c.pinned ? `Unpin ${c.customerName}` : `Pin ${c.customerName}`}
+        title={c.pinned ? "Unpin" : "Pin to the top"}
+        className={cn(
+          "absolute top-[33px] right-2 flex size-6 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50",
+          c.pinned ? "opacity-100" : "opacity-0 group-hover/item:opacity-100 [@media(hover:none)]:opacity-100",
+        )}
+      >
+        <Pin className={cn("size-3.5", c.pinned && "fill-current")} aria-hidden />
+      </button>
+    )}
+    </div>
   );
 }

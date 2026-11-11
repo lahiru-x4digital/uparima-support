@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCheck, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -14,13 +14,14 @@ import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useCan, useIsSuperAdmin, useMe, useStaff } from "@/lib/hooks/use-desk";
 import { useAssign, useMarkContacted, useReply, useUpdatePriority, useUpdateStatus, useVoiceReply } from "@/lib/hooks/use-ticket-actions";
 import { botChatKeys, ticketKeys } from "@/lib/hooks/query-keys";
-import { flattenRows, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
+import { flattenRows, useAgentTicketCounts, useTogglePin, useTicketCount, useTicketDetail, useTicketList } from "@/lib/hooks/use-tickets";
 import { applyClientFilters, reconcileFilters } from "@/lib/inbox/filters";
 import {
   botChatRefFromId,
   botChatRowToConversation,
   botChatThreadToConversation,
   detailToConversation,
+  byChatOrder,
   rowToConversation,
 } from "@/lib/inbox/mappers";
 import { useSupportAlerts } from "@/lib/realtime/support-socket";
@@ -31,6 +32,7 @@ import { ChatPane } from "./chat-pane";
 import { ContextPanel } from "./context-panel";
 import { ConversationList } from "./conversation-list";
 import { FilterBar } from "./filter-bar";
+import { QuickViews } from "./quick-views";
 import { FollowupsStrip } from "./followups-strip";
 
 const NO_STAFF: never[] = [];
@@ -85,6 +87,18 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const myId = me?.id ?? user?.id ?? null;
   const myPending = useTicketCount("mine-pending", { assignedToUserId: myId ?? undefined, status: "pending" }, myId != null);
   const myInReview = useTicketCount("mine-in-review", { assignedToUserId: myId ?? undefined, status: "in_review" }, myId != null);
+  const agentCounts = useAgentTicketCounts(myId != null);
+  const pin = useTogglePin();
+  const togglePin = useCallback(
+    async (c: Conversation) => {
+      try {
+        await pin.mutateAsync({ id: c.id, pinned: !c.pinned });
+      } catch (error) {
+        toast.error(getErrorMessage(error));
+      }
+    },
+    [pin],
+  );
   const botList = useBotChatList(
     search.trim(),
     view === "bot" && filters.status === "incomplete_driver",
@@ -94,7 +108,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
   const rows = useMemo(() => flattenRows(list.data), [list.data]);
   const botRows = useMemo(() => botList.data?.pages.flatMap((p) => p.data) ?? [], [botList.data]);
 
-  const ticketConversations = useMemo(() => rows.map((r) => rowToConversation(r, staff)), [rows, staff]);
+  const ticketConversations = useMemo(() => rows.map((r) => rowToConversation(r, staff, new Date(), myId)), [rows, staff, myId]);
   const allBotConversations = useMemo(() => botRows.map((r) => botChatRowToConversation(r)), [botRows]);
 
   const merged = useMemo(() => {
@@ -106,11 +120,9 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
     // "Unassigned" is tickets nobody owns; bot chats aren't tickets.
     if (filters.assignee === "unassigned" && view !== "bot") return ticketConversations;
     if (view === "bot") return allBotConversations;
-    // Not opened yet first (same as the backend's ticket order), then newest message first, like a
-    // chat list: a driver writing back brings the conversation to the top.
-    return [...ticketConversations, ...allBotConversations].sort(
-      (a, b) => Number(b.unread) - Number(a.unread) || (b.activityAt ?? b.createdAt).localeCompare(a.activityAt ?? a.createdAt),
-    );
+    // Newest message first, like a chat list: a driver writing back brings the conversation to the top,
+    // and opening a chat does not move it (the unread dot shows what is new).
+    return [...ticketConversations, ...allBotConversations].sort(byChatOrder);
   }, [lockedChannel, view, filters.assignee, ticketConversations, allBotConversations]);
 
   // Bot-only chats have no assignee, so the Assignee filter doesn't apply on the Bot chats tab.
@@ -258,6 +270,10 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
       <section className={cn("flex min-h-0 w-full flex-col border-r lg:w-[360px] lg:shrink-0", mobilePane === "chat" && "hidden lg:flex")}>
         <FollowupsStrip onOpenTicket={select} />
         {!botView && (
+          <QuickViews active={filters.quick} counts={agentCounts.data}
+            onSelect={(quick) => onFiltersChange(reconcileFilters(given, { quick }))} />
+        )}
+        {!botView && (
           <FilterBar filters={filters} needsContactCount={needsContact.data} myPendingCount={myPending.data}
             myInReviewCount={myInReview.data} hideChannel={!!lockedChannel}
             onChange={(p) => onFiltersChange(reconcileFilters(given, p))} />
@@ -293,6 +309,7 @@ export function TicketWorkspace({ filters: given, onFiltersChange, view = "all",
           markOpen={filters.assignee === "mine"}
           meId={myId}
           onSelect={select}
+          onTogglePin={togglePin}
           canTick={canUpdate && !botView ? canTick : undefined}
           ticked={ticked}
           onTick={toggleTick}

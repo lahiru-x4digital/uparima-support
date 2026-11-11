@@ -117,6 +117,9 @@ export function DeskRealtimeProvider({ children }: { children: React.ReactNode }
     socket.on("support:assigned", onAssigned);
     socket.on("support:unassigned", onUnassigned);
     socket.on("support:queue_changed", onQueueChanged);
+    // A ticket changed (assigned, hand-off, new message): refresh the list and the quick-view counts.
+    socket.on("support:ticket_updated", onQueueChanged);
+    socket.on("support:handoff", onQueueChanged);
     // Events sent while the connection was down are gone; catch up as soon as it is back.
     socket.io.on("reconnect", refresh);
 
@@ -124,6 +127,8 @@ export function DeskRealtimeProvider({ children }: { children: React.ReactNode }
       socket.off("support:assigned", onAssigned);
       socket.off("support:unassigned", onUnassigned);
       socket.off("support:queue_changed", onQueueChanged);
+      socket.off("support:ticket_updated", onQueueChanged);
+      socket.off("support:handoff", onQueueChanged);
       socket.io.off("reconnect", refresh);
       if (assignedTimer) clearTimeout(assignedTimer);
       if (takenTimer) clearTimeout(takenTimer);

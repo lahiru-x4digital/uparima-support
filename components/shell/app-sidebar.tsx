@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, LifeBuoy, LogOut, MessageCircle, MessageSquare, MessageSquareWarning, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
+import { type LucideIcon, BadgePercent, ListChecks, Car, ClipboardList, Gauge, History, Inbox, Landmark, LayoutDashboard, Mail, Receipt, Send, Settings2, SlidersHorizontal, Bot, Workflow, LifeBuoy, LogOut, MessageCircle, MessageSquare, MessageSquareWarning, MessagesSquare, PanelLeftClose, PanelLeftOpen, Route, ShieldCheck, Siren, Star, UserCheck, UserPlus, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PresenceSwitcher } from "@/components/shell/presence-switcher";
 import { useAuth } from "@/lib/auth-context";
@@ -44,6 +44,9 @@ const NAV: NavItem[] = [
   { href: "/sms/history", label: "SMS History", icon: History },
   { href: "/email/inbox", label: "Inbox", icon: Inbox, section: "Email", sectionIcon: Mail },
   { href: "/email/config", label: "Email Config", icon: Settings2 },
+  { href: "/settings/assignment", label: "Assignment Rules", icon: SlidersHorizontal, section: "Settings", sectionIcon: Settings2, adminOnly: true },
+  { href: "/settings/bot", label: "Bot Flows", icon: Workflow, adminOnly: true, exact: true },
+  { href: "/settings/bot/texts", label: "Bot Texts", icon: Bot, adminOnly: true },
   { href: "/drivers", label: "Drivers", icon: Car, section: "Drivers", sectionIcon: Car, anyPermission: ["driver.view"], exact: true },
   { href: "/drivers/pending", label: "Pending Drivers", icon: UserCheck, anyPermission: ["driver.view", "driver.view-pending", "driver.approve"] },
   { href: "/drivers/add", label: "Add Driver", icon: UserPlus, anyPermission: ["driver.manual-register"] },
