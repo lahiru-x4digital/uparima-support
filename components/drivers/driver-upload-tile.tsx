@@ -28,7 +28,8 @@ export function UploadTile({
   description: string;
   file?: File;
   existingUrl?: string;
-  onChange: (file: File) => void;
+  // undefined: a picked profile photo that failed the face check is detached again.
+  onChange: (file: File | undefined) => void;
   onPreview: (label: string, url: string) => void;
   // When set, a picked file is immediately run through the same live AI extraction the driver app
   // uses — assistive only: fields can still be filled by hand whatever (or whether) this returns.
@@ -70,6 +71,19 @@ export function UploadTile({
           ? await extractDriverProfilePicture(picked)
           : await extractDriverDocument(extractSlot, picked, isTemporaryLicense);
       if (!result.readable) {
+        if (extractSlot === "profilePicture") {
+          // Riders see this photo and approval needs a real photo of the driver: one that failed the
+          // face check isn't attached (same rule as the driver app and WhatsApp signup).
+          if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+          objectUrlRef.current = undefined;
+          setObjectUrl(undefined);
+          onChange(undefined);
+          setIssues([
+            ...(result.issues.length > 0 ? result.issues : ["This photo doesn't clearly show the driver's face."]),
+            "Not attached — pick a clear photo of the driver's face.",
+          ]);
+          return;
+        }
         setIssues(result.issues.length > 0 ? result.issues : ["Photo unclear — consider retaking it."]);
         return;
       }

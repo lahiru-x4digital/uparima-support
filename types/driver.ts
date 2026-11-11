@@ -75,6 +75,10 @@ export type Driver = {
   // Validation" setting (Rides -> System Settings): the required vehicle
   // photo and a license number. Empty when the driver has both.
   missingDocuments: string[];
+  // Also computed by the backend: the photos no approval can get past — profile photo, driving
+  // licence, insurance card, vehicle front (the backend's missingMandatoryPhotos). The backend
+  // refuses an approval while any is missing, admins included. Absent on an older backend.
+  missingMandatoryPhotos?: string[];
   // Also computed by the backend: the required details an unfinished signup
   // (status "incomplete") still lacks before it can be reviewed. Empty for
   // every other status. Absent on a response from an older backend.

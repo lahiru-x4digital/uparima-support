@@ -31,7 +31,7 @@ export type SectionProps = {
   set: <K extends keyof DriverFormValues>(key: K, value: DriverFormValues[K]) => void;
   patch: (fields: Partial<DriverFormValues>) => void;
   files: DriverFormFiles;
-  setFile: (key: DriverDocumentKey, file: File) => void;
+  setFile: (key: DriverDocumentKey, file: File | undefined) => void;
   existingDocs: Partial<Record<DriverDocumentKey, string>>;
   onPreview: (label: string, url: string) => void;
   applyExtracted: (fields: Partial<DriverFormValues>) => void;

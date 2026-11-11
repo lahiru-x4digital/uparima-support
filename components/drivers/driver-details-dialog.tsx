@@ -20,7 +20,7 @@ import { NoAccess } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
 import { changedDriverFields, type DriverSectionKey } from "@/lib/driver-form-rules";
-import { canAiValidateDriver, canApproveApplication, deskApprovalBlocker, formatDriverDate } from "@/lib/driver-review";
+import { approvalBlockerFor, canAiValidateDriver, canApproveApplication, formatDriverDate } from "@/lib/driver-review";
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useHotkeys } from "@/lib/hooks/use-hotkeys";
 import {
@@ -188,8 +188,9 @@ function DriverDialogBody({
   const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—";
   const busy = approve.isPending || suspend.isPending || restore.isPending;
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
-  // Support staff approve only what the AI review passed, or by hand when it couldn't run.
-  const approvalBlocker = isAdmin ? null : deskApprovalBlocker(driver);
+  // Support staff approve only what the AI review passed, or by hand when it couldn't run; nobody
+  // approves past a missing mandatory photo.
+  const approvalBlocker = approvalBlockerFor(driver, isAdmin);
   const owed = Number(driver.platformFeeOwedLkr ?? 0);
 
   const edit = useCallback((section?: DriverSectionKey) => setMode({ kind: "edit", section }), [setMode]);

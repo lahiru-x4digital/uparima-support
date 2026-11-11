@@ -86,7 +86,9 @@ export const AUTOMATED_REVIEW_UNAVAILABLE_ISSUE =
  */
 export function deskApprovalBlocker(
   driver: Pick<Driver, "reviewValid" | "reviewIssues"> &
-    Partial<Pick<Driver, "licenseExpiryDate" | "insuranceExpiryDate" | "revenueLicenseExpiryDate">>,
+    Partial<
+      Pick<Driver, "licenseExpiryDate" | "insuranceExpiryDate" | "revenueLicenseExpiryDate" | "missingDocuments">
+    >,
 ): string | null {
   // An expired document blocks approval whatever the AI said earlier (it may have passed before the
   // date ran out) — the driver couldn't go online anyway.
@@ -100,6 +102,12 @@ export function deskApprovalBlocker(
   if (expired.length > 0) {
     return `This driver has expired documents (${expired.map(([label]) => label).join(", ")}). The driver must upload the renewed document and its new expiry date before they can be approved.`;
   }
+  // The AI only judges the documents it was given, so a pass says nothing about one that was never
+  // uploaded (the backend refuses too).
+  const missing = driver.missingDocuments ?? [];
+  if (missing.length > 0) {
+    return `This driver is missing: ${missing.join(", ")}. Get the missing document(s) from the driver and add them before approving, or ask an admin.`;
+  }
   if (driver.reviewValid === true) return null;
   const issues = driver.reviewIssues ?? [];
   if (driver.reviewValid === null || driver.reviewValid === undefined) {
@@ -107,4 +115,25 @@ export function deskApprovalBlocker(
   }
   if (issues.length > 0 && issues.every((i) => i === AUTOMATED_REVIEW_UNAVAILABLE_ISSUE)) return null;
   return "The AI review found problems with this driver's documents, so it can't be approved here. Fix them and run AI Validate again, or ask an admin.";
+}
+
+/**
+ * Why nobody — admins included — can approve this driver: a mandatory photo (profile photo, driving
+ * licence, insurance card, vehicle front) is missing. The backend refuses it too (DriversService.approve).
+ */
+export function mandatoryPhotosBlocker(driver: Pick<Driver, "missingMandatoryPhotos">): string | null {
+  const missing = driver.missingMandatoryPhotos ?? [];
+  if (missing.length === 0) return null;
+  return `Can't approve: this driver has no ${missing.join(", ")}. Upload the missing photo(s) first (Edit).`;
+}
+
+/**
+ * Why Approve is greyed out for this viewer, or null: the mandatory photos for everyone, then the
+ * support-staff rules (deskApprovalBlocker) unless the viewer is an admin.
+ */
+export function approvalBlockerFor(
+  driver: Parameters<typeof deskApprovalBlocker>[0] & Pick<Driver, "missingMandatoryPhotos">,
+  isAdmin: boolean,
+): string | null {
+  return mandatoryPhotosBlocker(driver) ?? (isAdmin ? null : deskApprovalBlocker(driver));
 }

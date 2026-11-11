@@ -11,7 +11,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBox } from "@/components/shared/search-box";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
-import { deskApprovalBlocker } from "@/lib/driver-review";
+import { approvalBlockerFor } from "@/lib/driver-review";
 import { useCan, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useClientPagination } from "@/lib/hooks/use-client-pagination";
 import { useApproveDriver, useDrivers, useRestoreDriver, useSuspendDriver } from "@/lib/hooks/use-drivers";
@@ -135,8 +135,9 @@ export function DriversBrowse() {
                 </TableRow>
               ) : (
                 pageItems.map((d) => {
-                  // Support staff approve only what the AI review passed (see deskApprovalBlocker).
-                  const approvalBlocker = isAdmin ? null : deskApprovalBlocker(d);
+                  // Support staff approve only what the AI review passed (see deskApprovalBlocker);
+                  // nobody approves past a missing mandatory photo.
+                  const approvalBlocker = approvalBlockerFor(d, isAdmin);
                   return (
                     <TableRow key={d.id}>
                       <TableCell className="font-medium">

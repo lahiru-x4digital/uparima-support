@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTOMATED_REVIEW_UNAVAILABLE_ISSUE,
+  approvalBlockerFor,
   canAiValidateDriver,
   canApproveApplication,
   deskApprovalBlocker,
@@ -98,5 +99,33 @@ describe("deskApprovalBlocker with expiry dates", () => {
 
   it("allows a passed review whose documents are in date", () => {
     expect(deskApprovalBlocker({ reviewValid: true, reviewIssues: [], insuranceExpiryDate: "2099-01-01" })).toBeNull();
+  });
+});
+
+describe("deskApprovalBlocker with missing documents", () => {
+  it("refuses support staff while a document is missing, even after an AI pass", () => {
+    expect(
+      deskApprovalBlocker({ reviewValid: true, reviewIssues: [], missingDocuments: ["license expiry date"] }),
+    ).toMatch(/missing: license expiry date/);
+  });
+});
+
+describe("approvalBlockerFor", () => {
+  const passed = { reviewValid: true, reviewIssues: [] as string[] };
+
+  it("blocks everyone, admins included, while a mandatory photo is missing", () => {
+    const d = { ...passed, missingMandatoryPhotos: ["profile photo"] };
+    expect(approvalBlockerFor(d, true)).toMatch(/no profile photo/);
+    expect(approvalBlockerFor(d, false)).toMatch(/no profile photo/);
+  });
+
+  it("lets an admin past the support-staff rules once the photos are there", () => {
+    const d = { reviewValid: false, reviewIssues: ["licence is expired."], missingMandatoryPhotos: [] };
+    expect(approvalBlockerFor(d, true)).toBeNull();
+    expect(approvalBlockerFor(d, false)).toMatch(/found problems/);
+  });
+
+  it("allows a passed driver with every photo", () => {
+    expect(approvalBlockerFor(passed, false)).toBeNull();
   });
 });

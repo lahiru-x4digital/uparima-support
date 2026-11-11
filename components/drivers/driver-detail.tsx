@@ -13,7 +13,7 @@ import { NoAccess, PageShell } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
-import { canAiValidateDriver, canApproveApplication, deskApprovalBlocker, signupGaps } from "@/lib/driver-review";
+import { approvalBlockerFor, canAiValidateDriver, canApproveApplication, signupGaps } from "@/lib/driver-review";
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import {
   useApproveDriver,
@@ -93,8 +93,9 @@ export function DriverDetail({ id }: { id: string }) {
   // (lib/driver-review).
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
   // Support staff approve only what the AI review passed, or by hand when it couldn't run — the
-  // backend refuses the rest (SupportDeskDriverReviewService.approve). Admins aren't bound by it.
-  const approvalBlocker = isAdmin ? null : deskApprovalBlocker(driver);
+  // backend refuses the rest (SupportDeskDriverReviewService.approve). Admins aren't bound by it —
+  // except for the mandatory photos, which nobody can approve past.
+  const approvalBlocker = approvalBlockerFor(driver, isAdmin);
 
   function approveDriver() {
     approve.mutate(driver.id, {
@@ -245,7 +246,7 @@ export function DriverDetail({ id }: { id: string }) {
       {/* The live result of the "AI Validate" button takes priority over the stored verdict — both
           read the same reviewValid / reviewIssues columns once the page reloads, so showing both
           would only duplicate the information. */}
-      {/* Why Approve is greyed out for support staff. */}
+      {/* Why Approve is greyed out. */}
       {canApprove && approvalBlocker && (canApproveApplication(driver) || driver.status === "suspended") && (
         <Card className="ring-amber-400/60">
           <CardContent>
