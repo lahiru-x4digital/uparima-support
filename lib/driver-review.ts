@@ -137,3 +137,29 @@ export function approvalBlockerFor(
 ): string | null {
   return mandatoryPhotosBlocker(driver) ?? (isAdmin ? null : deskApprovalBlocker(driver));
 }
+
+/** Shortest approval reason the backend accepts (MIN_APPROVAL_REASON_LENGTH). */
+export const MIN_APPROVAL_REASON_LENGTH = 5;
+
+/** The AI document check has this driver flagged — what keeps an approved driver offline. */
+export function hasDocumentFlags(driver: Pick<Driver, "reviewValid"> & Partial<Pick<Driver, "lastAiCheckValid">>) {
+  return driver.reviewValid === false || driver.lastAiCheckValid === false;
+}
+
+/**
+ * What approving this driver by hand approves past — the AI check's issues, documents still missing,
+ * documents past their expiry date (the backend's openDocumentIssues). Empty: no reason needed.
+ * Otherwise the approval asks for a reason, which the backend stores with these and the approver.
+ */
+export function approvalIssues(
+  driver: Pick<Driver, "reviewValid" | "reviewIssues" | "missingDocuments"> &
+    Partial<Pick<Driver, "lastAiCheckValid" | "lastAiCheckIssues" | "expiredDocuments">>,
+): string[] {
+  const issues: string[] = [];
+  if (driver.reviewValid === false) issues.push(...(driver.reviewIssues ?? []));
+  else if (driver.lastAiCheckValid === false) issues.push(...(driver.lastAiCheckIssues ?? []));
+  if (hasDocumentFlags(driver) && issues.length === 0) issues.push("The AI document check failed.");
+  for (const label of driver.missingDocuments ?? []) issues.push(`Missing: ${label}`);
+  for (const label of driver.expiredDocuments ?? []) issues.push(`Expired: ${label}`);
+  return issues;
+}

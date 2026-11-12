@@ -13,10 +13,16 @@ import { NoAccess, PageShell } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
-import { approvalBlockerFor, canAiValidateDriver, canApproveApplication, signupGaps } from "@/lib/driver-review";
+import {
+  approvalBlockerFor,
+  canAiValidateDriver,
+  canApproveApplication,
+  hasDocumentFlags,
+  signupGaps,
+} from "@/lib/driver-review";
+import type { DriverApproval } from "@/types/driver";
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import {
-  useApproveDriver,
   useDeleteDriverPermanently,
   useDriverDetail,
   useRemoveDriverDocument,
@@ -24,6 +30,7 @@ import {
   useSuspendDriver,
   useValidateDriverWithAi,
 } from "@/lib/hooks/use-drivers";
+import { useApproveWithReason } from "./approval-reason";
 import type { AiValidationResult } from "@/types/driver";
 import { DriverDetailBody } from "./driver-detail-body";
 import { DriverDuplicateDocuments } from "./driver-duplicate-documents";
@@ -45,7 +52,7 @@ export function DriverDetail({ id }: { id: string }) {
   const canSeeRides = useCan("ride.view");
 
   const { data, isLoading, error } = useDriverDetail(id);
-  const approve = useApproveDriver();
+  const approve = useApproveWithReason();
   const suspend = useSuspendDriver();
   const restore = useRestoreDriver();
   const validate = useValidateDriverWithAi();
@@ -98,7 +105,7 @@ export function DriverDetail({ id }: { id: string }) {
   const approvalBlocker = approvalBlockerFor(driver, isAdmin);
 
   function approveDriver() {
-    approve.mutate(driver.id, {
+    approve.run(driver, {
       // An approved driver is outside what pending-only staff can open.
       onSuccess: () => {
         if (viewDrivers.pendingOnly) router.push("/drivers/pending");
@@ -158,6 +165,13 @@ export function DriverDetail({ id }: { id: string }) {
           {canSuspend && driver.status === "approved" && (
             <Button size="sm" variant="destructive" disabled={busy} onClick={() => suspend.mutate(driver.id)}>
               Suspend
+            </Button>
+          )}
+          {/* Admins: the flagged documents were checked by hand — clear the flag (with a reason) so the
+              driver can go online. Support staff approve only what the AI passed. */}
+          {isAdmin && canApprove && driver.status === "approved" && hasDocumentFlags(driver) && (
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => void approve.clearFlags(driver)}>
+              Clear flags
             </Button>
           )}
           {canApprove && driver.status === "suspended" && (
@@ -254,6 +268,8 @@ export function DriverDetail({ id }: { id: string }) {
           </CardContent>
         </Card>
       )}
+
+      {(data.approvals ?? []).length > 0 && <ApprovalHistory approvals={data.approvals ?? []} />}
 
       {/* The latest AI check failed on a driver whose stored verdict it didn't change (an approved
           driver re-checked) — kept so it survives a refresh. */}
@@ -401,6 +417,59 @@ export function DriverDetail({ id }: { id: string }) {
           </div>
         </div>
       </Modal>
+      {approve.modal}
     </PageShell>
+  );
+}
+
+const APPROVAL_SOURCE_LABEL: Record<string, string> = {
+  auto: "Approved automatically at signup",
+  manual: "Approved",
+  ai_validate: "Approved by AI Validate",
+  admin_create: "Added already approved",
+  override: "Document flags cleared",
+};
+
+/** Who approved this driver, how, and — past document issues — why (rides_driver_approvals). */
+function ApprovalHistory({ approvals }: { approvals: DriverApproval[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Approval history</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-3 text-sm">
+          {approvals.map((a) => (
+            <li key={a.id} className="border-b pb-3 last:border-0 last:pb-0">
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="font-medium">{APPROVAL_SOURCE_LABEL[a.source] ?? a.source}</span>
+                <span className="text-muted-foreground">
+                  by{" "}
+                  {a.approvedBy
+                    ? `${a.approvedBy.name || a.approvedBy.email || `user #${a.approvedBy.id}`}${a.approvedBy.role ? ` (${a.approvedBy.role.replace(/_/g, " ")})` : ""}`
+                    : a.source === "auto" ? "the automatic review" : "—"}
+                </span>
+                <span className="text-muted-foreground">· {formatDateTime(a.approvedAt)}</span>
+              </div>
+              {a.reason && (
+                <p className="mt-1">
+                  <span className="text-muted-foreground">Reason:</span> {a.reason}
+                </p>
+              )}
+              {a.overriddenIssues.length > 0 && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Approved past:
+                  <ul className="mt-0.5 list-disc pl-5">
+                    {a.overriddenIssues.map((issue, i) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

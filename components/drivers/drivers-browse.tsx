@@ -14,7 +14,8 @@ import { getErrorMessage } from "@/lib/api";
 import { approvalBlockerFor } from "@/lib/driver-review";
 import { useCan, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useClientPagination } from "@/lib/hooks/use-client-pagination";
-import { useApproveDriver, useDrivers, useRestoreDriver, useSuspendDriver } from "@/lib/hooks/use-drivers";
+import { useDrivers, useRestoreDriver, useSuspendDriver } from "@/lib/hooks/use-drivers";
+import { useApproveWithReason } from "./approval-reason";
 import { phoneMatches } from "@/lib/phone-search";
 import type { Driver } from "@/types/driver";
 import { DriverFlags } from "./driver-flags";
@@ -55,7 +56,7 @@ export function DriversBrowse() {
   const { data, isLoading, error, refetch } = useDrivers(status);
   const drivers = useMemo(() => data ?? [], [data]);
   const filters = useDriverFilters(drivers);
-  const approve = useApproveDriver();
+  const approve = useApproveWithReason();
   const suspend = useSuspendDriver();
   const restore = useRestoreDriver();
   const busy = approve.isPending || suspend.isPending || restore.isPending;
@@ -181,7 +182,7 @@ export function DriversBrowse() {
                               size="sm"
                               disabled={busy || !!approvalBlocker}
                               title={approvalBlocker ?? undefined}
-                              onClick={() => approve.mutate(d.id)}
+                              onClick={() => approve.run(d)}
                             >
                               {d.status === "suspended" ? "Re-approve" : "Approve"}
                             </Button>
@@ -230,6 +231,7 @@ export function DriversBrowse() {
           </Button>
         </div>
       </Modal>
+      {approve.modal}
     </PageShell>
   );
 }

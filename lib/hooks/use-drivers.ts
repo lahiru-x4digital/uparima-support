@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   adjustDriverSubscription,
   approveDriver,
+  overrideDriverDocumentFlags,
   createDriver,
   createDriverDraft,
   deleteDriverPermanently,
@@ -208,7 +209,14 @@ function useDriverMutation<TVars, TResult>(
   });
 }
 
-export const useApproveDriver = () => useDriverMutation((id: number) => approveDriver(id), "Driver approved");
+export const useApproveDriver = () =>
+  useDriverMutation(({ id, reason }: { id: number; reason?: string }) => approveDriver(id, reason), "Driver approved");
+
+export const useOverrideDriverFlags = () =>
+  useDriverMutation(
+    ({ id, reason }: { id: number; reason: string }) => overrideDriverDocumentFlags(id, reason),
+    "Document flags cleared",
+  );
 
 export const useRejectDriver = () =>
   useDriverMutation(({ id, reason }: { id: number; reason: string }) => rejectDriver(id, reason), "Driver rejected");

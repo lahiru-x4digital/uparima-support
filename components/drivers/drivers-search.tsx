@@ -13,7 +13,8 @@ import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
 import { useCan } from "@/lib/hooks/use-desk";
 import { useClientPagination } from "@/lib/hooks/use-client-pagination";
-import { useApproveDriver, useDrivers, useRestoreDriver, useSuspendDriver } from "@/lib/hooks/use-drivers";
+import { useDrivers, useRestoreDriver, useSuspendDriver } from "@/lib/hooks/use-drivers";
+import { useApproveWithReason } from "./approval-reason";
 import type { Driver } from "@/types/driver";
 import { DriverFlags } from "./driver-flags";
 
@@ -40,7 +41,7 @@ export function DriversSearch() {
   // Nothing is fetched until there is something to search for.
   const { data, isLoading, error, refetch } = useDrivers("all", { search: needle, enabled: searching });
   const drivers = useMemo(() => data ?? [], [data]);
-  const approve = useApproveDriver();
+  const approve = useApproveWithReason();
   const suspend = useSuspendDriver();
   const restore = useRestoreDriver();
   const busy = approve.isPending || suspend.isPending || restore.isPending;
@@ -138,7 +139,7 @@ export function DriversSearch() {
                           </Button>
                         )}
                         {canApprove && (d.status === "suspended" || d.status === "rejected") && (
-                          <Button size="sm" disabled={busy} onClick={() => approve.mutate(d.id)}>
+                          <Button size="sm" disabled={busy} onClick={() => approve.run(d)}>
                             {d.status === "suspended" ? "Re-approve" : "Approve"}
                           </Button>
                         )}
@@ -185,6 +186,7 @@ export function DriversSearch() {
           </Button>
         </div>
       </Modal>
+      {approve.modal}
     </PageShell>
   );
 }

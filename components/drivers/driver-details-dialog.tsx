@@ -24,7 +24,6 @@ import { approvalBlockerFor, canAiValidateDriver, canApproveApplication, formatD
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useHotkeys } from "@/lib/hooks/use-hotkeys";
 import {
-  useApproveDriver,
   useDeleteDriverPermanently,
   useDriverDetail,
   useRemoveDriverDocument,
@@ -33,6 +32,7 @@ import {
   useUpdateDriver,
   useValidateDriverWithAi,
 } from "@/lib/hooks/use-drivers";
+import { useApproveWithReason } from "./approval-reason";
 import { driverToFormValues, type AiValidationResult, type DriverDetail, type DriverFormFiles, type DriverFormValues } from "@/types/driver";
 import { DRIVER_TABS, DriverDetailBody, useDriverTab } from "./driver-detail-body";
 import { DriverFlags } from "./driver-flags";
@@ -171,7 +171,7 @@ function DriverDialogBody({
   const canAiValidate = canRegister || canUpdate || canApprove;
   const isAdmin = useIsAdmin();
 
-  const approve = useApproveDriver();
+  const approve = useApproveWithReason();
   const suspend = useSuspendDriver();
   const restore = useRestoreDriver();
   const validate = useValidateDriverWithAi();
@@ -224,7 +224,7 @@ function DriverDialogBody({
         size="sm"
         disabled={busy || !!approvalBlocker}
         title={approvalBlocker ?? undefined}
-        onClick={() => approve.mutate(driver.id)}
+        onClick={() => approve.run(driver)}
       >
         Approve
       </Button>
@@ -233,7 +233,7 @@ function DriverDialogBody({
         size="sm"
         disabled={busy || !!approvalBlocker}
         title={approvalBlocker ?? undefined}
-        onClick={() => approve.mutate(driver.id)}
+        onClick={() => approve.run(driver)}
       >
         Re-approve
       </Button>
@@ -429,6 +429,7 @@ function DriverDialogBody({
           </div>
         </div>
       </Modal>
+      {approve.modal}
     </>
   );
 }

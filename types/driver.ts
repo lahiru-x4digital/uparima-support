@@ -148,8 +148,23 @@ export type DriverBankAccount = {
   branchName: string | null;
 };
 
+/** One approval of a driver (rides_driver_approvals), newest first on the detail response. */
+export type DriverApproval = {
+  id: number;
+  // 'auto' signup review · 'manual' Approve · 'ai_validate' AI Validate passed ·
+  // 'admin_create' added already approved · 'override' document flags cleared.
+  source: string;
+  // Why staff approved past document issues (required then); null otherwise.
+  reason: string | null;
+  overriddenIssues: string[];
+  approvedAt: string;
+  approvedBy: { id: number; name: string | null; email: string | null; role: string | null } | null;
+};
+
 export type DriverDetail = {
   driver: Driver;
+  // Absent on a response from an older backend.
+  approvals?: DriverApproval[];
   vehicleMakeName: string | null;
   vehicleModelName: string | null;
   document_urls: Partial<Record<DriverDocumentKey, string>>;

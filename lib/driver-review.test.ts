@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTOMATED_REVIEW_UNAVAILABLE_ISSUE,
   approvalBlockerFor,
+  approvalIssues,
   canAiValidateDriver,
   canApproveApplication,
   deskApprovalBlocker,
@@ -127,5 +128,36 @@ describe("approvalBlockerFor", () => {
 
   it("allows a passed driver with every photo", () => {
     expect(approvalBlockerFor(passed, false)).toBeNull();
+  });
+});
+
+describe("approvalIssues", () => {
+  const flag = "Insurance temporary cover note expired on 2026-11-04.";
+
+  it("lists the AI issues, missing and expired documents", () => {
+    expect(
+      approvalIssues({
+        reviewValid: false,
+        reviewIssues: [flag],
+        missingDocuments: ["license expiry date"],
+        expiredDocuments: ["revenue licence (expired 2026-11-08)"],
+      }),
+    ).toEqual([flag, "Missing: license expiry date", "Expired: revenue licence (expired 2026-11-08)"]);
+  });
+
+  it("uses the last AI check when the stored review passed", () => {
+    expect(
+      approvalIssues({
+        reviewValid: true,
+        reviewIssues: [],
+        missingDocuments: [],
+        lastAiCheckValid: false,
+        lastAiCheckIssues: [flag],
+      }),
+    ).toEqual([flag]);
+  });
+
+  it("is empty for a clean driver — no reason asked", () => {
+    expect(approvalIssues({ reviewValid: true, reviewIssues: [], missingDocuments: [] })).toEqual([]);
   });
 });

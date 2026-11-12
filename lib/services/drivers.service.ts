@@ -136,7 +136,14 @@ export function extractDriverProfilePicture(file: File) {
 export const validateDriverWithAi = (id: number | string) =>
   apiPost<AiValidationResult>(`${BASE}/${id}/ai-validate`);
 
-export const approveDriver = (id: number | string) => apiPost<void>(`${BASE}/${id}/approve`);
+// `reason` is required when the driver has open document issues (approvalIssues) — stored with the
+// issues and the approver.
+export const approveDriver = (id: number | string, reason?: string) =>
+  apiPost<void>(`${BASE}/${id}/approve`, reason ? { reason } : {});
+
+/** An approved driver's AI document flags, checked by hand: cleared with a reason (admins). */
+export const overrideDriverDocumentFlags = (id: number | string, reason: string) =>
+  apiPost<{ cleared: string[] }>(`${BASE}/${id}/override-document-flags`, { reason });
 
 export const rejectDriver = (id: number | string, reason: string) =>
   apiPost<void>(`${BASE}/${id}/reject`, { reason });

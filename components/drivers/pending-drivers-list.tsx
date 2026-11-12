@@ -18,7 +18,8 @@ import { getErrorMessage } from "@/lib/api";
 import { approvalBlockerFor, signupReadyForReview } from "@/lib/driver-review";
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import { useClientPagination } from "@/lib/hooks/use-client-pagination";
-import { useApproveDriver, usePendingDrivers, useRejectDriver } from "@/lib/hooks/use-drivers";
+import { usePendingDrivers, useRejectDriver } from "@/lib/hooks/use-drivers";
+import { useApproveWithReason } from "./approval-reason";
 import { phoneMatches } from "@/lib/phone-search";
 import type { Driver } from "@/types/driver";
 import { DriverFlags } from "./driver-flags";
@@ -63,7 +64,7 @@ export function PendingDriversList() {
   const { data, isLoading, error, refetch } = usePendingDrivers();
   const drivers = useMemo(() => data ?? [], [data]);
   const filters = useDriverFilters(drivers);
-  const approve = useApproveDriver();
+  const approve = useApproveWithReason();
   const reject = useRejectDriver();
 
   const [term, setTerm] = useState("");
@@ -236,7 +237,7 @@ export function PendingDriversList() {
                                 size="sm"
                                 disabled={approve.isPending || !!approvalBlocker}
                                 title={approvalBlocker ?? undefined}
-                                onClick={() => approve.mutate(d.id)}
+                                onClick={() => approve.run(d)}
                               >
                                 <CheckCircle /> Approve
                               </Button>
@@ -293,6 +294,7 @@ export function PendingDriversList() {
           </div>
         </div>
       </Modal>
+      {approve.modal}
     </PageShell>
   );
 }
