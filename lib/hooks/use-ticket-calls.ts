@@ -62,7 +62,7 @@ export function useLogTicketCall(ticketId: string) {
     onError: (error) => toast.error("Couldn't log the call", { description: getErrorMessage(error) }),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ticketCallKeys.list(ticketId) });
-      // Every driver query — the Drivers lists, Pending Drivers and the driver's own page — so
+      // Every driver query - the Drivers lists, Pending Drivers and the driver's own page - so
       // contact status is re-read from the backend wherever the driver shows.
       void qc.invalidateQueries({ queryKey: driverKeys.all });
     },

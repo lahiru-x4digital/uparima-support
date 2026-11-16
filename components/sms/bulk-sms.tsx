@@ -48,7 +48,7 @@ const plural = (n: number, word: string) => `${count(n)} ${word}${n === 1 ? "" :
  * Bulk SMS, for super admins: pick customers, write one message, send it to all of them.
  *
  * The selection is a set of customer ids that outlives the page and the filters, so a batch can be
- * built up from several searches. Sending only queues the batch — the backend sends it in the
+ * built up from several searches. Sending only queues the batch - the backend sends it in the
  * background, and the list underneath shows how far it has got.
  */
 export function BulkSms() {
@@ -266,7 +266,7 @@ export function BulkSms() {
                               onClick={(e) => e.stopPropagation()}
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{c.name || "—"}</TableCell>
+                          <TableCell className="font-medium">{c.name || "-"}</TableCell>
                           <TableCell className="font-mono text-xs">{c.phone}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
@@ -276,7 +276,7 @@ export function BulkSms() {
                                 </Badge>
                               )}
                               {c.hasRides && <Badge variant="outline">Rider</Badge>}
-                              {!c.isDriver && !c.hasRides && <span className="text-muted-foreground">—</span>}
+                              {!c.isDriver && !c.hasRides && <span className="text-muted-foreground">-</span>}
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">{new Date(c.joinedAt).toLocaleDateString()}</TableCell>

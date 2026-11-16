@@ -27,7 +27,7 @@ export function useIsSuperAdmin(): boolean {
   return useAuth().user?.type === "super_admin";
 }
 
-/** An admin or super admin — not bound by the support-staff rules (e.g. deskApprovalBlocker). */
+/** An admin or super admin - not bound by the support-staff rules (e.g. deskApprovalBlocker). */
 export function useIsAdmin(): boolean {
   const type = useAuth().user?.type;
   return type === "admin" || type === "super_admin";

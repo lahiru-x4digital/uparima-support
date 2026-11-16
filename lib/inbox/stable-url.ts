@@ -1,5 +1,5 @@
 // The backend signs every attachment link afresh on each request, and an open conversation is
-// re-fetched every few seconds — so the same file would arrive under a new address each time, and
+// re-fetched every few seconds - so the same file would arrive under a new address each time, and
 // the browser would throw the picture away and download it again. This keeps the first signed link
 // it saw for a file and hands that back until the link is close to expiring.
 

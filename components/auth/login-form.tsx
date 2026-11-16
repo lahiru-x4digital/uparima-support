@@ -11,7 +11,7 @@ import { safeNextPath, signInNotice, type SignInValues } from "@/lib/auth-flow";
 import * as authService from "@/lib/services/auth.service";
 
 /**
- * The sign-in screen: email and password, then — for an account with two-factor sign-in on —
+ * The sign-in screen: email and password, then - for an account with two-factor sign-in on -
  * the code that was emailed. `next` and `reason` come from the address bar (see lib/auth-flow.ts).
  */
 export function LoginForm({ next, reason }: { next?: string; reason?: string }) {
@@ -27,7 +27,7 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
     return text ? { tone: "info", text } : null;
   });
 
-  // One place decides where a signed-in agent goes — whether they just signed in or already were.
+  // One place decides where a signed-in agent goes - whether they just signed in or already were.
   useEffect(() => {
     if (!loading && user) router.replace(destination);
   }, [loading, user, router, destination]);
@@ -86,7 +86,7 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
         </header>
         {challenge.emailSent === false && (
           <AuthAlert>
-            We couldn&apos;t send your code to {challenge.emailHint}. Ask a super admin for it — they can see it in
+            We couldn&apos;t send your code to {challenge.emailHint}. Ask a super admin for it - they can see it in
             the admin dashboard under Sign-in Codes.
           </AuthAlert>
         )}

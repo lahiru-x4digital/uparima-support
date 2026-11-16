@@ -35,7 +35,7 @@ const HIGHLIGHTS: { icon: LucideIcon; title: string; text: string }[] = [
 export function BrandPanel() {
   return (
     <aside className="relative hidden overflow-hidden bg-linear-to-br from-sidebar to-sidebar-end text-sidebar-foreground lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14">
-      {/* Soft shapes behind the text — decoration only. */}
+      {/* Soft shapes behind the text - decoration only. */}
       <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-sidebar-primary/25 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-32 -left-20 size-112 rounded-full bg-sidebar-foreground/10 blur-3xl" />
 
@@ -45,7 +45,7 @@ export function BrandPanel() {
         <div className="flex flex-col gap-3">
           <h2 className="font-heading text-3xl font-bold leading-tight xl:text-4xl">Help riders and drivers, faster.</h2>
           <p className="text-sm text-sidebar-foreground/75 xl:text-base">
-            Everything the Uparima support team needs to answer, resolve and follow up — in one place.
+            Everything the Uparima support team needs to answer, resolve and follow up - in one place.
           </p>
         </div>
         <ul className="flex flex-col gap-5">
@@ -65,7 +65,7 @@ export function BrandPanel() {
 
       <p className="relative flex items-center gap-2 text-xs text-sidebar-foreground/70">
         <ShieldCheck className="size-4 shrink-0" aria-hidden />
-        Staff accounts only — protected by your password and an optional emailed code.
+        Staff accounts only - protected by your password and an optional emailed code.
       </p>
     </aside>
   );

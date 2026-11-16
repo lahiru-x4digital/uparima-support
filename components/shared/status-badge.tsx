@@ -25,7 +25,7 @@ const STATUS_TONE: Record<string, Tone> = {
 /** A coloured pill for a status string; unknown values fall back to neutral. */
 export function StatusBadge({ value, label }: { value: string | null | undefined; label?: string }) {
   const tone = STATUS_TONE[(value ?? "").toLowerCase()] ?? "neutral";
-  const text = label ?? (value ? value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—");
+  const text = label ?? (value ? value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "-");
   return (
     <span
       className={cn(

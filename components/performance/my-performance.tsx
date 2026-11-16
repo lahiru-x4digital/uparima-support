@@ -24,7 +24,7 @@ const PERIODS = [
 ] as const;
 
 function duration(sec: number | null | undefined) {
-  if (sec == null) return "—";
+  if (sec == null) return "-";
   if (sec < 60) return `${Math.round(sec)}s`;
   const m = Math.round(sec / 60);
   if (m < 60) return `${m}m`;
@@ -33,7 +33,7 @@ function duration(sec: number | null | undefined) {
 }
 
 const hours = (sec: number) => `${(sec / 3600).toFixed(1)}h`;
-const pct = (v: number | null | undefined) => (v == null ? "—" : `${Math.round(v)}%`);
+const pct = (v: number | null | undefined) => (v == null ? "-" : `${Math.round(v)}%`);
 
 /** How a count compares with the period before. `lowerIsBetter` flips the colour for things like reopened. */
 function Delta({ now, before, lowerIsBetter }: { now: number; before: number | null | undefined; lowerIsBetter?: boolean }) {
@@ -85,13 +85,13 @@ const APPROVED_HOW: Record<string, string> = {
   admin_create: "Added by admin",
 };
 const when = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" }) : "—";
+  iso ? new Date(iso).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" }) : "-";
 
 const TH = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
 const TD = "px-3 py-2 align-top";
 const APPROVALS_CAP = 200;
 
-/** Drivers approved in the period that I took part in — pressed approve, called, or replied before it. */
+/** Drivers approved in the period that I took part in - pressed approve, called, or replied before it. */
 function ApprovalsSection({ from, to }: { from: string; to: string }) {
   const canSeeDriver = useCan("driver.view");
   const { data, isLoading, error } = useMyApprovals(from, to);
@@ -151,7 +151,7 @@ function ApprovalsSection({ from, to }: { from: string; to: string }) {
                   </td>
                   <td className={cn(TD, "whitespace-nowrap")}>{when(r.approvedAt)}</td>
                   <td className={TD}>
-                    {APPROVED_HOW[r.approvedHow ?? ""] ?? r.approvedHow ?? "—"}
+                    {APPROVED_HOW[r.approvedHow ?? ""] ?? r.approvedHow ?? "-"}
                     {r.approvedBy && <div className="text-xs text-muted-foreground">by {r.approvedBy}</div>}
                   </td>
                 </tr>
@@ -159,7 +159,7 @@ function ApprovalsSection({ from, to }: { from: string; to: string }) {
             </tbody>
           </table>
           {rows.length >= APPROVALS_CAP && (
-            <p className="mt-2 text-xs text-muted-foreground">Showing the latest {APPROVALS_CAP} — pick a shorter period to see the rest.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Showing the latest {APPROVALS_CAP} - pick a shorter period to see the rest.</p>
           )}
         </div>
       )}
@@ -235,7 +235,7 @@ export function MyPerformance() {
   return (
     <PageShell
       title="My Performance"
-      description="Your own numbers — nobody else's."
+      description="Your own numbers - nobody else's."
       actions={
         <div className="flex gap-1 rounded-full border bg-card p-1">
           {PERIODS.map((p) => (
@@ -268,7 +268,7 @@ export function MyPerformance() {
             <Stat label="Completed" value={a.workload.completed} hint={<Delta now={a.workload.completed} before={prev?.workload.completed} />} />
             <Stat
               label="Drivers approved"
-              value={credited ?? "—"}
+              value={credited ?? "-"}
               hint={note(assisted ? `+ ${assisted} assist${assisted === 1 ? "" : "s"}` : "your credit, once per driver")}
             />
             <Stat label="Reopened" value={a.workload.reopened} hint={<Delta now={a.workload.reopened} before={prev?.workload.reopened} lowerIsBetter />} />

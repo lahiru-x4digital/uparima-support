@@ -24,7 +24,7 @@ interface NavItem {
   sectionIcon?: LucideIcon;
   /** Shown only to an agent holding at least one of these permissions (always shown when omitted). */
   anyPermission?: string[];
-  /** Shown only to a super admin — for what no permission grants (bulk SMS). */
+  /** Shown only to a super admin - for what no permission grants (bulk SMS). */
   superAdminOnly?: boolean;
   /** Shown only to an admin or super admin. */
   adminOnly?: boolean;
@@ -110,7 +110,7 @@ export function AppSidebar() {
       try {
         localStorage.setItem(STORAGE_KEY, c ? "0" : "1");
       } catch {
-        /* storage unavailable — state just won't persist */
+        /* storage unavailable - state just won't persist */
       }
       return !c;
     });

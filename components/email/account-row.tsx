@@ -138,7 +138,7 @@ function EditForm({ account: a, onDone }: { account: EmailAccount; onDone: () =>
         )}
       </div>
       {(folder !== a.folder || password || privateKey || (a.provider === "imap" && host !== a.imapHost)) && (
-        <p className="text-xs text-muted-foreground">Changing the folder, host or password restarts syncing from now — older mail is not imported.</p>
+        <p className="text-xs text-muted-foreground">Changing the folder, host or password restarts syncing from now - older mail is not imported.</p>
       )}
       <div className="flex gap-2">
         <Button size="sm" onClick={save} disabled={update.isPending || !name.trim()}>

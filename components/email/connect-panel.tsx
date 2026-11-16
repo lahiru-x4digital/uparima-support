@@ -167,7 +167,7 @@ export function ConnectPanel({
         {oauthAvailable && (
           <div className="rounded-xl border bg-muted/40 p-4">
             <p className="mb-3 text-sm text-muted-foreground">
-              Recommended — you sign in on {provider === "gmail" ? "Google" : "Microsoft"}; no password is shared with us.
+              Recommended - you sign in on {provider === "gmail" ? "Google" : "Microsoft"}; no password is shared with us.
             </p>
             <Button onClick={signIn} disabled={oauth.isPending}>
               {oauth.isPending ? <Loader2 className="animate-spin" /> : <LogIn />}

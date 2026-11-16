@@ -57,7 +57,7 @@ function toLocalInput(date: Date): string {
  * The calls agents made to the customer about a ticket, as chips beside the customer's name in the
  * chat header: the 1st, 2nd and 3rd call, in order, as an icon each (which call it is, the outcome, the time and who made it are on hover) and a "History" button.
  * Later calls are only in the history popover, which has every call's note and who made it. Shows
- * nothing until the first call is logged — calls are logged from <LogCallButton>.
+ * nothing until the first call is logged - calls are logged from <LogCallButton>.
  */
 export function HeaderCalls({ ticketId }: { ticketId: string }) {
   const { data } = useTicketCalls(ticketId);
@@ -69,7 +69,7 @@ export function HeaderCalls({ ticketId }: { ticketId: string }) {
       {calls.slice(0, SHOWN).map((call) => (
         <span
           key={call.id}
-          title={`${ordinal(call.number)} call — ${STATUS[call.status].label}, ${formatDateTime(call.calledAt)} by ${
+          title={`${ordinal(call.number)} call - ${STATUS[call.status].label}, ${formatDateTime(call.calledAt)} by ${
             call.caller.name ?? `Staff #${call.caller.id}`
           }`}
           className="inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5"
@@ -82,7 +82,7 @@ export function HeaderCalls({ ticketId }: { ticketId: string }) {
   );
 }
 
-/** Answered / No answer, as two buttons — used by the log form and the edit dialog. */
+/** Answered / No answer, as two buttons - used by the log form and the edit dialog. */
 function OutcomePicker({ value, onChange }: { value: TicketCallStatus; onChange: (s: TicketCallStatus) => void }) {
   return (
     <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Call outcome">
@@ -110,7 +110,7 @@ function OutcomePicker({ value, onChange }: { value: TicketCallStatus; onChange:
 }
 
 /** Every call, newest first: outcome, when, who called, and the note. The agent who logged a call gets an
- * Edit button on it (only theirs — the backend refuses anyone else's); each change is in the action log. */
+ * Edit button on it (only theirs - the backend refuses anyone else's); each change is in the action log. */
 function CallHistory({ ticketId, calls }: { ticketId: string; calls: TicketCall[] }) {
   const newestFirst = [...calls].reverse();
   const { data: me } = useMe();
@@ -219,7 +219,7 @@ function EditCallDialog({ ticketId, call, onClose }: { ticketId: string; call: T
   );
 }
 
-/** "Log call" button with its small form — sits in the chat header, next to the status. */
+/** "Log call" button with its small form - sits in the chat header, next to the status. */
 export function LogCallButton({ ticketId }: { ticketId: string }) {
   const nextNumber = (useTicketCalls(ticketId).data?.length ?? 0) + 1;
   const [open, setOpen] = useState(false);

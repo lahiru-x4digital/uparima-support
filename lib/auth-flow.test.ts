@@ -104,15 +104,15 @@ describe("describeAuthFailure", () => {
   });
 
   it("lets a wrong code be retried, with the attempts left", () => {
-    const failure = describeAuthFailure(refusal(401, "TWO_FACTOR_INVALID", "Incorrect code — 3 attempt(s) left"));
-    expect(failure).toEqual({ message: "Incorrect code — 3 attempt(s) left", action: "retry" });
+    const failure = describeAuthFailure(refusal(401, "TWO_FACTOR_INVALID", "Incorrect code - 3 attempt(s) left"));
+    expect(failure).toEqual({ message: "Incorrect code - 3 attempt(s) left", action: "retry" });
     // The same refusal from the signed-in "turn it on" flow arrives as a 400.
-    expect(describeAuthFailure(refusal(400, "TWO_FACTOR_INVALID", "Incorrect code — 3 attempt(s) left")).action).toBe("retry");
+    expect(describeAuthFailure(refusal(400, "TWO_FACTOR_INVALID", "Incorrect code - 3 attempt(s) left")).action).toBe("retry");
   });
 
   it("starts over when the code is used up or expired", () => {
-    expect(describeAuthFailure(refusal(429, "TWO_FACTOR_INVALID", "Too many wrong codes — please sign in again")).action).toBe("restart");
-    expect(describeAuthFailure(refusal(401, "OTP_EXPIRED", "This code has expired — please sign in again")).action).toBe("restart");
+    expect(describeAuthFailure(refusal(429, "TWO_FACTOR_INVALID", "Too many wrong codes - please sign in again")).action).toBe("restart");
+    expect(describeAuthFailure(refusal(401, "OTP_EXPIRED", "This code has expired - please sign in again")).action).toBe("restart");
   });
 
   it("passes on a rate limit as it was worded", () => {

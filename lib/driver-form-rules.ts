@@ -1,11 +1,11 @@
-// Rules the driver form applies before anything is sent. Pure — no React, no requests.
+// Rules the driver form applies before anything is sent. Pure - no React, no requests.
 // The dashboard (uparima-classified-dashbord/lib/driver-form-rules.ts) has the same file.
 
 import type { DriverFormValues } from "@/types/driver";
 
 /**
  * A licence number as it should be stored. The Support Portal takes any number as written (no
- * letter + digits format check — the backend's support-desk endpoints don't apply one either), so
+ * letter + digits format check - the backend's support-desk endpoints don't apply one either), so
  * this only trims, e.g. a number read off a photo.
  */
 export function normalizeLicenseNumber(value: string): string {
@@ -21,7 +21,7 @@ const TOGETHER: (keyof DriverFormValues)[][] = [
 ];
 
 /**
- * What an edit actually changed — the only fields worth sending.
+ * What an edit actually changed - the only fields worth sending.
  *
  * Sending the whole form back made the backend re-check values nobody touched: a driver whose
  * stored licence number predates today's format could not have a document replaced, because the
@@ -58,7 +58,7 @@ export function isDriverSectionKey(value: string | null | undefined): value is D
   return DRIVER_SECTIONS.some((s) => s.key === value);
 }
 
-/** Required for review, per section — the backend's REQUIRED_APPLICATION_FIELDS plus the mobile number. */
+/** Required for review, per section - the backend's REQUIRED_APPLICATION_FIELDS plus the mobile number. */
 export const REQUIRED_BY_SECTION: Record<DriverSectionKey, (keyof DriverFormValues)[]> = {
   personal: ["phone", "firstName", "lastName", "nicNumber"],
   address: ["addressLine1", "province", "district", "city"],
@@ -121,7 +121,7 @@ export function sectionOfField(field: keyof DriverFormValues): DriverSectionKey 
 const isBlank = (v: DriverFormValues[keyof DriverFormValues]) => String(v ?? "").trim() === "";
 
 /**
- * Required fields still empty. The mobile number is skipped on an edit — it comes from the
+ * Required fields still empty. The mobile number is skipped on an edit - it comes from the
  * driver's account and can't be changed in the form, so flagging it would only be noise.
  */
 export function missingRequiredFields(values: DriverFormValues, mode: "create" | "edit"): (keyof DriverFormValues)[] {
@@ -142,7 +142,7 @@ export function bankProblems(values: DriverFormValues): FieldProblems {
 }
 
 /**
- * What stops an edit from being saved. A required field that is merely still empty does not —
+ * What stops an edit from being saved. A required field that is merely still empty does not -
  * a partial save is how an unfinished signup gets completed bit by bit, and the backend moves it
  * to Pending on the save that fills the last gap. Clearing a field that had a value does block:
  * an empty value is never sent, so the save would quietly keep the old one.
@@ -150,7 +150,7 @@ export function bankProblems(values: DriverFormValues): FieldProblems {
 export function editBlockingProblems(initial: DriverFormValues, values: DriverFormValues): FieldProblems {
   const problems: FieldProblems = { ...bankProblems(values) };
   for (const field of Object.values(REQUIRED_BY_SECTION).flat()) {
-    if (!isBlank(initial[field]) && isBlank(values[field])) problems[field] = "Required — can't be cleared";
+    if (!isBlank(initial[field]) && isBlank(values[field])) problems[field] = "Required - can't be cleared";
   }
   return problems;
 }

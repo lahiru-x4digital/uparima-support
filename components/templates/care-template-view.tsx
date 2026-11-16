@@ -5,7 +5,7 @@ import type { CareTemplate } from "@/types/care-template";
 import { requestTypeLabel } from "./meta";
 import { DetailRow, ViewDialog } from "./view-dialog";
 
-const dash = (v: string | null) => v?.trim() || <span className="text-muted-foreground">—</span>;
+const dash = (v: string | null) => v?.trim() || <span className="text-muted-foreground">-</span>;
 
 /** Read-only view of a care template: its ticket defaults and custom fields. */
 export function CareTemplateView({ t }: { t: CareTemplate }) {

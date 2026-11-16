@@ -13,7 +13,7 @@ const ACTIVE_POLL_MS = 20_000;
 // An open alert's detail page refreshes itself (vehicle position, other agents' actions).
 const DETAIL_POLL_MS = 5_000;
 
-/** Open + acknowledged alerts — what rings, badges the sidebar and fills the Active tab. */
+/** Open + acknowledged alerts - what rings, badges the sidebar and fills the Active tab. */
 export function useActiveSos(enabled: boolean) {
   const { user } = useAuth();
   return useQuery({

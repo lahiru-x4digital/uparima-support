@@ -9,7 +9,7 @@ import type { DriverFormFiles, DriverFormValues } from "@/types/driver";
 import { DiscardChangesModal, DriverForm } from "./driver-form";
 
 /**
- * Register a brand-new driver from the inbox, without leaving the ticket —
+ * Register a brand-new driver from the inbox, without leaving the ticket -
  * same create flow as /drivers/add (DriverCreate), just as a dialog. On
  * success, hands the new driver's id back so the caller can switch straight
  * into DriverDetailsDialog for it.

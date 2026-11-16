@@ -41,7 +41,7 @@ function readStoredTab(): DriverTab {
     const v = localStorage.getItem(TAB_STORAGE_KEY);
     if (DRIVER_TABS.some((t) => t.key === v)) return v as DriverTab;
   } catch {
-    // Storage blocked — fall through to the default.
+    // Storage blocked - fall through to the default.
   }
   return "overview";
 }
@@ -57,7 +57,7 @@ export function useDriverTab() {
     try {
       localStorage.setItem(TAB_STORAGE_KEY, next);
     } catch {
-      // Not remembered — fine.
+      // Not remembered - fine.
     }
   }
   return [tab, setTab] as const;
@@ -72,8 +72,8 @@ const DOC_LABELS: Record<DriverDocumentKey, string> = {
   vehicleFront: "Vehicle Photo (Front)",
 };
 
-// A Section 126(4) temporary permit is one certificate page — optionally folded, which is the only
-// reason it ever has a second side — so calling its photos the "front" and "back" of a licence
+// A Section 126(4) temporary permit is one certificate page - optionally folded, which is the only
+// reason it ever has a second side - so calling its photos the "front" and "back" of a licence
 // card misleads whoever is reviewing them.
 const TEMPORARY_LICENSE_DOC_LABELS: Partial<Record<DriverDocumentKey, string>> = {
   licenseFront: "Temporary Licence (Certificate)",
@@ -243,9 +243,9 @@ export function DriverDetailBody({
                     ["Registration no.", <CopyValue key="r" value={driver.vehicleRegistrationNumber} />],
                     [
                       "Make / model",
-                      [data.vehicleMakeName, data.vehicleModelName].filter(Boolean).join(" ") || "—",
+                      [data.vehicleMakeName, data.vehicleModelName].filter(Boolean).join(" ") || "-",
                     ],
-                    ["Year · colour", [driver.vehicleYom, driver.vehicleColor].filter(Boolean).join(" · ") || "—"],
+                    ["Year · colour", [driver.vehicleYom, driver.vehicleColor].filter(Boolean).join(" · ") || "-"],
                     ["Owns vehicle", driver.ownsVehicle ? "Yes" : "No"],
                   ]}
                 />
@@ -260,9 +260,9 @@ export function DriverDetailBody({
               <CardContent>
                 <DetailList
                   rows={[
-                    ["Address", [driver.addressLine1, driver.addressLine2].filter(Boolean).join(", ") || "—"],
-                    ["City", driver.city ?? "—"],
-                    ["District · province", [driver.district, driver.province].filter(Boolean).join(" · ") || "—"],
+                    ["Address", [driver.addressLine1, driver.addressLine2].filter(Boolean).join(", ") || "-"],
+                    ["City", driver.city ?? "-"],
+                    ["District · province", [driver.district, driver.province].filter(Boolean).join(" · ") || "-"],
                   ]}
                 />
               </CardContent>
@@ -319,7 +319,7 @@ export function DriverDetailBody({
             />
             <Stat label="Fees collected" value={lkr(driver.platformFeeTotalLkr)} />
             <Stat label="Total rides" value={driver.totalRides} />
-            <Stat label="Avg rating" value={driver.averageRating != null ? Number(driver.averageRating).toFixed(1) : "—"} />
+            <Stat label="Avg rating" value={driver.averageRating != null ? Number(driver.averageRating).toFixed(1) : "-"} />
           </div>
           <DriverSubscriptionCard driverId={driverId} />
           <Transactions transactions={data.transactions} />
@@ -337,7 +337,7 @@ export function DriverDetailBody({
                   <DetailList
                     rows={[
                       ["Bank", data.bankAccount.bankName],
-                      ["Branch", data.bankAccount.branchName ?? "—"],
+                      ["Branch", data.bankAccount.branchName ?? "-"],
                       ["Account holder", data.bankAccount.accountName],
                       ["Account no.", <CopyValue key="a" value={data.bankAccount.accountNumber} />],
                     ]}
@@ -420,7 +420,7 @@ const DOC_GROUPS: DocGroup[] = [
       ["Type", driver.isTemporaryLicense ? "Temporary (Section 126(4))" : "Standard card"],
       ["Licence no.", <CopyValue key="l" value={driver.licenseNumber} />],
       ["Expiry", <ExpiryValue key="e" date={driver.licenseExpiryDate} />],
-      ["Name", [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—"],
+      ["Name", [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "-"],
       ["NIC", <CopyValue key="n" value={driver.nicNumber} />],
     ],
   },
@@ -431,7 +431,7 @@ const DOC_GROUPS: DocGroup[] = [
     rows: ({ driver }) => [
       ["Policy no.", <CopyValue key="p" value={driver.insurancePolicyNumber} />],
       ["Expiry", <ExpiryValue key="e" date={driver.insuranceExpiryDate} />],
-      ["Registration no.", driver.vehicleRegistrationNumber ?? "—"],
+      ["Registration no.", driver.vehicleRegistrationNumber ?? "-"],
     ],
   },
   {
@@ -440,7 +440,7 @@ const DOC_GROUPS: DocGroup[] = [
     slots: ["revenueLicenseImage"],
     rows: ({ driver }) => [
       ["Expiry", <ExpiryValue key="e" date={driver.revenueLicenseExpiryDate} />],
-      ["Registration no.", driver.vehicleRegistrationNumber ?? "—"],
+      ["Registration no.", driver.vehicleRegistrationNumber ?? "-"],
     ],
   },
   {
@@ -449,8 +449,8 @@ const DOC_GROUPS: DocGroup[] = [
     slots: ["vehicleFront"],
     rows: ({ driver, vehicleMakeName, vehicleModelName }) => [
       ["Registration no.", <CopyValue key="r" value={driver.vehicleRegistrationNumber} />],
-      ["Make / model", [vehicleMakeName, vehicleModelName].filter(Boolean).join(" ") || "—"],
-      ["Colour", driver.vehicleColor ?? "—"],
+      ["Make / model", [vehicleMakeName, vehicleModelName].filter(Boolean).join(" ") || "-"],
+      ["Colour", driver.vehicleColor ?? "-"],
     ],
   },
   {
@@ -458,7 +458,7 @@ const DOC_GROUPS: DocGroup[] = [
     section: "personal",
     slots: ["profilePicture"],
     rows: ({ driver }) => [
-      ["Name", [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—"],
+      ["Name", [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "-"],
       ["Display name", driver.preferredDisplayName ?? "Not set"],
     ],
   },
@@ -518,7 +518,7 @@ function MissingDoc({ label, optional }: { label: string; optional: boolean }) {
     >
       <ImageOff className="size-4" />
       <span className="font-medium">{label}</span>
-      <span>{optional ? "Optional — not uploaded" : "Not uploaded"}</span>
+      <span>{optional ? "Optional - not uploaded" : "Not uploaded"}</span>
     </div>
   );
 }
@@ -575,9 +575,9 @@ function Transactions({ transactions }: { transactions: DriverDetail["transactio
                       {t.type === "deduction" ? "-" : "+"}
                       {t.credits}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{t.onepayReference ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{t.onepayReference ?? "-"}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {t.createdAt ? new Date(t.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "—"}
+                      {t.createdAt ? new Date(t.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "-"}
                     </TableCell>
                   </TableRow>
                 ))}

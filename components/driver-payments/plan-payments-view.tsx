@@ -30,7 +30,7 @@ const STATUS_LABEL = { under_review: "Pending", approved: "Approved", rejected: 
 const REASON_MAX = 500;
 
 const startsLabel = (row: PlanPaymentRow) =>
-  row.applyMode === "now" ? "On approval" : row.applyMode === "after_current" ? "After current plan" : "—";
+  row.applyMode === "now" ? "On approval" : row.applyMode === "after_current" ? "After current plan" : "-";
 
 // Older payments have no recorded type, so fall back on the file's extension.
 const isPdf = (row: PlanPaymentRow) =>
@@ -148,9 +148,9 @@ export function PlanPaymentsView() {
                         driverLabel(r.driverName, r.driverId)
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">{r.driverPhone ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground">{r.driverPhone ?? "-"}</div>
                   </TableCell>
-                  <TableCell>{r.planName ?? "—"}</TableCell>
+                  <TableCell>{r.planName ?? "-"}</TableCell>
                   <TableCell>
                     <div className="font-semibold">{formatLkr(r.amountLkr)}</div>
                     {Number(r.platformFeeLkr) > 0 && (
@@ -166,7 +166,7 @@ export function PlanPaymentsView() {
                         {isPdf(r) ? "View PDF" : "View slip"}
                       </button>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -196,7 +196,7 @@ export function PlanPaymentsView() {
                         </Button>
                       </div>
                     ) : (
-                      "—"
+                      "-"
                     )}
                   </TableCell>
                 </TableRow>
@@ -239,7 +239,7 @@ export function PlanPaymentsView() {
           <div className="space-y-4 p-0.5">
             <Summary row={rejecting} />
             <SlipPreview key={rejecting.id} row={rejecting} />
-            <Field label="Reason" hint="The driver sees this, so say what to fix — for example, the amount doesn't match.">
+            <Field label="Reason" hint="The driver sees this, so say what to fix - for example, the amount doesn't match.">
               <Textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
@@ -269,7 +269,7 @@ export function PlanPaymentsView() {
       <Modal
         open={!!viewing}
         onClose={() => setViewing(null)}
-        title={viewing ? `Payment slip — ${driverLabel(viewing.driverName, viewing.driverId)}` : undefined}
+        title={viewing ? `Payment slip - ${driverLabel(viewing.driverName, viewing.driverId)}` : undefined}
         className="sm:max-w-3xl"
       >
         {viewing && (
@@ -295,7 +295,7 @@ function SlipPreview({ row, large = false }: { row: PlanPaymentRow; large?: bool
   if (failed) {
     return (
       <p className="rounded-lg border p-3 text-sm text-muted-foreground">
-        The slip couldn&apos;t be loaded. Its link lasts 30 minutes — reload the page and try again.
+        The slip couldn&apos;t be loaded. Its link lasts 30 minutes - reload the page and try again.
       </p>
     );
   }
@@ -340,7 +340,7 @@ function Summary({ row }: { row: PlanPaymentRow }) {
         {row.driverPhone ? ` · ${row.driverPhone}` : ""}
       </dd>
       <dt className="text-muted-foreground">Plan</dt>
-      <dd>{row.planName ?? "—"}</dd>
+      <dd>{row.planName ?? "-"}</dd>
       <dt className="text-muted-foreground">Amount</dt>
       <dd className="font-semibold">{formatLkr(row.amountLkr)}</dd>
       <dt className="text-muted-foreground">Starts</dt>

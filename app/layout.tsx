@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 // Body: Inter. Headings: Plus Jakarta Sans. Noto Sinhala/Tamil are fallbacks for si/ta text
-// (Latin fonts have no glyphs for them) — they only download when those scripts appear.
+// (Latin fonts have no glyphs for them) - they only download when those scripts appear.
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["600", "700", "800"] });
 const notoSinhala = Noto_Sans_Sinhala({ variable: "--font-noto-sinhala", subsets: ["sinhala"], preload: false });

@@ -41,7 +41,7 @@ function legDuration(pts: JourneyPoint[]) {
   return pts.length > 1 ? pts[pts.length - 1][2] - pts[0][2] : null;
 }
 
-const km = (v: number | null | undefined) => (v == null ? "—" : `${Number(v).toFixed(2)} km`);
+const km = (v: number | null | undefined) => (v == null ? "-" : `${Number(v).toFixed(2)} km`);
 
 type Side = "both" | "driver" | "rider";
 
@@ -50,7 +50,7 @@ const ROLE_LABEL: Record<JourneyRole, string> = { driver: "Driver", rider: "Ride
 const outageText = (o: JourneyOutage) =>
   `${ROLE_LABEL[o.role]} · ${OUTAGE_LABEL[o.kind]} · ${formatSeconds(o.to - o.from)} (${formatClock(o.from)} – ${formatClock(o.to)})`;
 
-// Dash styles per leg — the colour says whose line it is, the dash which leg.
+// Dash styles per leg - the colour says whose line it is, the dash which leg.
 const DASH = { search: "1 7", pickup: "8 8" } as const;
 
 /** An outage stretch: a wide translucent band (the area) under the line. */
@@ -71,7 +71,7 @@ function outageSummary(outages: JourneyOutage[], role: JourneyRole) {
 /**
  * One side's lines: each leg cut at its outages. The normal runs keep the leg's own style; the
  * segments spanning an outage are returned separately so they can be drawn last, on top, in the
- * outage colour. `tripOverride` (the road-snapped driver trip) replaces the raw trip runs — snapped
+ * outage colour. `tripOverride` (the road-snapped driver trip) replaces the raw trip runs - snapped
  * points have no timestamps, so outage segments still come from the raw trace.
  */
 function sideLines(
@@ -100,12 +100,12 @@ function sideLines(
   });
   const all = legs.flatMap((l) => l.points);
   // Outages with no stretch of their own: no location came back before the ride ended (or, live,
-  // hasn't yet) — pinned where the line stops.
+  // hasn't yet) - pinned where the line stops.
   const undrawn = outages.filter((o) => !drawn.has(o));
   const markers: OutageMarker[] = undrawn.flatMap((o) => {
     const at = outageAnchor(all, o);
     return at
-      ? [{ lat: at[0], lng: at[1], color: outageColor(o.kind), tooltip: `${outageText(o)} — last known location` }]
+      ? [{ lat: at[0], lng: at[1], color: outageColor(o.kind), tooltip: `${outageText(o)} - last known location` }]
       : [];
   });
   return { base, gaps, markers, undrawn };
@@ -171,7 +171,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
         )
       : null;
   // A rider outage that never closed (phone locked / no coverage until the ride ended) has no line
-  // of its own — but during the trip the rider is in the car, so the driver's route over that time
+  // of its own - but during the trip the rider is in the car, so the driver's route over that time
   // shows where it was.
   const tripFrom = data?.tripLeg[0]?.[2];
   const tripTo = data?.tripLeg[data.tripLeg.length - 1]?.[2];
@@ -186,7 +186,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
           return outageLines(
             positions,
             o,
-            `${outageText(o)} — rider was in the car; shown along the driver's route`,
+            `${outageText(o)} - rider was in the car; shown along the driver's route`,
             3,
           );
         })
@@ -203,7 +203,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
   const tripStart = startEndLeg?.length ? toLatLng([startEndLeg[0]])[0] : undefined;
   const tripEnd =
     startEndLeg && startEndLeg.length > 1 ? toLatLng([startEndLeg[startEndLeg.length - 1]])[0] : undefined;
-  // Where the rider actually was when they booked — may differ from the pickup they chose.
+  // Where the rider actually was when they booked - may differ from the pickup they chose.
   const bookedAt = showRider ? (riderLegs.search[0] ?? null) : null;
   const shownOutages = outages.filter((o) => (o.role === "driver" ? showDriver : showRider));
 
@@ -259,7 +259,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {data.live && (
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
-                Live — ride in progress
+                Live - ride in progress
               </span>
             )}
             {data.endReason && (
@@ -355,7 +355,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
               <span className="w-14 font-semibold text-foreground">Outages</span>
               <Legend color={JOURNEY_COLORS.offline} style="band" label="Connection lost (no internet)" />
               <Legend color={JOURNEY_COLORS.noSignal} style="band-dashed" label="No location (connected, no GPS fix)" />
-              <Legend color={JOURNEY_COLORS.offline} style="ring" label="Last known location — no update until ride end" />
+              <Legend color={JOURNEY_COLORS.offline} style="ring" label="Last known location - no update until ride end" />
             </div>
             {data.matchedPartial && showSnapped && (
               <p className="text-amber-700 dark:text-amber-400">Some segments couldn&apos;t be snapped and show raw GPS.</p>
@@ -364,7 +364,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
 
           {(data.driverMockPoints > 0 || data.riderMockPoints > 0) && (
             <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              Mock (fake) GPS detected —{" "}
+              Mock (fake) GPS detected -{" "}
               {[
                 data.driverMockPoints > 0 && `driver: ${data.driverMockPoints} fixes`,
                 data.riderMockPoints > 0 && `rider: ${data.riderMockPoints} fixes`,
@@ -381,11 +381,11 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
             <Stat label="Snapped route" value={km(data.matchedDistanceKm)} />
             <Stat
               label="Drive to pickup"
-              value={legDuration(data.pickupLeg) != null ? formatSeconds(legDuration(data.pickupLeg)!) : "—"}
+              value={legDuration(data.pickupLeg) != null ? formatSeconds(legDuration(data.pickupLeg)!) : "-"}
             />
             <Stat
               label="Trip duration"
-              value={legDuration(data.tripLeg) != null ? formatSeconds(legDuration(data.tripLeg)!) : "—"}
+              value={legDuration(data.tripLeg) != null ? formatSeconds(legDuration(data.tripLeg)!) : "-"}
             />
             <Stat label="Driver points (stored / raw)" value={`${data.pointCount} / ${data.rawPointCount}`} />
             <Stat
@@ -393,7 +393,7 @@ export function RideJourneyModal({ rideId, onClose }: { rideId: string | null; o
               value={hasRider ? `${data.riderPointCount} / ${data.riderRawPointCount}` : "Not shared"}
             />
             <Stat label="Driver gaps" value={outageSummary(outages, "driver")} />
-            <Stat label="Rider gaps" value={hasRider ? outageSummary(outages, "rider") : "—"} />
+            <Stat label="Rider gaps" value={hasRider ? outageSummary(outages, "rider") : "-"} />
           </div>
 
           {shownOutages.length > 0 && (

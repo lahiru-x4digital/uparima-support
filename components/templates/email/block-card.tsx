@@ -44,7 +44,7 @@ function AlignToggle({ value, onChange }: { value: BlockAlign; onChange: (a: Blo
 }
 
 const BadLink = ({ url }: { url: string }) =>
-  url.trim() && !safeUrl(url) ? <p className="mt-1 text-xs text-destructive">Use a full https:// link — this one will be left out.</p> : null;
+  url.trim() && !safeUrl(url) ? <p className="mt-1 text-xs text-destructive">Use a full https:// link - this one will be left out.</p> : null;
 
 /** One block in the designer: its fields plus move / duplicate / delete. */
 export function BlockCard({ block: b, first, last, onChange, onMove, onDuplicate, onRemove }: {

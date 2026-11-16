@@ -6,7 +6,7 @@ export type DisputeStatus = "none" | "disputed" | "resolved";
 
 /**
  * One rating row with its ride, rider and driver context. Staff can never edit `stars` or
- * `comment` — the original content a rider/driver submitted — only the moderation fields below.
+ * `comment` - the original content a rider/driver submitted - only the moderation fields below.
  */
 export interface Rating {
   id: number;

@@ -32,7 +32,7 @@ export function UploadTile({
   onChange: (file: File | undefined) => void;
   onPreview: (label: string, url: string) => void;
   // When set, a picked file is immediately run through the same live AI extraction the driver app
-  // uses — assistive only: fields can still be filled by hand whatever (or whether) this returns.
+  // uses - assistive only: fields can still be filled by hand whatever (or whether) this returns.
   extractSlot?: DriverDocumentKey;
   isTemporaryLicense?: boolean;
   onConfirmFields?: (fields: Partial<DriverFormValues>) => void;
@@ -80,11 +80,11 @@ export function UploadTile({
           onChange(undefined);
           setIssues([
             ...(result.issues.length > 0 ? result.issues : ["This photo doesn't clearly show the driver's face."]),
-            "Not attached — pick a clear photo of the driver's face.",
+            "Not attached - pick a clear photo of the driver's face.",
           ]);
           return;
         }
-        setIssues(result.issues.length > 0 ? result.issues : ["Photo unclear — consider retaking it."]);
+        setIssues(result.issues.length > 0 ? result.issues : ["Photo unclear - consider retaking it."]);
         return;
       }
       const extracted: Record<string, string> = {};
@@ -94,9 +94,9 @@ export function UploadTile({
       }
       if (Object.keys(extracted).length > 0) setPendingFields(extracted);
     } catch (e) {
-      // Assistive only — a failed live check (network / AI trouble) never blocks attaching the
+      // Assistive only - a failed live check (network / AI trouble) never blocks attaching the
       // file or filling fields in by hand.
-      setIssues([getErrorMessage(e) || "Extraction failed — you can still fill in the details manually."]);
+      setIssues([getErrorMessage(e) || "Extraction failed - you can still fill in the details manually."]);
     } finally {
       setExtracting(false);
     }
@@ -131,7 +131,7 @@ export function UploadTile({
               : file
                 ? file.name
                 : existingUrl
-                  ? "Uploaded — click to replace"
+                  ? "Uploaded - click to replace"
                   : description}
           </p>
         </div>
@@ -174,7 +174,7 @@ export function UploadTile({
       <Modal
         open={!!pendingFields}
         onClose={() => setPendingFields(null)}
-        title={`Confirm details — ${label}`}
+        title={`Confirm details - ${label}`}
         className="sm:max-w-md"
       >
         {pendingFields && extractSlot && (

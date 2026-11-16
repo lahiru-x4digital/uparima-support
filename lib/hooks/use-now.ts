@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-/** The current time, re-read every `intervalMs` — for countdowns that tick while a screen is open. */
+/** The current time, re-read every `intervalMs` - for countdowns that tick while a screen is open. */
 export function useNow(intervalMs = 1000): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

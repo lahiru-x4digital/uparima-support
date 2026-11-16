@@ -192,7 +192,7 @@ function FollowupCard({ followup: f, mine }: { followup: DriverFollowup; mine: b
       )}
       {f.note && <p className="text-xs text-muted-foreground">{f.note}</p>}
       {f.ticket && <p className="text-xs text-muted-foreground">Ticket {f.ticket.ticketNumber}</p>}
-      {allReceived && mine && <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Everything is in — mark it done.</p>}
+      {allReceived && mine && <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Everything is in - mark it done.</p>}
 
       <div className="flex flex-wrap gap-1">
         {mine ? (

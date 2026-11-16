@@ -31,7 +31,7 @@ export function AudioTemplateList() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">Audio templates</h1>
-            <p className="text-sm text-muted-foreground">Recorded voice messages — a voice note on WhatsApp, an audio attachment elsewhere.</p>
+            <p className="text-sm text-muted-foreground">Recorded voice messages - a voice note on WhatsApp, an audio attachment elsewhere.</p>
           </div>
           {canCreate && <Link href="/templates/audio/new" className={buttonVariants()}><Plus /> New audio template</Link>}
         </div>

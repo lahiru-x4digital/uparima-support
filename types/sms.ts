@@ -89,7 +89,7 @@ export interface SendBulkSmsInput {
   message: string;
 }
 
-/** `skipped`: chosen customers left out — no usable number, or the same number as another. */
+/** `skipped`: chosen customers left out - no usable number, or the same number as another. */
 export interface BulkSmsQueued {
   batchId: string;
   queued: number;

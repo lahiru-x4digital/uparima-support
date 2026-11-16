@@ -14,7 +14,7 @@ import type {
   PlatformFeeTransactionRow,
 } from "@/types/driver-payment";
 
-// Driver money — the backend's `/support-desk/driver-payments/*`: platform fees
+// Driver money - the backend's `/support-desk/driver-payments/*`: platform fees
 // drivers owe, promotion balances the company owes them, and their withdrawal
 // requests. Reading needs driver-payment.view; approving / rejecting a
 // withdrawal driver-payment.withdrawal-review; editing a balance by hand (or

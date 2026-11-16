@@ -143,9 +143,9 @@ export function WithdrawalsView() {
                       driverLabel(r.driverName, r.driverId)
                     )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{r.driverPhone ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.driverPhone ?? "-"}</TableCell>
                   <TableCell className="font-semibold">{formatLkr(r.amountLkr)}</TableCell>
-                  {/* Always the driver's CURRENT active account, whatever this request's status — for reference. */}
+                  {/* Always the driver's CURRENT active account, whatever this request's status - for reference. */}
                   <TableCell className="text-xs text-muted-foreground">
                     {r.driverBankAccount ? (
                       <div>
@@ -161,18 +161,18 @@ export function WithdrawalsView() {
                       "No bank account on file"
                     )}
                   </TableCell>
-                  {/* Only set once APPROVED — the frozen snapshot of what was actually paid, permanent even if the account above later changes. */}
+                  {/* Only set once APPROVED - the frozen snapshot of what was actually paid, permanent even if the account above later changes. */}
                   <TableCell className="text-xs text-muted-foreground">
                     {r.bankName || r.accountNumber ? (
                       <div>
-                        <div>{r.bankName ?? "—"}</div>
+                        <div>{r.bankName ?? "-"}</div>
                         <div>
                           {r.accountName ? `${r.accountName} · ` : ""}
                           {r.accountNumber ?? ""}
                         </div>
                       </div>
                     ) : (
-                      "—"
+                      "-"
                     )}
                   </TableCell>
                   <TableCell>
@@ -220,7 +220,7 @@ export function WithdrawalsView() {
                         View slip
                       </a>
                     ) : (
-                      "—"
+                      "-"
                     )}
                   </TableCell>
                 </TableRow>
@@ -238,7 +238,7 @@ export function WithdrawalsView() {
             <p className="text-sm text-muted-foreground">
               Approving {formatLkr(approving.amountLkr)} for{" "}
               <span className="font-medium text-foreground">{driverLabel(approving.driverName, approving.driverId)}</span>
-              . You can optionally attach the bank-transfer slip as proof of payment — this cannot be undone.
+              . You can optionally attach the bank-transfer slip as proof of payment - this cannot be undone.
             </p>
             {approving.driverBankAccount ? (
               <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -251,7 +251,7 @@ export function WithdrawalsView() {
               </div>
             ) : (
               <p className="text-xs text-destructive">
-                This driver has no bank account on file — confirm payment details before approving.
+                This driver has no bank account on file - confirm payment details before approving.
               </p>
             )}
             <div>
@@ -295,7 +295,7 @@ export function WithdrawalsView() {
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g. The bank account on file is closed — please add a new one."
+                placeholder="e.g. The bank account on file is closed - please add a new one."
               />
             </Field>
             <div className="flex justify-end gap-2">
@@ -366,7 +366,7 @@ function MinimumWithdrawal({ canEdit }: { canEdit: boolean }) {
       )}
       <p className="min-w-[16rem] flex-1 text-sm text-muted-foreground">
         Drivers can&apos;t request a withdrawal below this amount, or while their balance is under it. Applies
-        immediately to all drivers — no app update needed. 0 removes the minimum. Requests already submitted are
+        immediately to all drivers - no app update needed. 0 removes the minimum. Requests already submitted are
         unaffected.
       </p>
       {(validation || error) && (

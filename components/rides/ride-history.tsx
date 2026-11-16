@@ -50,18 +50,18 @@ const pillClass = (active: boolean) =>
     active ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-card hover:border-ring hover:bg-accent",
   );
 
-// Flags worth surfacing in the detail view — each is a manual-review signal (an override, or a
+// Flags worth surfacing in the detail view - each is a manual-review signal (an override, or a
 // trip that ended somewhere other than the destination) and carries the reason the actor gave.
 function detailRows(r: Ride): DetailRow[] {
   const rows: DetailRow[] = [
     { label: "Ride ID", value: <span className="font-mono text-xs">{r.id}</span> },
-    { label: "Pickup", value: r.pickup_address ?? "—" },
-    { label: "Dropoff", value: r.dropoff_address ?? "—" },
+    { label: "Pickup", value: r.pickup_address ?? "-" },
+    { label: "Dropoff", value: r.dropoff_address ?? "-" },
     {
       label: "Distance",
       value: (
         <>
-          {r.distance_km ? `${parseFloat(r.distance_km).toFixed(1)} km quoted` : "—"}
+          {r.distance_km ? `${parseFloat(r.distance_km).toFixed(1)} km quoted` : "-"}
           {r.actual_distance_km && ` · ${parseFloat(r.actual_distance_km).toFixed(1)} km actual`}
         </>
       ),
@@ -70,7 +70,7 @@ function detailRows(r: Ride): DetailRow[] {
       label: "Fare",
       value: (
         <>
-          {r.final_fare_lkr ? formatLkr(r.final_fare_lkr) : r.fare_lkr ? formatLkr(r.fare_lkr) : "—"}
+          {r.final_fare_lkr ? formatLkr(r.final_fare_lkr) : r.fare_lkr ? formatLkr(r.fare_lkr) : "-"}
           {r.final_fare_lkr && r.fare_lkr && (
             <span className="text-xs text-muted-foreground"> (quoted {formatLkr(r.fare_lkr)})</span>
           )}
@@ -111,7 +111,7 @@ function detailRows(r: Ride): DetailRow[] {
   if (r.early_ended) {
     rows.push({
       label: "Ended early",
-      value: `By ${r.early_end_by ?? "unknown"}${r.early_end_reason ? ` — ${r.early_end_reason}` : ""}`,
+      value: `By ${r.early_end_by ?? "unknown"}${r.early_end_reason ? ` - ${r.early_end_reason}` : ""}`,
     });
   }
   return rows;
@@ -125,7 +125,7 @@ function DriverCell({ ride, link }: { ride: Ride; link: boolean }) {
     return (
       <span
         className="text-muted-foreground italic"
-        title="This driver's account no longer exists — the ride still references its original driver ID."
+        title="This driver's account no longer exists - the ride still references its original driver ID."
       >
         {driverLabel(ride)}
       </span>
@@ -139,7 +139,7 @@ function DriverCell({ ride, link }: { ride: Ride; link: boolean }) {
       </Link>
     );
   }
-  return <>{name || "—"}</>;
+  return <>{name || "-"}</>;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -154,7 +154,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * Ride history: every ride, or one driver's (`?driverId=` — the driver page's "Ride history" button),
+ * Ride history: every ride, or one driver's (`?driverId=` - the driver page's "Ride history" button),
  * with status and date filters, details for each ride, and its recorded journey on a map.
  */
 export function RideHistory() {
@@ -202,7 +202,7 @@ function RideHistoryList({ driverId }: { driverId: number | null }) {
 
   return (
     <PageShell
-      title={driverId ? `Ride history — ${driverName ?? `Driver #${driverId}`}` : "Rides"}
+      title={driverId ? `Ride history - ${driverName ?? `Driver #${driverId}`}` : "Rides"}
       backHref={driverId && canOpenDriver ? `/drivers/${driverId}` : undefined}
     >
       {driverId && (
@@ -312,7 +312,7 @@ function RideHistoryList({ driverId }: { driverId: number | null }) {
               rides.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
-                    {r.rider_name?.trim() || (r.rider_user_id ? `Rider #${r.rider_user_id}` : "—")}
+                    {r.rider_name?.trim() || (r.rider_user_id ? `Rider #${r.rider_user_id}` : "-")}
                     {r.rider_phone && <p className="text-xs text-muted-foreground">{r.rider_phone}</p>}
                   </TableCell>
                   <TableCell>
@@ -346,13 +346,13 @@ function RideHistoryList({ driverId }: { driverId: number | null }) {
                     </div>
                   </TableCell>
                   <TableCell className="max-w-[160px] truncate" title={r.pickup_address}>
-                    {r.pickup_address ?? "—"}
+                    {r.pickup_address ?? "-"}
                   </TableCell>
                   <TableCell className="max-w-[160px] truncate" title={r.dropoff_address}>
-                    {r.dropoff_address ?? "—"}
+                    {r.dropoff_address ?? "-"}
                   </TableCell>
                   <TableCell>
-                    {r.distance_km ? `${parseFloat(r.distance_km).toFixed(1)} km` : "—"}
+                    {r.distance_km ? `${parseFloat(r.distance_km).toFixed(1)} km` : "-"}
                     {r.actual_distance_km && (
                       <div className="text-xs text-muted-foreground">
                         actual: {parseFloat(r.actual_distance_km).toFixed(1)} km
@@ -370,7 +370,7 @@ function RideHistoryList({ driverId }: { driverId: number | null }) {
                     ) : r.fare_lkr ? (
                       formatLkr(r.fare_lkr)
                     ) : (
-                      "—"
+                      "-"
                     )}
                     {r.route_deviation_flag && r.route_deviation_flag !== "none" && (
                       <div className="mt-1">

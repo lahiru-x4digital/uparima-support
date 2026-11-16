@@ -68,7 +68,7 @@ export function usePlanPayments(status: PlanPaymentStatus | undefined, page: num
   });
 }
 
-/** How many plan payments are waiting for review — the number on the sidebar item. */
+/** How many plan payments are waiting for review - the number on the sidebar item. */
 export function usePlanPaymentsWaiting(enabled: boolean) {
   const { user } = useAuth();
   return useQuery({
@@ -119,7 +119,7 @@ export const useAdjustPromotionBalance = () =>
   );
 
 export const useApprovePlanPayment = () =>
-  usePaymentMutation((id: number) => approvePlanPayment(id), "Payment approved — the driver's plan has started");
+  usePaymentMutation((id: number) => approvePlanPayment(id), "Payment approved - the driver's plan has started");
 
 export const useRejectPlanPayment = () =>
   usePaymentMutation(

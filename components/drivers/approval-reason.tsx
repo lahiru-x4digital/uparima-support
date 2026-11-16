@@ -17,7 +17,7 @@ const nameOf = (d: Pick<Driver, "firstName" | "lastName">) => [d.firstName, d.la
 
 /**
  * Approve (or Re-approve) a driver, asking for a reason first when they have open document issues
- * (approvalIssues) — the backend refuses such an approval without one and stores it with the issues
+ * (approvalIssues) - the backend refuses such an approval without one and stores it with the issues
  * and the approver (DriversService.approve). `clearFlags` clears an approved driver's AI document
  * flags the same way (admins). Render `modal` once in the component.
  */
@@ -94,13 +94,13 @@ export function useApproveWithReason() {
               autoFocus
               rows={3}
               maxLength={500}
-              placeholder="e.g. Checked the cover note — the policy runs to 05/10/2027; the AI read the cover note's own 30 days."
+              placeholder="e.g. Checked the cover note - the policy runs to 05/10/2027; the AI read the cover note's own 30 days."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
           </Field>
           {trimmed.length > 0 && trimmed.length < MIN_APPROVAL_REASON_LENGTH && (
-            <p className="text-xs text-red-600">Write a little more — at least {MIN_APPROVAL_REASON_LENGTH} characters.</p>
+            <p className="text-xs text-red-600">Write a little more - at least {MIN_APPROVAL_REASON_LENGTH} characters.</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => finish(null)}>

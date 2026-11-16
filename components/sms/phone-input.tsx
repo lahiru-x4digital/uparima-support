@@ -12,10 +12,10 @@ interface Props {
   onPhoneChange: (phone: string) => void;
 }
 
-// Simple digits-only length check — no libphonenumber-js dependency.
+// Simple digits-only length check - no libphonenumber-js dependency.
 const isValidNumber = (phone: string) => /^\d{7,12}$/.test(phone);
 
-// Country is fixed to Sri Lanka — no country selector needed.
+// Country is fixed to Sri Lanka - no country selector needed.
 export function PhoneInput({ phone, onPhoneChange }: Props) {
   const valid = isValidNumber(phone);
 

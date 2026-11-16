@@ -230,7 +230,7 @@ export function rowToConversation(row: TicketRow, staff: Staff[], now: Date = ne
     incompleteDriver: row.submitterDriverStatus === "incomplete",
     toOnboard: isToOnboard(row.submitterDriverStatus, row.userId == null && !!row.reporterPhone),
     customerName,
-    phone: row.submitterPhone ?? row.reporterPhone ?? "—",
+    phone: row.submitterPhone ?? row.reporterPhone ?? "-",
     email: row.reporterEmail ?? null,
     submitter: null,
     messages: [firstMessage(row, customerName, now)],
@@ -327,7 +327,7 @@ export function detailToConversation(
     row?.reporterEmail ??
     "Unknown caller";
   const phone =
-    row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "—";
+    row?.submitterPhone ?? (submitter?.kind === "driver" ? submitter.phone : null) ?? ticket.reporterPhone ?? "-";
   const thread = (t: Ticket, r: TicketReply[], session: TicketDetail["whatsappSession"]) =>
     ticketThread(t, r, session, customerName, staff, now);
   const earlier = (detail.earlierConversations ?? []).flatMap((e) => [
@@ -396,7 +396,7 @@ const str = (v: unknown): string | undefined => (typeof v === "string" ? v : und
 const PASSTHROUGH_KINDS = new Set(["tap", "location", "location_request", "media", "cta", "template"]);
 
 /** The backend already knows the WhatsApp media type ("image" | "document" |
- * "audio") — trusting it instead of re-inferring from the synthetic S3 key's
+ * "audio") - trusting it instead of re-inferring from the synthetic S3 key's
  * extension avoids two independent extension-guessing paths drifting apart. */
 function mediaKindOf(mediaKind: string | undefined): Attachment["kind"] {
   if (mediaKind === "image") return "image";
@@ -406,7 +406,7 @@ function mediaKindOf(mediaKind: string | undefined): Attachment["kind"] {
 
 /** Maps the bot's own message kind (buttons/list/tap/location/...) to the
  * portal's Message kind, so the thread renders the way WhatsApp itself
- * does — see MessageBubble. "buttons" and "list" both become "options":
+ * does - see MessageBubble. "buttons" and "list" both become "options":
  * WhatsApp shows either as tappable chips under the bubble. */
 function botMessage(m: BotChatMessage, customerName: string): Message {
   const kind: Message["kind"] =
@@ -494,7 +494,7 @@ export function botChatRowToConversation(row: BotChatRow, now: Date = new Date()
 
 /** The full bot-chat thread for a ticketless conversation, in `ChatPane`
  * shape. `sessionId` is the session being viewed, which the caller already
- * knows from the row/id it opened — it may differ from
+ * knows from the row/id it opened - it may differ from
  * `thread.contact.sessionId`, the phone's *current* session (see
  * `BotChatThread.contact.sessionId`). */
 export function botChatThreadToConversation(

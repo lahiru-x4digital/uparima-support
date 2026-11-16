@@ -9,7 +9,7 @@ export type ComboOption = { value: string; label: string };
 /**
  * A text box with suggestions. Typing filters `options`; picking one (click, Enter) selects it. Text
  * that matches no option is kept as a new entry: `onCreate(text)` turns it into a value (shown as
- * "Add …" while typing). Leaving the box commits what's typed — an exact match (any letter case)
+ * "Add …" while typing). Leaving the box commits what's typed - an exact match (any letter case)
  * selects that option instead of creating a duplicate.
  */
 export function CreatableCombobox({

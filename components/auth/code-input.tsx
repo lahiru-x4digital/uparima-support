@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Six boxes for an emailed code. They are a picture of one real text field stretched invisibly
- * over them — so typing, Backspace, pasting "123 456", the phone's "from Messages/Mail" suggestion
+ * over them - so typing, Backspace, pasting "123 456", the phone's "from Messages/Mail" suggestion
  * and password managers all behave exactly as they do in any other field.
  */
 export function CodeInput({

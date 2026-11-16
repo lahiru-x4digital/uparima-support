@@ -6,7 +6,7 @@ export type DocFieldSpec = {
   isDate?: boolean;
 };
 
-// Which fields to show in the confirm-extraction modal per document slot —
+// Which fields to show in the confirm-extraction modal per document slot -
 // mirrors the mobile driver app's slotFieldSpecs (document_capture_widgets.dart)
 // almost verbatim. Keys match DocumentExtractionResult.fields' keys exactly
 // (the backend deliberately names extraction fields after RegisterDriverDto/
@@ -21,7 +21,7 @@ export const DOC_FIELD_SPECS: Partial<Record<DriverDocumentKey, DocFieldSpec[]>>
     { key: "licenseExpiryDate", label: "License expiry date", isDate: true },
     { key: "addressLine1", label: "Address" },
   ],
-  // No nicNumber — it's only printed on the front (field 4c); the back has
+  // No nicNumber - it's only printed on the front (field 4c); the back has
   // no per-driver NIC field, only the category legend/table and expiry date.
   licenseBack: [{ key: "licenseExpiryDate", label: "License expiry date", isDate: true }],
   insuranceCardFront: [
@@ -33,13 +33,13 @@ export const DOC_FIELD_SPECS: Partial<Record<DriverDocumentKey, DocFieldSpec[]>>
     { key: "vehicleRegistrationNumber", label: "Vehicle registration number" },
     { key: "revenueLicenseExpiryDate", label: "Revenue license expiry date", isDate: true },
   ],
-  // vehicleType is also returned by the AI but is informational only here —
+  // vehicleType is also returned by the AI but is informational only here -
   // vehicleTypeId is a dropdown selection, not a free-text field to overwrite.
   vehicleFront: [
     { key: "vehicleRegistrationNumber", label: "Vehicle registration number" },
     { key: "vehicleColor", label: "Vehicle color" },
   ],
-  // profilePicture: no OCR fields — checkProfilePhoto only returns
+  // profilePicture: no OCR fields - checkProfilePhoto only returns
   // readable/issues, so it has no entry here (the confirm modal never opens
   // for it, see driver-form.tsx).
 };

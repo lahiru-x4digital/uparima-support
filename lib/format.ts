@@ -3,9 +3,9 @@ export function formatLkr(value: number | string): string {
   return `LKR ${Number(value).toLocaleString("en-LK", { minimumFractionDigits: 2 })}`;
 }
 
-/** "8 Oct 2026", or "—" for a missing date. */
+/** "8 Oct 2026", or "-" for a missing date. */
 export function formatDate(value: string | null | undefined): string {
-  if (!value) return "—";
+  if (!value) return "-";
   return new Date(value).toLocaleDateString("en-LK", { dateStyle: "medium" });
 }
 

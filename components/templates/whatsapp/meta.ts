@@ -13,8 +13,8 @@ export const WA_STATUS: Record<WhatsappStatus, { label: string; className: strin
 export const EDITABLE: WhatsappStatus[] = ["draft", "rejected", "paused"];
 
 export const CATEGORY_OPTIONS: { value: WhatsappCategory; label: string }[] = [
-  { value: "UTILITY", label: "Utility — updates about a ride, ticket or account" },
-  { value: "MARKETING", label: "Marketing — offers, news, promotions" },
+  { value: "UTILITY", label: "Utility - updates about a ride, ticket or account" },
+  { value: "MARKETING", label: "Marketing - offers, news, promotions" },
 ];
 
 // Meta language codes; Meta decides which it accepts for your account.

@@ -1,11 +1,11 @@
-// Leaflet-free helpers for the ride journey modal and map — kept out of the map component so
+// Leaflet-free helpers for the ride journey modal and map - kept out of the map component so
 // importing them never pulls Leaflet into server rendering.
 
 import type { JourneyOutage, JourneyPoint } from "@/types/ride";
 
 export type JourneyStop = { lat: number; lng: number; seconds: number };
 
-// One colour per side so the two paths are never mixed up — the leg is told apart by the dash
+// One colour per side so the two paths are never mixed up - the leg is told apart by the dash
 // style instead (dotted = rider finding a driver, dashed = before pickup, solid = trip). Outage
 // colours are kept clear of both.
 export const DRIVER_COLOR = "#7c3aed"; // purple
@@ -38,10 +38,10 @@ export type JourneySegment = { positions: [number, number][]; outage?: JourneyOu
 
 /**
  * Cuts one side's line into normal runs and the stretches that fall inside an outage. A step
- * between two consecutive points belongs to an outage when their time spans overlap — so it works
+ * between two consecutive points belongs to an outage when their time spans overlap - so it works
  * whether the backend kept exactly the points bracketing the gap or not, and consecutive steps of
  * the same outage become one stretch. Outages no step overlaps (still open on a live ride, or one
- * that ran to the ride's end) aren't stretches — see `outageAnchor`.
+ * that ran to the ride's end) aren't stretches - see `outageAnchor`.
  */
 export function splitByOutages(points: JourneyPoint[], outages: JourneyOutage[]): JourneySegment[] {
   const out: JourneySegment[] = [];
@@ -94,7 +94,7 @@ export function formatClock(epochSec: number) {
   return new Date(epochSec * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-// Matches the backend's PATH_KEEP_STOP_SECONDS — a gap this long between two recorded points
+// Matches the backend's PATH_KEEP_STOP_SECONDS - a gap this long between two recorded points
 // means the vehicle stood still.
 export const STOP_GAP_SECONDS = 30;
 

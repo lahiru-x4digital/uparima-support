@@ -9,7 +9,7 @@ import { CODE_LENGTH, describeAuthFailure, formatCountdown } from "@/lib/auth-fl
 import { useNow } from "@/lib/hooks/use-now";
 import type { TwoFactorChallenge } from "@/types/auth";
 
-/** A challenge plus when this browser received it — its countdowns are measured from there. */
+/** A challenge plus when this browser received it - its countdowns are measured from there. */
 export interface ActiveChallenge extends TwoFactorChallenge {
   receivedAt: number;
 }
@@ -50,7 +50,7 @@ export function CodeForm({
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState<"verify" | "resend" | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // A complete code is sent as soon as it's typed — but the same one never twice.
+  // A complete code is sent as soon as it's typed - but the same one never twice.
   const lastTried = useRef<string | null>(null);
   const messageId = useId();
 

@@ -14,11 +14,11 @@ function announceReview(driver: CreatedDriver) {
   if (review?.approved) {
     toast.success("Driver added and approved", { description: "The AI review passed every document." });
   } else if (review) {
-    toast.warning("Driver added — waiting for review", {
+    toast.warning("Driver added - waiting for review", {
       description: "The AI review found problems. They're listed on the driver's page: fix them and run AI Validate again.",
     });
   } else {
-    toast.warning("Driver added — waiting for review", {
+    toast.warning("Driver added - waiting for review", {
       description: "The AI review couldn't start. Run AI Validate from the driver's page.",
     });
   }

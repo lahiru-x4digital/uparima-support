@@ -25,7 +25,7 @@ export interface TwoFactorChallenge {
   expiresInSeconds: number;
   resendAfterSeconds: number;
   /**
-   * False when the code couldn't be sent. The code still works — a super admin can read it out
+   * False when the code couldn't be sent. The code still works - a super admin can read it out
    * from the dashboard. Absent on older backends.
    */
   emailSent?: boolean;
@@ -33,7 +33,7 @@ export interface TwoFactorChallenge {
 
 export type LoginResult = AuthTokens | TwoFactorChallenge;
 
-/** GET /auth/2fa/email — the signed-in account's two-factor sign-in setting. */
+/** GET /auth/2fa/email - the signed-in account's two-factor sign-in setting. */
 export interface TwoFactorStatus {
   /** False when the account type can't use it or the account has no email address. */
   available: boolean;
@@ -41,12 +41,12 @@ export interface TwoFactorStatus {
   emailHint: string | null;
   /** How codes are sent (when on). Absent on older backends (email). */
   channel?: "sms" | "email";
-  /** The masked number SMS codes go to ("+94 77*****67") — the account's phone, or a number kept
+  /** The masked number SMS codes go to ("+94 77*****67") - the account's phone, or a number kept
    * just for codes; null when it has neither (choosing SMS then asks for one). */
   phoneHint?: string | null;
 }
 
-/** How sign-in codes should be sent. `phone` — only for SMS on an account with no number. */
+/** How sign-in codes should be sent. `phone` - only for SMS on an account with no number. */
 export interface TwoFactorChoice {
   channel: "sms" | "email";
   phone?: string;

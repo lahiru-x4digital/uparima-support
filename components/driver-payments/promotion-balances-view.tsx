@@ -156,11 +156,11 @@ export function PromotionBalancesView() {
                         )}
                       </>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {d.paidLkr > 0 ? formatLkr(d.paidLkr) : <span className="text-muted-foreground">—</span>}
+                    {d.paidLkr > 0 ? formatLkr(d.paidLkr) : <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{formatDate(d.lastCreditAt)}</TableCell>
                   <TableCell>
@@ -202,7 +202,7 @@ export function PromotionBalancesView() {
             <>
               You can&apos;t deduct more than the withdrawable balance.
               {adjusting.pendingLkr > 0 &&
-                ` ${formatLkr(adjusting.pendingLkr)} is in a pending withdrawal request — reject that request first to return it to the balance.`}
+                ` ${formatLkr(adjusting.pendingLkr)} is in a pending withdrawal request - reject that request first to return it to the balance.`}
             </>
           }
           reasonLabel="Reason (recorded in the driver's credit history)"

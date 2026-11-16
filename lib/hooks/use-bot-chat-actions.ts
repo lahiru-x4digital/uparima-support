@@ -7,7 +7,7 @@ import { convertBotChatToTicket, replyToBotChat, voiceReplyToBotChat } from "@/l
 import { botChatKeys, ticketKeys } from "./query-keys";
 
 /** Replies to a WhatsApp conversation that has no ticket yet (or whose
- * ticket is closed) — the backend opens/reuses a ticket and delivers the
+ * ticket is closed) - the backend opens/reuses a ticket and delivers the
  * message over WhatsApp. Rejects with a toast if the 23.5h window has
  * closed; the composer keeps the text so nothing is lost. */
 export function useReplyToBotChat(phone: string) {
@@ -42,7 +42,7 @@ export function useVoiceReplyToBotChat(phone: string) {
 }
 
 /** Manually marks a live WhatsApp conversation as a ticket, without sending
- * a reply — for when staff want to track it even though the bot never
+ * a reply - for when staff want to track it even though the bot never
  * escalated it. */
 export function useConvertBotChatToTicket(phone: string) {
   const qc = useQueryClient();

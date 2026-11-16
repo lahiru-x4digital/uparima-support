@@ -27,7 +27,7 @@ const RATED_BY_TABS: Array<{ key: "all" | "rider" | "driver"; label: string }> =
 ];
 
 const DISPUTE_LABEL: Record<DisputeStatus, string> = {
-  none: "—",
+  none: "-",
   disputed: "Disputed",
   resolved: "Resolved",
 };
@@ -57,7 +57,7 @@ const pillClass = (active: boolean) =>
 /**
  * Reviews & ratings: every rating left after a ride, in both directions, with search/filters and
  * a moderation panel (flag a dispute, resolve it, hide a rating). Staff can never edit the stars
- * or comment a rider/driver actually submitted — see RatingModerationModal.
+ * or comment a rider/driver actually submitted - see RatingModerationModal.
  */
 export function ReviewsList() {
   const canView = useCan("rating.view");
@@ -98,9 +98,9 @@ export function ReviewsList() {
     <PageShell title="Reviews & Ratings" description="Search ratings, investigate disputes, and hide abusive reviews.">
       {meta && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <Stat label="Driver ratings (avg)" value={meta.summary.ofDrivers.average?.toFixed(2) ?? "—"} />
+          <Stat label="Driver ratings (avg)" value={meta.summary.ofDrivers.average?.toFixed(2) ?? "-"} />
           <Stat label="Driver ratings (count)" value={meta.summary.ofDrivers.count.toLocaleString()} />
-          <Stat label="Rider ratings (avg)" value={meta.summary.ofRiders.average?.toFixed(2) ?? "—"} />
+          <Stat label="Rider ratings (avg)" value={meta.summary.ofRiders.average?.toFixed(2) ?? "-"} />
           <Stat label="Rider ratings (count)" value={meta.summary.ofRiders.count.toLocaleString()} />
         </div>
       )}
@@ -189,23 +189,23 @@ export function ReviewsList() {
                 <TableRow key={r.id} className={cn(r.deleted_at && "opacity-50")}>
                   <TableCell><Stars value={r.stars} /></TableCell>
                   <TableCell className="max-w-[220px] truncate" title={r.comment ?? undefined}>
-                    {r.comment || <span className="text-muted-foreground">—</span>}
+                    {r.comment || <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell className="capitalize">{r.rated_by}</TableCell>
                   <TableCell>
                     {r.driver_missing ? (
                       <span className="text-muted-foreground italic">Removed driver #{r.driver_id}</span>
                     ) : (
-                      r.driver_name?.trim() || "—"
+                      r.driver_name?.trim() || "-"
                     )}
                     {r.driver_phone && <p className="text-xs text-muted-foreground">{r.driver_phone}</p>}
                   </TableCell>
                   <TableCell>
-                    {r.rider_display_name?.trim() || (r.rider_user_id ? `Rider #${r.rider_user_id}` : "—")}
+                    {r.rider_display_name?.trim() || (r.rider_user_id ? `Rider #${r.rider_user_id}` : "-")}
                     {r.rider_phone && <p className="text-xs text-muted-foreground">{r.rider_phone}</p>}
                   </TableCell>
                   <TableCell>
-                    {r.fare_lkr ? formatLkr(r.fare_lkr) : "—"}
+                    {r.fare_lkr ? formatLkr(r.fare_lkr) : "-"}
                     <div className="text-xs text-muted-foreground">{formatDate(r.ride_created_at)}</div>
                   </TableCell>
                   <TableCell>
@@ -312,10 +312,10 @@ function RatingModerationModal({
             <Field label="Stars"><p><Stars value={rating.stars} /></p></Field>
             <Field label="Rated by"><p className="capitalize">{rating.rated_by}</p></Field>
             <Field label="Driver">
-              <p>{rating.driver_name?.trim() || (rating.driver_id ? `Driver #${rating.driver_id}` : "—")}</p>
+              <p>{rating.driver_name?.trim() || (rating.driver_id ? `Driver #${rating.driver_id}` : "-")}</p>
             </Field>
             <Field label="Rider">
-              <p>{rating.rider_display_name?.trim() || (rating.rider_user_id ? `Rider #${rating.rider_user_id}` : "—")}</p>
+              <p>{rating.rider_display_name?.trim() || (rating.rider_user_id ? `Rider #${rating.rider_user_id}` : "-")}</p>
             </Field>
             <Field label="Ride"><p className="font-mono text-xs">{rating.ride_id}</p></Field>
             <Field label="Ride status"><p><StatusBadge value={rating.ride_status} /></p></Field>
@@ -378,7 +378,7 @@ function RatingModerationModal({
                 <div className="space-y-3 rounded-lg border p-3">
                   <div className="flex gap-2">
                     <Button size="sm" variant={outcome === "dismissed" ? "default" : "outline"} onClick={() => setOutcome("dismissed")} disabled={busy}>
-                      Dismiss — rating stands
+                      Dismiss - rating stands
                     </Button>
                     <Button size="sm" variant={outcome === "upheld" ? "default" : "outline"} onClick={() => setOutcome("upheld")} disabled={busy}>
                       Uphold

@@ -54,7 +54,7 @@ export function SmsHistoryList() {
                       {log.message}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {log.provider || "—"} · Sent by {log.sentByName ?? `#${log.sentByUserId}`} ·{" "}
+                      {log.provider || "-"} · Sent by {log.sentByName ?? `#${log.sentByUserId}`} ·{" "}
                       {new Date(log.createdAt).toLocaleString()}
                     </p>
                   </div>

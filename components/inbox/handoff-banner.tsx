@@ -14,7 +14,7 @@ interface Props {
 
 /**
  * Shown on a WhatsApp conversation (ticket or bot-only). A reply typed in the composer is
- * delivered straight to the driver's WhatsApp — the call/message links below are a fallback for
+ * delivered straight to the driver's WhatsApp - the call/message links below are a fallback for
  * when the 23.5h reply window has closed and a direct reply can no longer go out.
  */
 export function HandoffBanner({ conversation: c, canUpdate, marking, onMarkContacted }: Props) {
@@ -41,11 +41,11 @@ export function HandoffBanner({ conversation: c, canUpdate, marking, onMarkConta
       {details.length > 0 && <p className="mt-0.5 text-xs text-muted-foreground">{details.join(" · ")}</p>}
       {!c.canReply && (
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Can&apos;t reply directly right now — their last WhatsApp message was over 23.5 hours ago. Call or message them instead.
+          Can&apos;t reply directly right now - their last WhatsApp message was over 23.5 hours ago. Call or message them instead.
         </p>
       )}
       <div className="mt-2 flex flex-wrap gap-2">
-        {c.phone !== "—" && (
+        {c.phone !== "-" && (
           <>
             <a href={`tel:+${digits}`} className={buttonVariants({ size: "sm", variant: "outline" })}><Phone /> Call</a>
             <a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer" className={buttonVariants({ size: "sm", variant: "outline" })}>

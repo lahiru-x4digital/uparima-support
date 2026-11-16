@@ -54,7 +54,7 @@ function Line({
 }
 
 /**
- * Everything that needs the agent's attention, one line each, with the action that fixes it —
+ * Everything that needs the agent's attention, one line each, with the action that fixes it -
  * replacing stacked banner cards that pushed the actual details below the fold.
  */
 export function DriverStatusStrip({
@@ -88,13 +88,13 @@ export function DriverStatusStrip({
           )
         }
       >
-        <strong>Signup not finished</strong> — still needs {gaps.join(", ")}
+        <strong>Signup not finished</strong> - still needs {gaps.join(", ")}
       </Line>,
     );
   } else if (gaps) {
     lines.push(
       <Line key="ready" tone="green" icon={<CheckCircle2 />}>
-        <strong>Ready for review</strong> — check the documents, then Approve or AI Validate
+        <strong>Ready for review</strong> - check the documents, then Approve or AI Validate
       </Line>,
     );
   }
@@ -126,12 +126,12 @@ export function DriverStatusStrip({
         details={aiResult.issues}
       >
         <strong>{aiResult.valid ? "AI validation passed" : "AI validation found issues"}</strong>
-        {aiResult.summary && ` — ${aiResult.summary}`}
+        {aiResult.summary && ` - ${aiResult.summary}`}
         {aiResult.filledLicenseNumber && (
           <>
             {" "}
             · Licence no. <span className="font-mono font-semibold">{aiResult.filledLicenseNumber}</span> read from the photo
-            and saved — check it.
+            and saved - check it.
           </>
         )}
         {aiResult.approved && " · Driver was automatically approved."}
@@ -151,7 +151,7 @@ export function DriverStatusStrip({
         }
       >
         <strong>Document issues found</strong>
-        {driver.reviewSummary && ` — ${driver.reviewSummary}`}
+        {driver.reviewSummary && ` - ${driver.reviewSummary}`}
       </Line>,
     );
   }

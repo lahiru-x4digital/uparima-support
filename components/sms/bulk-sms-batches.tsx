@@ -14,7 +14,7 @@ function statusOf(b: BulkSmsBatch): { label: string; tone: string } {
   if (b.pending > 0) return { label: `Sending… ${count(b.total - b.pending)} of ${count(b.total)}`, tone: "text-primary" };
   if (b.failed === 0) return { label: "All sent", tone: "text-emerald-600 dark:text-emerald-400" };
   if (b.sent === 0) return { label: "None sent", tone: "text-destructive" };
-  return { label: `Finished — ${count(b.failed)} failed`, tone: "text-amber-600 dark:text-amber-400" };
+  return { label: `Finished - ${count(b.failed)} failed`, tone: "text-amber-600 dark:text-amber-400" };
 }
 
 /** The latest bulk sends and how far each has got; one still going out can be stopped. */

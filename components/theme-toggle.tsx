@@ -10,7 +10,7 @@ export function ThemeToggle() {
     try {
       localStorage.setItem("support_theme", dark ? "dark" : "light");
     } catch {
-      /* storage unavailable — theme just won't persist */
+      /* storage unavailable - theme just won't persist */
     }
   }
   return (

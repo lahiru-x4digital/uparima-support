@@ -24,7 +24,7 @@ const SOURCE_LABELS: Record<string, string> = {
   onepay: "Card payment",
 };
 
-const fmt = (s: string | null) => (s ? new Date(s).toLocaleDateString() : "—");
+const fmt = (s: string | null) => (s ? new Date(s).toLocaleDateString() : "-");
 
 // Date input value (yyyy-mm-dd, local) for a timestamp.
 function toDateInput(d: Date) {
@@ -35,7 +35,7 @@ function toDateInput(d: Date) {
 // A picked calendar day means "end of that day" (local), so the driver keeps the whole day.
 const endOfDay = (value: string) => new Date(`${value}T23:59:59`);
 
-/** The driver's current plan, and — with driver.subscription-adjust — a way to add or remove days. */
+/** The driver's current plan, and - with driver.subscription-adjust - a way to add or remove days. */
 export function DriverSubscriptionCard({ driverId }: { driverId: string }) {
   const canAdjust = useCan("driver.subscription-adjust");
   const { data: info, error: loadError } = useDriverSubscription(driverId);
@@ -211,7 +211,7 @@ export function DriverSubscriptionCard({ driverId }: { driverId: string }) {
             <p className="rounded-lg bg-muted px-3 py-2 text-muted-foreground">
               New expiry: <span className="font-medium text-foreground">{preview.toLocaleDateString()}</span>
               {previewDays !== null && previewDays > 0 ? ` (${previewDays} day(s) remaining)` : " (ends immediately)"}
-              {!current && previewDays !== null && previewDays > 0 && " — a new admin-granted period will be created."}
+              {!current && previewDays !== null && previewDays > 0 && " - a new admin-granted period will be created."}
             </p>
           )}
 

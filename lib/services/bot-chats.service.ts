@@ -33,7 +33,7 @@ export const fetchVoiceNote = async (messageId: string) =>
   (await api.get<Blob>(`/support-desk/bot-chats/messages/${messageId}/audio`, { responseType: "blob" })).data;
 
 /** Manually marks a live WhatsApp conversation as a ticket, with no reply
- * sent — for when staff want to track it even though the bot never
+ * sent - for when staff want to track it even though the bot never
  * escalated it to a hand-off. */
 export const convertBotChatToTicket = (phone: string) =>
   apiPost<BotChatConvertResult>(`/support-desk/bot-chats/${phone}/convert`, {});

@@ -17,7 +17,7 @@ import type {
 } from "@/types/driver";
 import { newVehicleModelName } from "@/types/driver";
 
-// Driver management — the backend's `/support-desk/drivers/*`, which wraps the
+// Driver management - the backend's `/support-desk/drivers/*`, which wraps the
 // classified dashboard's admin driver endpoints. Each route is gated by its own
 // permission (driver.view, driver.update, driver.approve, ...).
 
@@ -105,7 +105,7 @@ export const createDriverDraft = (values: DriverFormValues, files: DriverFormFil
   apiPost<Driver>(`${BASE}/draft`, buildFormData(values, files), MULTIPART);
 
 export function updateDriver(id: number | string, values: Partial<DriverFormValues>, files: DriverFormFiles) {
-  // The phone is the account's login — the backend refuses to change it here,
+  // The phone is the account's login - the backend refuses to change it here,
   // and rejects the whole request for an unknown field.
   const editable = { ...values };
   delete editable.phone;
@@ -136,7 +136,7 @@ export function extractDriverProfilePicture(file: File) {
 export const validateDriverWithAi = (id: number | string) =>
   apiPost<AiValidationResult>(`${BASE}/${id}/ai-validate`);
 
-// `reason` is required when the driver has open document issues (approvalIssues) — stored with the
+// `reason` is required when the driver has open document issues (approvalIssues) - stored with the
 // issues and the approver.
 export const approveDriver = (id: number | string, reason?: string) =>
   apiPost<void>(`${BASE}/${id}/approve`, reason ? { reason } : {});

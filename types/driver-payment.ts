@@ -70,7 +70,7 @@ export interface DriverBalanceRow {
   balanceLkr: number;
 }
 
-// "settlement" rows are legacy (the admin-direct settle feature was removed —
+// "settlement" rows are legacy (the admin-direct settle feature was removed -
 // payouts now happen only via withdrawal requests).
 export type DiscountTransactionType = "ride_credit" | "settlement";
 
@@ -104,7 +104,7 @@ export interface PlanPaymentRow {
   planName: string | null;
   // The whole transfer: the plan price plus platformFeeLkr.
   amountLkr: number | string;
-  // Platform fees the driver owed when they submitted, included in amountLkr —
+  // Platform fees the driver owed when they submitted, included in amountLkr -
   // cleared from their balance when the payment is approved.
   platformFeeLkr: number | string;
   // When the plan starts if the driver still has one running at approval time.
@@ -122,7 +122,7 @@ export interface PlanPaymentRow {
 export type DiscountWithdrawalStatus = "pending" | "approved" | "rejected";
 
 // The driver's current active bank account, shown for reference before
-// approving — separate from the row's own bank fields, which stay null until
+// approving - separate from the row's own bank fields, which stay null until
 // approval.
 export interface DriverBankAccountRow {
   id: number;
@@ -141,7 +141,7 @@ export interface DiscountWithdrawalRow {
   accountNumber: string | null;
   status: DiscountWithdrawalStatus;
   rejectionReason: string | null;
-  // Presigned view URL for the uploaded bank-transfer slip — null until approved.
+  // Presigned view URL for the uploaded bank-transfer slip - null until approved.
   slipUrl: string | null;
   driverBankAccount: DriverBankAccountRow | null;
   createdAt: string;

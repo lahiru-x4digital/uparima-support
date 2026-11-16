@@ -61,7 +61,7 @@ const LIVE_DRIVER_POLL_MS = 5_000;
  * One driver. `live` keeps it fresh while it is on screen, for a signup the WhatsApp bot is still
  * filling in (documents and details arrive after the page loaded): "incomplete" polls only while
  * the signup is unfinished, "always" polls whatever the status. Leave it off while the data feeds
- * an edit form — a refresh underneath a half-typed edit would shift what counts as changed.
+ * an edit form - a refresh underneath a half-typed edit would shift what counts as changed.
  */
 export function useDriverDetail(id: string, options: { live?: "incomplete" | "always" | false } = {}) {
   const { user } = useAuth();
@@ -103,7 +103,7 @@ export function useAreaSearch(text: string) {
   });
 }
 
-/** The cities of the district picked in the driver form — the list the driver app registers with. */
+/** The cities of the district picked in the driver form - the list the driver app registers with. */
 export function useDistrictCities(province: string, district: string) {
   return useQuery({
     queryKey: driverKeys.districtCities(province, district),
@@ -135,7 +135,7 @@ export function useVehicleMakes(vehicleTypeId: string) {
   });
 }
 
-/** Models are scoped to the (type, make) pair — one make offers different models per type. */
+/** Models are scoped to the (type, make) pair - one make offers different models per type. */
 export function useVehicleModels(vehicleTypeId: string, vehicleMakeId: string) {
   const { user } = useAuth();
   return useQuery({
@@ -231,7 +231,7 @@ export const useValidateDriverWithAi = () => useDriverMutation((id: string) => v
 export const useRemoveDriverDocument = () =>
   useDriverMutation(
     ({ id, slot }: { id: string; slot: string }) => removeDriverDocument(id, slot),
-    "Document removed — the driver must re-upload it",
+    "Document removed - the driver must re-upload it",
   );
 
 export const useDeleteDriverPermanently = () =>
@@ -245,12 +245,12 @@ export const useCreateDriver = () =>
 export const useCreateDriverDraft = () =>
   useDriverMutation(
     ({ values, files }: { values: DriverFormValues; files: DriverFormFiles }) => createDriverDraft(values, files),
-    "Draft saved — finish it from the driver's details",
+    "Draft saved - finish it from the driver's details",
   );
 
 export const useUpdateDriver = () =>
   useDriverMutation(
-    // Only the fields an edit changed — see changedDriverFields.
+    // Only the fields an edit changed - see changedDriverFields.
     ({ id, values, files }: { id: string; values: Partial<DriverFormValues>; files: DriverFormFiles }) =>
       updateDriver(id, values, files),
     "Driver updated",

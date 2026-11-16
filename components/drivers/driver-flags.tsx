@@ -8,12 +8,12 @@ type DriverFlagsInput = Pick<Driver, "missingDocuments" | "reviewValid" | "revie
 /**
  * Compact badges for the drivers list and detail page: an application with nothing to review yet
  * (created or resubmitted while "Bypass Document Validation" was on), and one the AI review
- * already flagged a document problem on — visible without opening the driver. Both come from the
+ * already flagged a document problem on - visible without opening the driver. Both come from the
  * backend (RidesAdminService.missingRequiredDocuments, DriverReviewService), not derived here.
  */
 export function DriverFlags({ driver, className }: { driver: DriverFlagsInput; className?: string }) {
   const missing = driver.missingDocuments ?? [];
-  // reviewValid is null until the first AI review completes — only false is a flagged problem.
+  // reviewValid is null until the first AI review completes - only false is a flagged problem.
   // Otherwise the latest AI check's problems, when it failed on a driver whose stored verdict it
   // didn't change (an approved driver re-checked).
   const issues =

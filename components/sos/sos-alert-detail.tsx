@@ -27,7 +27,7 @@ function locationFreshness(updatedAt?: number | null) {
   return { label: "Stale", dot: "bg-red-500" };
 }
 
-/** One SOS alert: who, where, the ride, the timeline — and, with sos.respond, acknowledge and resolve. */
+/** One SOS alert: who, where, the ride, the timeline - and, with sos.respond, acknowledge and resolve. */
 export function SosAlertDetail({ id }: { id: string }) {
   const canView = useCan("sos.view");
   const canRespond = useCan("sos.respond");
@@ -109,7 +109,7 @@ export function SosAlertDetail({ id }: { id: string }) {
             <CardTitle>Rider</CardTitle>
           </CardHeader>
           <CardContent>
-            <PartyBody name={alert.rider_name || "—"} phone={alert.rider_phone} raisedSos={alert.triggered_by_role === "rider"} />
+            <PartyBody name={alert.rider_name || "-"} phone={alert.rider_phone} raisedSos={alert.triggered_by_role === "rider"} />
           </CardContent>
         </Card>
 
@@ -155,7 +155,7 @@ export function SosAlertDetail({ id }: { id: string }) {
                   className="mt-1 inline-flex items-center gap-1.5 font-semibold text-primary hover:underline"
                 >
                   <span className={`size-2 rounded-full ${fresh.dot}`} />
-                  {fresh.label} — open in Maps <ExternalLink className="size-3" />
+                  {fresh.label} - open in Maps <ExternalLink className="size-3" />
                 </a>
               ) : (
                 <div className="mt-1 text-muted-foreground">No live location</div>
@@ -187,9 +187,9 @@ export function SosAlertDetail({ id }: { id: string }) {
             <CardTitle>Ride</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <Row label="Pickup">{alert.pickup_address ?? "—"}</Row>
-            <Row label="Drop-off">{alert.dropoff_address ?? "—"}</Row>
-            <Row label="Status now">{(alert.ride_status ?? "—").replace(/_/g, " ")}</Row>
+            <Row label="Pickup">{alert.pickup_address ?? "-"}</Row>
+            <Row label="Drop-off">{alert.dropoff_address ?? "-"}</Row>
+            <Row label="Status now">{(alert.ride_status ?? "-").replace(/_/g, " ")}</Row>
             <Row label="Status at SOS">{alert.ride_status_at_trigger.replace(/_/g, " ")}</Row>
             <Row label="Ride ID">
               <span className="font-mono text-xs">{alert.ride_id}</span>
@@ -255,7 +255,7 @@ export function SosAlertDetail({ id }: { id: string }) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={4}
-              placeholder="e.g. Called rider — vehicle broke down, arranged replacement ride. Rider safe."
+              placeholder="e.g. Called rider - vehicle broke down, arranged replacement ride. Rider safe."
             />
           </Field>
           <div className="flex justify-end gap-2 pt-1">

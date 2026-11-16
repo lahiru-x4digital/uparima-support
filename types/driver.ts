@@ -12,7 +12,7 @@ export type Driver = {
 
   firstName: string | null;
   lastName: string | null;
-  // Optional, driver-picked subset of firstName/lastName's words — shown to
+  // Optional, driver-picked subset of firstName/lastName's words - shown to
   // riders and on the driver's own profile instead of the legal name when
   // set. See the backend's RidesDriver.preferredDisplayName.
   preferredDisplayName: string | null;
@@ -38,11 +38,11 @@ export type Driver = {
 
   // True if the driver currently holds the Department of Motor Traffic's
   // temporary permit (Section 126(4)) rather than the standard printed card
-  // — see the backend's RidesDriver.isTemporaryLicense doc comment. When
+  // - see the backend's RidesDriver.isTemporaryLicense doc comment. When
   // true, licenseNumber holds the permit/certificate number (not the
   // standard card's letter-prefix format) and licenseFrontS3Key holds a
   // photo of the certificate's main page. licenseBackS3Key is optional here
-  // and often empty — the permit is one page, but drivers who fold and
+  // and often empty - the permit is one page, but drivers who fold and
   // laminate theirs do have a real second side, which is captured and read
   // just like the main page when they supply it.
   isTemporaryLicense: boolean;
@@ -60,7 +60,7 @@ export type Driver = {
   vehicleFrontS3Key: string | null;
 
   // Populated by AI validation (background, at registration/resubmission,
-  // or an admin's manual "AI Validate") — see the backend's
+  // or an admin's manual "AI Validate") - see the backend's
   // DriverReviewService/AiValidationService. reviewValid is null until the
   // first review completes. reviewIssues holds one human-readable string
   // per problem found across all documents (mismatch, blurry, wrong
@@ -70,12 +70,12 @@ export type Driver = {
   reviewSummary: string | null;
 
   // Computed by the backend on every /rides/admin/drivers* response (not a
-  // stored column) — human-readable labels for the two things
+  // stored column) - human-readable labels for the two things
   // registration can skip when an admin turns on the "Bypass Document
   // Validation" setting (Rides -> System Settings): the required vehicle
   // photo and a license number. Empty when the driver has both.
   missingDocuments: string[];
-  // Also computed by the backend: the photos no approval can get past — profile photo, driving
+  // Also computed by the backend: the photos no approval can get past - profile photo, driving
   // licence, insurance card, vehicle front (the backend's missingMandatoryPhotos). The backend
   // refuses an approval while any is missing, admins included. Absent on an older backend.
   missingMandatoryPhotos?: string[];
@@ -83,7 +83,7 @@ export type Driver = {
   // (status "incomplete") still lacks before it can be reviewed. Empty for
   // every other status. Absent on a response from an older backend.
   missingFields?: string[];
-  // Computed too: documents past their saved expiry date, as labels — "insurance (expired
+  // Computed too: documents past their saved expiry date, as labels - "insurance (expired
   // 2026-09-25)". Absent on a response from an older backend.
   expiredDocuments?: string[];
   // The latest AI document check (RidesDriver.lastAiCheckAt): kept even when it failed on an approved
@@ -93,7 +93,7 @@ export type Driver = {
   lastAiCheckValid?: boolean | null;
   lastAiCheckSummary?: string | null;
   lastAiCheckIssues?: string[] | null;
-  // How support staff have reached the driver (list endpoint only), manual work only — bot
+  // How support staff have reached the driver (list endpoint only), manual work only - bot
   // messages don't count: "call" for a logged call, otherwise the channel of a ticket an agent
   // replied on ("whatsapp", "email", "app"). `agents` is who did it. Empty methods = not contacted.
   contact?: {
@@ -115,7 +115,7 @@ export type Driver = {
   totalRides: number;
   isOnline: boolean;
   // Admin-only dispatch isolation switch (set from this dashboard, never
-  // self-service in the driver app) — see the backend's RidesDriver.
+  // self-service in the driver app) - see the backend's RidesDriver.
   // isTestDriver doc comment. A test driver is NEVER offered a real
   // rider's ride, and vice versa.
   isTestDriver: boolean;
@@ -211,7 +211,7 @@ export type DriverFormValues = {
 
   revenueLicenseExpiryDate: string;
 
-  // The driver's payout account (DriverDetail.bankAccount) — optional, but
+  // The driver's payout account (DriverDetail.bankAccount) - optional, but
   // bank, holder and number go together. All empty leaves it unchanged.
   bankName: string;
   bankAccountName: string;
@@ -221,7 +221,7 @@ export type DriverFormValues = {
 
 /**
  * A model typed in the Model box that isn't in the list is kept in `vehicleModelId` as
- * `new:<Name>` and sent as `vehicleModelName` — the backend reuses a model of that name under the
+ * `new:<Name>` and sent as `vehicleModelName` - the backend reuses a model of that name under the
  * chosen type + make (any letter case) or creates it.
  */
 export const NEW_VEHICLE_MODEL_PREFIX = "new:";
@@ -322,7 +322,7 @@ export function driverToFormValues(d: Driver, bankAccount?: DriverBankAccount | 
 // ── Payloads of the driver endpoints (`/support-desk/drivers/*`) ─────────────
 
 /**
- * One of a driver's documents that matches a document already on file under another driver — the
+ * One of a driver's documents that matches a document already on file under another driver - the
  * detail behind the "possible reused/shared document" warning. Mirrors
  * RidesAdminService.getDriverDuplicateDocuments in uparima-backend.
  */
@@ -388,7 +388,7 @@ export type AdjustSubscriptionBody =
   | { mode: "set_date"; expiresAt: string; reason: string }
   | { mode: "adjust_days"; days: number; reason: string };
 
-// The OS permission statuses a driver's app last reported — one snapshot per
+// The OS permission statuses a driver's app last reported - one snapshot per
 // driver, overwritten on every report. Null for a driver who has never
 // reported, i.e. an app build older than the feature.
 export type DriverDevicePermissions = {

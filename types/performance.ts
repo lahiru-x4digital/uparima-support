@@ -1,4 +1,4 @@
-/** Backend DTOs for `GET /support-desk/me/performance` — the signed-in agent's own numbers. */
+/** Backend DTOs for `GET /support-desk/me/performance` - the signed-in agent's own numbers. */
 
 export interface TimingStats {
   count: number;

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * A value an agent reads out or pastes elsewhere (phone, NIC, licence no.), with a one-click copy
- * button. `href` turns the value itself into a link — `tel:` for phone numbers.
+ * button. `href` turns the value itself into a link - `tel:` for phone numbers.
  */
 export function CopyValue({
   value,
@@ -21,7 +21,7 @@ export function CopyValue({
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  if (!value) return <span className="text-muted-foreground">—</span>;
+  if (!value) return <span className="text-muted-foreground">-</span>;
 
   async function copy() {
     try {
@@ -30,7 +30,7 @@ export function CopyValue({
       toast.success("Copied", { description: value!, duration: 1500 });
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      toast.error("Couldn't copy — select the text instead");
+      toast.error("Couldn't copy - select the text instead");
     }
   }
 

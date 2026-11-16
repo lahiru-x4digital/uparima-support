@@ -17,8 +17,8 @@ import { getErrorMessage } from "@/lib/api";
 import type { CareFieldRow, CareFieldType, CareTemplate, CareTemplateForm } from "@/types/care-template";
 import { PRIORITIES, REQUEST_TYPES } from "./meta";
 
-const REQUEST_TYPE_OPTIONS = [{ value: "", label: "— Select Request Type —" }, ...REQUEST_TYPES];
-const PRIORITY_OPTIONS = [{ value: "", label: "— None —" }, ...PRIORITIES];
+const REQUEST_TYPE_OPTIONS = [{ value: "", label: "- Select Request Type -" }, ...REQUEST_TYPES];
+const PRIORITY_OPTIONS = [{ value: "", label: "- None -" }, ...PRIORITIES];
 const STATUSES = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },

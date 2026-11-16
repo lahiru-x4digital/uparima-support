@@ -9,7 +9,7 @@ import { usePlatformFeeLedger } from "@/lib/hooks/use-driver-payments";
 import { driverLabel, formatDateTime, formatLkr } from "@/lib/format";
 import { PLATFORM_FEE_TRANSACTION_LABELS, type DriverPlatformFeeBalanceRow } from "@/types/driver-payment";
 
-/** One driver's platform fee ledger — every fee charged and every payment, newest first. */
+/** One driver's platform fee ledger - every fee charged and every payment, newest first. */
 export function PlatformFeeHistoryModal({
   driver,
   onClose,
@@ -26,7 +26,7 @@ export function PlatformFeeHistoryModal({
     <Modal
       open
       onClose={onClose}
-      title={`Platform fee history — ${driverLabel(driver.driverName, driver.driverId)}`}
+      title={`Platform fee history - ${driverLabel(driver.driverName, driver.driverId)}`}
       className="sm:max-w-3xl"
     >
       <div className="space-y-3">
@@ -71,7 +71,7 @@ export function PlatformFeeHistoryModal({
                             ? `Invoice #${t.invoiceId}`
                             : t.adminId != null
                               ? `Staff #${t.adminId}`
-                              : "—"}
+                              : "-"}
                     </TableCell>
                     <TableCell
                       className={`text-right font-semibold whitespace-nowrap ${

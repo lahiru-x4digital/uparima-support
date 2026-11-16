@@ -1,6 +1,6 @@
 "use client";
 
-// Leaflet touches `window` at import time — only ever load this through next/dynamic with
+// Leaflet touches `window` at import time - only ever load this through next/dynamic with
 // { ssr: false } (see ride-journey-modal.tsx).
 import "leaflet/dist/leaflet.css";
 import "./ride-journey-map.css";
@@ -12,7 +12,7 @@ import { JOURNEY_COLORS, MAP_TILES, formatSeconds, type JourneyStop } from "@/li
 // address) opens in a popup on click.
 export type JourneyMarker = { lat: number; lng: number; label: string; detail?: string | null; color: string };
 
-// One drawn polyline. Order in the array is draw order — later lines sit on top (outage segments
+// One drawn polyline. Order in the array is draw order - later lines sit on top (outage segments
 // go last so they're never hidden under a route).
 export type JourneyLine = {
   positions: LatLngTuple[];
@@ -24,7 +24,7 @@ export type JourneyLine = {
 };
 
 // An outage with no segment to colour (still open on a live ride, or one that lasted until the
-// ride ended) — pinned at the last known point.
+// ride ended) - pinned at the last known point.
 export type OutageMarker = { lat: number; lng: number; color: string; tooltip: string };
 
 export default function RideJourneyMap({

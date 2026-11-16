@@ -63,7 +63,7 @@ export function useBulkSmsCustomers(params: BulkSmsCustomerParams, enabled: bool
   });
 }
 
-/** Every customer matching a filter — what "select all matching" selects. */
+/** Every customer matching a filter - what "select all matching" selects. */
 export function useBulkSmsCustomerIds() {
   return useMutation({
     mutationFn: (filter: BulkSmsCustomerFilter) => listBulkSmsCustomerIds(filter),

@@ -1,7 +1,7 @@
 import { apiGet, apiGetPage } from "@/lib/api";
 import type { RideListParams, RidePath, RidesPage } from "@/types/ride";
 
-// Ride history and ride paths — the backend's `/support-desk/rides/*` (needs ride.view).
+// Ride history and ride paths - the backend's `/support-desk/rides/*` (needs ride.view).
 
 /**
  * One page of rides, newest first. With `driverId` it is that driver's history, and `meta.summary`

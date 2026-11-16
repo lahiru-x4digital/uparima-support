@@ -42,8 +42,8 @@ import { DriverStatusStrip } from "./driver-status-strip";
 type Mode = { kind: "view" } | { kind: "edit"; section?: DriverSectionKey };
 
 /**
- * Full driver details — and, with the right permissions, every action the
- * standalone `/drivers/[id]` page offers — as a dialog, so a support agent
+ * Full driver details - and, with the right permissions, every action the
+ * standalone `/drivers/[id]` page offers - as a dialog, so a support agent
  * working a ticket never has to leave it. Same `useCan` gates and the same
  * backend endpoints as the full page; this component just doesn't navigate.
  */
@@ -60,7 +60,7 @@ export function DriverDetailsDialog({
   const canRegister = useCan("driver.manual-register");
   const canView = viewDrivers.any || viewDrivers.pendingOnly || canRegister;
   const [mode, setMode] = useState<Mode>({ kind: "view" });
-  // Refreshes on its own (the bot saves documents after this was loaded) — but never underneath an edit.
+  // Refreshes on its own (the bot saves documents after this was loaded) - but never underneath an edit.
   const { data, isLoading, error, refetch } = useDriverDetail(driverId, {
     live: mode.kind === "edit" ? false : open ? "always" : "incomplete",
   });
@@ -185,7 +185,7 @@ function DriverDialogBody({
   const [deleteText, setDeleteText] = useState("");
 
   const { driver } = data;
-  const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—";
+  const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "-";
   const busy = approve.isPending || suspend.isPending || restore.isPending;
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
   // Support staff approve only what the AI review passed, or by hand when it couldn't run; nobody
@@ -201,7 +201,7 @@ function DriverDialogBody({
   }
 
   async function handleEditSubmit(values: DriverFormValues, files: DriverFormFiles) {
-    // Only what this edit changed — see changedDriverFields.
+    // Only what this edit changed - see changedDriverFields.
     const initial = driverToFormValues(driver, data.bankAccount);
     await update.mutateAsync({ id: driverId, values: changedDriverFields(initial, values), files });
     onDirtyChange(false);
@@ -242,7 +242,7 @@ function DriverDialogBody({
         size="sm"
         disabled={busy}
         onClick={() => restore.mutate(driver.id)}
-        title="Restores the account to Pending — review and Approve to reactivate"
+        title="Restores the account to Pending - review and Approve to reactivate"
       >
         Restore
       </Button>
@@ -261,7 +261,7 @@ function DriverDialogBody({
       <DialogDescription className="flex flex-wrap items-center gap-x-2 text-xs">
         <span className="inline-flex items-center gap-1">
           <Star className="size-3.5 fill-current text-amber-500" />
-          {driver.averageRating != null ? Number(driver.averageRating).toFixed(1) : "—"}
+          {driver.averageRating != null ? Number(driver.averageRating).toFixed(1) : "-"}
         </span>
         <span>· {Number(driver.totalRides).toLocaleString()} rides</span>
         <span>· Joined {formatDriverDate(driver.createdAt)}</span>
@@ -395,8 +395,8 @@ function DriverDialogBody({
           <div>
             <p className="font-medium">Kept</p>
             <ul className="mt-1 list-disc pl-5 text-muted-foreground">
-              <li>The user account (classifieds, support tickets) — they can re-register as a driver</li>
-              <li>Rides they drove, for riders&apos; history — shown without a driver</li>
+              <li>The user account (classifieds, support tickets) - they can re-register as a driver</li>
+              <li>Rides they drove, for riders&apos; history - shown without a driver</li>
             </ul>
           </div>
           <label className="block space-y-1">

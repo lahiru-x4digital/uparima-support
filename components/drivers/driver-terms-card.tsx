@@ -25,7 +25,7 @@ export function DriverTermsCard({ driverId }: { driverId: string }) {
         ) : (
           <DetailList
             rows={[
-              ["Current version", currentVersion != null ? `v${currentVersion}` : "—"],
+              ["Current version", currentVersion != null ? `v${currentVersion}` : "-"],
               [
                 "Status",
                 acceptedCurrent ? (

@@ -157,7 +157,7 @@ describe("approvalIssues", () => {
     ).toEqual([flag]);
   });
 
-  it("is empty for a clean driver — no reason asked", () => {
+  it("is empty for a clean driver - no reason asked", () => {
     expect(approvalIssues({ reviewValid: true, reviewIssues: [], missingDocuments: [] })).toEqual([]);
   });
 });

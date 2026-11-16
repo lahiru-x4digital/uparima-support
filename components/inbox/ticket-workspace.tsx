@@ -57,7 +57,7 @@ interface Props {
 /**
  * Conversation cards on the left, the open thread in the middle, ticket properties on the right.
  * Tickets and the live WhatsApp bot conversations are merged into one list (nothing is deduped by
- * phone — a person can have several rows at once: an earlier closed ticket, a new one, the live
+ * phone - a person can have several rows at once: an earlier closed ticket, a new one, the live
  * bot chat). Owns the selection and the actions; the filters are controlled by the caller so the
  * page header can drive them too.
  */

@@ -113,7 +113,7 @@ export function DriverForm(props: FormProps) {
   );
 }
 
-/** "Discard unsaved changes?" — shared by the form's Cancel and the owners' close guards. */
+/** "Discard unsaved changes?" - shared by the form's Cancel and the owners' close guards. */
 export function DiscardChangesModal({
   open,
   onKeep,
@@ -357,7 +357,7 @@ type Step = { key: string; title: string; fields: (keyof DriverFormValues)[] };
 
 // Documents come first, mirroring the driver app's registration flow: the paperwork is
 // photographed before typing any of the fields those photos can autofill. No required fields
-// there — a driver can still be created with zero photos and everything typed by hand.
+// there - a driver can still be created with zero photos and everything typed by hand.
 const STEPS: Step[] = [
   { key: "documents", title: "Documents", fields: [] },
   ...DRIVER_SECTIONS.filter((s) => s.key !== "bank").map((s) => ({

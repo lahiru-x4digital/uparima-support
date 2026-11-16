@@ -87,7 +87,7 @@ export function useVoiceRecorder() {
     }, 250);
   }, [releaseMic, revokeUrl, stop]);
 
-  /** Drops the current take — mid-recording or after. */
+  /** Drops the current take - mid-recording or after. */
   const discard = useCallback(() => {
     if (recorder.current?.state === "recording") {
       cancelled.current = true;

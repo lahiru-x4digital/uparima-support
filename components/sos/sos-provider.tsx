@@ -22,7 +22,7 @@ const BASE_TITLE = "Uparima Support";
 interface SosContextValue {
   /** Open + acknowledged, newest first. Empty for an agent who may not read SOS. */
   activeAlerts: SosAlert[];
-  /** Open only — these keep the alarm ringing. */
+  /** Open only - these keep the alarm ringing. */
   ringing: SosAlert[];
   /** May this agent acknowledge / resolve? Only responders get the siren and the blocking overlay. */
   canRespond: boolean;
@@ -123,7 +123,7 @@ export function SosProvider({ children }: { children: React.ReactNode }) {
     let on = false;
     const timer = setInterval(() => {
       on = !on;
-      document.title = on ? `🚨 SOS (${ringing.length}) — ${BASE_TITLE}` : BASE_TITLE;
+      document.title = on ? `🚨 SOS (${ringing.length}) - ${BASE_TITLE}` : BASE_TITLE;
     }, 800);
     return () => {
       clearInterval(timer);

@@ -2,7 +2,7 @@ import { apiGet, apiGetPage, apiPost } from "@/lib/api";
 import type { Paginated } from "@/types/ticket";
 import type { SosAlert, SosAlertDetail } from "@/types/sos";
 
-// SOS alerts — the backend's `/support-desk/sos/*`. Reading needs sos.view; acknowledging and
+// SOS alerts - the backend's `/support-desk/sos/*`. Reading needs sos.view; acknowledging and
 // resolving need sos.respond.
 
 const BASE = "/support-desk/sos";

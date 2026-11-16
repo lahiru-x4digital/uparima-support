@@ -14,7 +14,7 @@ let users = 0;
  * The one desk socket, shared by everything that listens for live events (routing alerts on every
  * page, the inbox's hand-off and update alerts). The last `releaseDeskSocket` closes it. Callers
  * add handlers with `socket.on(event, handler)` and must remove only their own with
- * `socket.off(event, handler)` — never `off(event)` alone, which would silence the others.
+ * `socket.off(event, handler)` - never `off(event)` alone, which would silence the others.
  */
 export function acquireDeskSocket(): Socket {
   if (!socket) {

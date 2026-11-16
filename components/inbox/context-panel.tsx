@@ -39,7 +39,7 @@ import { AssignmentWhy } from "./assignment-history";
 const PRIORITY_OPTIONS = (Object.keys(PRIORITIES) as Priority[]).map((p) => ({ value: p, label: PRIORITIES[p].label }));
 const UNASSIGNED = "__none__";
 
-/** Driver account states that need a visible flag in the panel — the agent
+/** Driver account states that need a visible flag in the panel - the agent
  * is likely on this ticket precisely because the driver is blocked. */
 const FLAGGED_DRIVER_STATUSES = new Set(["suspended", "rejected"]);
 
@@ -58,7 +58,7 @@ interface Props {
   focusNotesKey?: number;
 }
 
-/** A conversation only ever carries one display name — split it for the
+/** A conversation only ever carries one display name - split it for the
  * registration form's separate first/last name fields. "Unknown caller" and
  * phone-only placeholders aren't real names, so they're left blank rather
  * than prefilled as someone's first name. */
@@ -102,15 +102,15 @@ function IncompleteSignupNote({ driverId }: { driverId: number }) {
       <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
       <span>
         <strong>Signup not finished</strong>
-        {missing.length > 0 && <> — needs {missing.join(", ")}</>}
+        {missing.length > 0 && <> - needs {missing.join(", ")}</>}
       </span>
     </p>
   );
 }
 
 /** Driver alerts and actions. Status and rating live in the header; this only shows what needs
- * attention — why the account is blocked, an unfinished signup, a balance owed (most drivers
- * have none) — followed by the two actions in one row. */
+ * attention - why the account is blocked, an unfinished signup, a balance owed (most drivers
+ * have none) - followed by the two actions in one row. */
 function DriverStats({
   submitter,
   onViewDriver,
@@ -126,7 +126,7 @@ function DriverStats({
 }) {
   const flagged = FLAGGED_DRIVER_STATUSES.has(submitter.status);
   // platformFeeOwedLkr/creditBalance are Postgres `decimal` columns that TypeORM can return as
-  // strings — coerce before formatting so a string value never crashes `.toLocaleString`.
+  // strings - coerce before formatting so a string value never crashes `.toLocaleString`.
   const platformFeeOwedLkr = Number(submitter.platformFeeOwedLkr);
   const creditBalance = Number(submitter.creditBalance);
   const owed = platformFeeOwedLkr > 0;
@@ -263,8 +263,8 @@ function RideCard({ rideId }: { rideId: string }) {
           <p className="text-xs text-muted-foreground">
             {ride.status} · LKR {Math.round(Number(ride.fareLkr))}{ride.createdAt ? ` · ${formatTime(ride.createdAt)}` : ""}
           </p>
-          {ride.driver && <p className="text-xs text-muted-foreground">Driver: {ride.driver.name} · {ride.driver.vehicleRegistrationNumber ?? "—"}</p>}
-          {ride.rider && <p className="text-xs text-muted-foreground">Rider: {ride.rider.name ?? "—"}{ride.rider.phone ? ` · ${ride.rider.phone}` : ""}</p>}
+          {ride.driver && <p className="text-xs text-muted-foreground">Driver: {ride.driver.name} · {ride.driver.vehicleRegistrationNumber ?? "-"}</p>}
+          {ride.rider && <p className="text-xs text-muted-foreground">Rider: {ride.rider.name ?? "-"}{ride.rider.phone ? ` · ${ride.rider.phone}` : ""}</p>}
         </div>
       )}
     </div>
@@ -319,7 +319,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
   const canSeeDriver = viewDrivers.any || viewDrivers.pendingOnly || useCan("driver.manual-register");
   const [createDriverOpen, setCreateDriverOpen] = useState(false);
   const [deleteDriverOpen, setDeleteDriverOpen] = useState(false);
-  // A driver created from a ticket with no existing driver record — shown
+  // A driver created from a ticket with no existing driver record - shown
   // in the detail dialog right after registration, by id (not c.submitter,
   // which still reflects the conversation's stale pre-registration state).
   const [newDriverId, setNewDriverId] = useState<number | null>(null);
@@ -429,7 +429,7 @@ export function ContextPanel({ conversation: c, staff, canUpdate, canReassign, o
               )}
             </Field>
           ) : (
-            <p className="text-xs text-muted-foreground">No ticket yet — reply to start one.</p>
+            <p className="text-xs text-muted-foreground">No ticket yet - reply to start one.</p>
           )}
 
           {c.previousTickets.length > 0 && (

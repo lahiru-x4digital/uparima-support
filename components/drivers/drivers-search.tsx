@@ -19,13 +19,13 @@ import type { Driver } from "@/types/driver";
 import { DriverFlags } from "./driver-flags";
 
 const PAGE_SIZE = 20;
-/** Too short a term would match half the drivers — the page is for finding one. */
+/** Too short a term would match half the drivers - the page is for finding one. */
 const MIN_SEARCH_LENGTH = 3;
 
-const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "—");
-const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "—";
+const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "-");
+const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "-";
 
-/** Find a driver by searching — the full list is never shown; with permission, add / approve / suspend / restore from the row. */
+/** Find a driver by searching - the full list is never shown; with permission, add / approve / suspend / restore from the row. */
 export function DriversSearch() {
   const canView = useCan("driver.view");
   const canRegister = useCan("driver.manual-register");
@@ -120,9 +120,9 @@ export function DriversSearch() {
                     <TableCell>
                       <StatusBadge value={d.status} />
                     </TableCell>
-                    <TableCell>{d.vehicleRegistrationNumber ?? "—"}</TableCell>
+                    <TableCell>{d.vehicleRegistrationNumber ?? "-"}</TableCell>
                     <TableCell className="font-medium">{d.creditBalance}</TableCell>
-                    <TableCell>{d.averageRating != null ? Number(d.averageRating).toFixed(1) : "—"}</TableCell>
+                    <TableCell>{d.averageRating != null ? Number(d.averageRating).toFixed(1) : "-"}</TableCell>
                     <TableCell>{d.totalRides}</TableCell>
                     <TableCell>
                       <TonePill tone={d.isOnline ? "green" : "neutral"}>{d.isOnline ? "Online" : "Offline"}</TonePill>
@@ -148,7 +148,7 @@ export function DriversSearch() {
                             size="sm"
                             disabled={busy}
                             onClick={() => restore.mutate(d.id)}
-                            title="Restores the account to Pending — review and Approve to reactivate"
+                            title="Restores the account to Pending - review and Approve to reactivate"
                           >
                             Restore
                           </Button>

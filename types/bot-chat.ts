@@ -11,24 +11,24 @@ export interface BotChatRow {
   language: string | null;
   userId: number | null;
   /** The driver/hire-tenant behind this phone, resolved the same way a
-   * ticket's submitter is — null when the phone isn't a known account. */
+   * ticket's submitter is - null when the phone isn't a known account. */
   submitter: Submitter;
   state: string;
   sessionId: string | null;
-  /** Whether this is the phone's *current* session — a reply can only be
+  /** Whether this is the phone's *current* session - a reply can only be
    * offered from here, never from an older row for the same phone. */
   isCurrentSession: boolean;
   lastAt: string;
   lastDirection: "in" | "out";
   lastKind: string;
   lastBody: string;
-  /** Whether this phone has an open hand-off ticket waiting on a person —
+  /** Whether this phone has an open hand-off ticket waiting on a person -
    * the same signal as a ticket's own needsContact, since from the
    * customer's side asking the bot for help and having an open ticket are
    * the same need. */
   needsContact: boolean;
   /** True when no staff member has opened this session since its last
-   * message — shared across staff, same as a ticket's own unread flag. */
+   * message - shared across staff, same as a ticket's own unread flag. */
   unseen: boolean;
 }
 
@@ -52,10 +52,10 @@ export interface BotChatThread {
     name: string | null;
     language: string | null;
     userId: number | null;
-    /** The driver/hire-tenant behind this phone — see BotChatRow.submitter. */
+    /** The driver/hire-tenant behind this phone - see BotChatRow.submitter. */
     submitter: Submitter;
     state: string;
-    /** The phone's *current* session — may differ from the session being
+    /** The phone's *current* session - may differ from the session being
      * viewed (see BotChatRow.sessionId on the row this thread came from). */
     sessionId: string | null;
     lastInboundAt: string | null;
@@ -63,7 +63,7 @@ export interface BotChatThread {
   };
   /** Whether this is the phone's current session (a reply always reaches
    * the person now, so it can't sensibly be offered from inside a session
-   * that already ended — a different reason than the 23.5h window below). */
+   * that already ended - a different reason than the 23.5h window below). */
   isCurrentSession: boolean;
   /** Whether a staff reply can still go out as a free-form WhatsApp message
    * right now. Only meaningful when `isCurrentSession` is true. */

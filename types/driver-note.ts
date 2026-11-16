@@ -1,4 +1,4 @@
-/** A staff-only handoff note on a driver — `GET /support-desk/drivers/:id/notes`. Never shown to drivers. */
+/** A staff-only handoff note on a driver - `GET /support-desk/drivers/:id/notes`. Never shown to drivers. */
 export interface DriverNote {
   id: string;
   driverId: number;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * A driver's name on an SOS alert, linked to their profile page (/drivers/[id], the driver id — `driver_id`
+ * A driver's name on an SOS alert, linked to their profile page (/drivers/[id], the driver id - `driver_id`
  * on the alert) when `link` is set (the viewer has driver.view). Plain text when there is no id to open.
  */
 export function SosDriverName({
@@ -23,5 +23,5 @@ export function SosDriverName({
       </Link>
     );
   }
-  return <>{label || "—"}</>;
+  return <>{label || "-"}</>;
 }

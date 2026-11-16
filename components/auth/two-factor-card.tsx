@@ -39,7 +39,7 @@ export function TwoFactorCard() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            After your password, we send a 6-digit code — by text message or email, as you choose — and ask for it
+            After your password, we send a 6-digit code - by text message or email, as you choose - and ask for it
             before you&apos;re let in. Someone who learns your password still can&apos;t sign in without your phone or
             inbox.
           </p>
@@ -105,7 +105,7 @@ function Details({ status, onRetry }: { status: "loading" | "error" | TwoFactorS
           by email to <span className="font-medium text-foreground">{status.emailHint}</span>
         </>
       )}
-      . To turn it off, ask an administrator — it&apos;s switched off in Staff Management.
+      . To turn it off, ask an administrator - it&apos;s switched off in Staff Management.
     </p>
   );
 }
@@ -244,7 +244,7 @@ function ChooseDialog({
             {option(
               "sms",
               "SMS",
-              status.phoneHint ? <>Text message to {status.phoneHint}</> : <>Your account has no mobile number — enter one below.</>,
+              status.phoneHint ? <>Text message to {status.phoneHint}</> : <>Your account has no mobile number - enter one below.</>,
               <Smartphone className="size-4" aria-hidden />,
             )}
             {option("email", "Email", <>Email to {status.emailHint}</>, <MailCheck className="size-4" aria-hidden />)}
@@ -265,7 +265,7 @@ function ChooseDialog({
           )}
           {mode === "enable" && (
             <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
-              <li>We&apos;ll send a code now — make sure you can get it.</li>
+              <li>We&apos;ll send a code now - make sure you can get it.</li>
               <li>Once it&apos;s on, you&apos;re signed out on every device and sign in again with a code.</li>
               <li>Only an administrator can turn it off again.</li>
             </ul>

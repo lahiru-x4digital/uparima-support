@@ -20,7 +20,7 @@ import { DRIVER_NOTE_MAX_LENGTH, type DriverNote, type DriverNoteInput } from "@
 const COMPACT_SHOWN = 3;
 
 /**
- * Staff-only notes on a driver: what was done, what's pending — so whoever picks the driver up
+ * Staff-only notes on a driver: what was done, what's pending - so whoever picks the driver up
  * next carries on instead of starting over. Used in the inbox details panel (compact, linked to
  * the open ticket) and as the Notes tab on the driver dialog and page.
  */
@@ -69,7 +69,7 @@ export function DriverNotes({
         initial={{ content: "", ticketNumber: currentTicketNumber ?? "" }}
         submitLabel="Add note"
         busy={add.isPending}
-        placeholder="Leave a note for whoever picks this driver up next — what you did, what's pending…"
+        placeholder="Leave a note for whoever picks this driver up next - what you did, what's pending…"
         resetOnSave
         onSave={(input) => add.mutateAsync(input)}
       />
@@ -88,7 +88,7 @@ export function DriverNotes({
         </p>
       ) : list.length === 0 ? (
         <p className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-3 text-xs text-muted-foreground">
-          <StickyNote className="size-4 shrink-0" /> No notes yet — leave one for whoever picks this up next.
+          <StickyNote className="size-4 shrink-0" /> No notes yet - leave one for whoever picks this up next.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">

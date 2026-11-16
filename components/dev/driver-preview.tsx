@@ -152,7 +152,7 @@ const NOTES: DriverNote[] = [
   {
     id: "n2",
     driverId: 1042,
-    content: "Called at 3pm — he'll upload the new revenue licence tonight. If it isn't there by tomorrow, suspend until it is.",
+    content: "Called at 3pm - he'll upload the new revenue licence tonight. If it isn't there by tomorrow, suspend until it is.",
     ticket: { id: "t1", ticketNumber: "TKT-MG7Q2ABC" },
     author: { id: 2, name: "Sachini Fernando" },
     createdAt: ago(25),
@@ -247,7 +247,7 @@ const PANEL_SCENARIOS: Record<string, { label: string; conversation: Conversatio
 export function DriverPreview() {
   const qc = useQueryClient();
   // Seed the cache once, before anything reads it. With nobody signed in the queries never fetch,
-  // so the components render exactly this data. Saving / approving will fail (no API) — expected.
+  // so the components render exactly this data. Saving / approving will fail (no API) - expected.
   useState(() => {
     qc.setQueryData(deskKeys.me, ME);
     qc.setQueryData(driverNoteKeys.list("approved"), NOTES);
@@ -279,7 +279,7 @@ export function DriverPreview() {
       <div className="flex flex-col gap-2">
         {Object.entries(SCENARIOS).map(([id, s]) => (
           <Button key={id} variant="outline" className="justify-start" onClick={() => setOpenId(id)}>
-            Open dialog — {s.label}
+            Open dialog - {s.label}
           </Button>
         ))}
         <Button variant="outline" className="justify-start" onClick={() => setCreating(true)}>
@@ -316,10 +316,10 @@ export function DriverPreview() {
         <DriverForm
           mode="create"
           onSubmit={async () => {
-            throw new Error("Preview only — nothing is saved.");
+            throw new Error("Preview only - nothing is saved.");
           }}
           onSaveDraft={async () => {
-            throw new Error("Preview only — the draft would be saved as an unfinished signup.");
+            throw new Error("Preview only - the draft would be saved as an unfinished signup.");
           }}
           onCancel={() => setCreating(false)}
         />

@@ -14,5 +14,5 @@ export function smsParts(message: string): number {
   return message.length <= single ? 1 : Math.ceil(message.length / perPart);
 }
 
-/** The most customers one bulk batch can go to — the backend's SMS_BULK_MAX_RECIPIENTS. */
+/** The most customers one bulk batch can go to - the backend's SMS_BULK_MAX_RECIPIENTS. */
 export const BULK_SMS_MAX_RECIPIENTS = 5000;

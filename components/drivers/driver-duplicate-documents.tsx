@@ -73,11 +73,11 @@ export function DriverDuplicateDocuments({ driverId }: { driverId: string }) {
                     {url ? (
                       <button
                         type="button"
-                        onClick={() => setPreview({ label: `${m.label} — ${who}`, url })}
+                        onClick={() => setPreview({ label: `${m.label} - ${who}`, url })}
                         className="block w-full overflow-hidden rounded-lg border"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URL */}
-                        <img src={url} alt={`${m.label} — ${who}`} className="h-40 w-full object-cover" />
+                        <img src={url} alt={`${m.label} - ${who}`} className="h-40 w-full object-cover" />
                       </button>
                     ) : (
                       <div className="flex h-40 items-center justify-center rounded-lg border text-xs text-muted-foreground">

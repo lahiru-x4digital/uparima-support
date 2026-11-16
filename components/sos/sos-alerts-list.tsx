@@ -105,7 +105,7 @@ export function SosAlertsList() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-muted-foreground">
-                    {needle ? "No alerts match your search." : live ? "No active SOS alerts — all clear." : "No SOS alerts found."}
+                    {needle ? "No alerts match your search." : live ? "No active SOS alerts - all clear." : "No SOS alerts found."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -126,7 +126,7 @@ export function SosAlertsList() {
                     </TableCell>
                     <TableCell>
                       <div className="leading-tight">
-                        <div>{a.rider_name ?? "—"}</div>
+                        <div>{a.rider_name ?? "-"}</div>
                         {a.rider_phone && <div className="text-xs text-muted-foreground">{a.rider_phone}</div>}
                       </div>
                     </TableCell>
@@ -148,7 +148,7 @@ export function SosAlertsList() {
                           <div className="text-xs text-muted-foreground">in {durationBetween(a.created_at, a.acknowledged_at)}</div>
                         </div>
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </TableCell>
                     <TableCell className="text-right">

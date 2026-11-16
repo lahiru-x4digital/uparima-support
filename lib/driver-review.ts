@@ -1,4 +1,4 @@
-// When a driver application can be decided on. Pure — no React, no requests.
+// When a driver application can be decided on. Pure - no React, no requests.
 // The admin dashboard (uparima-classified-dashbord/lib/driver-review.ts) has the same file.
 
 import type { Driver } from "@/types/driver";
@@ -8,7 +8,7 @@ type Reviewed = Pick<Driver, "status" | "missingFields" | "missingDocuments" | "
 
 /**
  * What an unfinished signup (status "incomplete", e.g. started on WhatsApp) still needs before it
- * can be reviewed. Null when it isn't one, or when the backend didn't say — nothing is assumed
+ * can be reviewed. Null when it isn't one, or when the backend didn't say - nothing is assumed
  * about a signup whose gaps are unknown.
  */
 export function signupGaps(driver: Reviewed): string[] | null {
@@ -31,7 +31,7 @@ export function canApproveApplication(driver: Reviewed): boolean {
 /**
  * AI Validate is offered wherever Approve is, and for an approved driver with something to clear:
  * a flagged review (a pass lets them go online again) or a missing licence number (read off the
- * licence photo) — see the backend's RidesAdminService.validateDriverWithAi.
+ * licence photo) - see the backend's RidesAdminService.validateDriverWithAi.
  */
 export function canAiValidateDriver(driver: Reviewed): boolean {
   return (
@@ -65,22 +65,22 @@ export function expiryStatus(date: string | null | undefined, now: Date = new Da
 
 /** One unambiguous date format for every driver view: "13 Oct 2026". */
 export function formatDriverDate(date: string | null | undefined): string {
-  if (!date) return "—";
+  if (!date) return "-";
   const parsed = new Date(date.length === 10 ? `${date}T00:00:00` : date);
   return Number.isNaN(parsed.getTime())
-    ? "—"
+    ? "-"
     : parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 /**
- * The issue a review records when the AI service itself couldn't run — the backend's
+ * The issue a review records when the AI service itself couldn't run - the backend's
  * AUTOMATED_REVIEW_UNAVAILABLE_ISSUE (uparima-backend/src/modules/rides/drivers/desk-approval-policy.ts).
  */
 export const AUTOMATED_REVIEW_UNAVAILABLE_ISSUE =
-  "Automated review is temporarily unavailable — a staff member will review this application.";
+  "Automated review is temporarily unavailable - a staff member will review this application.";
 
 /**
- * Why support staff can't approve this driver by hand, or null when they can — the backend's
+ * Why support staff can't approve this driver by hand, or null when they can - the backend's
  * deskApprovalBlocker, which refuses the request too. They approve only what the AI review passed,
  * or by hand when the AI couldn't run at all. Admins aren't bound by it.
  */
@@ -91,7 +91,7 @@ export function deskApprovalBlocker(
     >,
 ): string | null {
   // An expired document blocks approval whatever the AI said earlier (it may have passed before the
-  // date ran out) — the driver couldn't go online anyway.
+  // date ran out) - the driver couldn't go online anyway.
   const expired = (
     [
       ["driving licence", driver.licenseExpiryDate],
@@ -111,14 +111,14 @@ export function deskApprovalBlocker(
   if (driver.reviewValid === true) return null;
   const issues = driver.reviewIssues ?? [];
   if (driver.reviewValid === null || driver.reviewValid === undefined) {
-    return "Run AI Validate first — a driver is approved only after their documents have been checked.";
+    return "Run AI Validate first - a driver is approved only after their documents have been checked.";
   }
   if (issues.length > 0 && issues.every((i) => i === AUTOMATED_REVIEW_UNAVAILABLE_ISSUE)) return null;
   return "The AI review found problems with this driver's documents, so it can't be approved here. Fix them and run AI Validate again, or ask an admin.";
 }
 
 /**
- * Why nobody — admins included — can approve this driver: a mandatory photo (profile photo, driving
+ * Why nobody - admins included - can approve this driver: a mandatory photo (profile photo, driving
  * licence, insurance card, vehicle front) is missing. The backend refuses it too (DriversService.approve).
  */
 export function mandatoryPhotosBlocker(driver: Pick<Driver, "missingMandatoryPhotos">): string | null {
@@ -141,13 +141,13 @@ export function approvalBlockerFor(
 /** Shortest approval reason the backend accepts (MIN_APPROVAL_REASON_LENGTH). */
 export const MIN_APPROVAL_REASON_LENGTH = 5;
 
-/** The AI document check has this driver flagged — what keeps an approved driver offline. */
+/** The AI document check has this driver flagged - what keeps an approved driver offline. */
 export function hasDocumentFlags(driver: Pick<Driver, "reviewValid"> & Partial<Pick<Driver, "lastAiCheckValid">>) {
   return driver.reviewValid === false || driver.lastAiCheckValid === false;
 }
 
 /**
- * What approving this driver by hand approves past — the AI check's issues, documents still missing,
+ * What approving this driver by hand approves past - the AI check's issues, documents still missing,
  * documents past their expiry date (the backend's openDocumentIssues). Empty: no reason needed.
  * Otherwise the approval asks for a reason, which the backend stores with these and the approver.
  */

@@ -35,7 +35,7 @@ const LEVEL_TONE: Record<string, "red" | "amber" | "neutral"> = {
   low: "neutral",
 };
 
-/** Today / n days back as YYYY-MM-DD in Sri Lanka time — the backend's report days. */
+/** Today / n days back as YYYY-MM-DD in Sri Lanka time - the backend's report days. */
 const lkDay = (daysBack = 0) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Colombo" }).format(new Date(Date.now() - daysBack * 86_400_000));
 
@@ -46,7 +46,7 @@ const PRESETS = [
   { key: "30d", label: "Last 30 days", from: () => lkDay(29), to: () => lkDay() },
 ];
 
-const pretty = (v: string | null) => (v ? v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—");
+const pretty = (v: string | null) => (v ? v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "-");
 
 function Stat({ label, value, sub }: { label: string; value: number; sub?: string }) {
   return (
@@ -68,7 +68,7 @@ const pillClass = (active: boolean) =>
 
 /**
  * Complaint Report: every complaint a rider made about a driver, or a driver about a rider, newest
- * first — incidents naming the other person plus support tickets filed on a ride. Read-only; open
+ * first - incidents naming the other person plus support tickets filed on a ride. Read-only; open
  * the ticket or driver to act on it.
  */
 export function ComplaintList() {

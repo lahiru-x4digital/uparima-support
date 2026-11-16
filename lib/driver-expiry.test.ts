@@ -21,6 +21,6 @@ describe("expiryStatus", () => {
 describe("formatDriverDate", () => {
   it("formats day-month-year unambiguously", () => {
     expect(formatDriverDate("2026-03-04")).toBe("04 Mar 2026");
-    expect(formatDriverDate(null)).toBe("—");
+    expect(formatDriverDate(null)).toBe("-");
   });
 });

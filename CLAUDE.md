@@ -1,11 +1,11 @@
 @AGENTS.md
 
-# uparima-support — architecture & conventions
+# uparima-support - architecture & conventions
 
 Support Portal for the Uparima backend (`uparima-backend`). Next.js (App Router) + TypeScript (strict) + Tailwind 4 +
 shadcn/ui. Same backend and staff auth as the classified dashboard. Import alias: `@/*` → project root.
 
-Sign-in is email + password, then — for an account with two-factor sign-in on — a 6-digit code emailed by the
+Sign-in is email + password, then - for an account with two-factor sign-in on - a 6-digit code emailed by the
 backend (`AdminTwoFactorService` in `uparima-backend`; applies to support, admin and super admin accounts). It is
 switched on per account by an admin (dashboard → Staff Management) or by the account holder (`/account/security`);
 only an admin can switch it off. The flow's pure rules live in `lib/auth-flow.ts`, the screens in `components/auth/`.
@@ -18,7 +18,7 @@ app/                     Routes only (App Router). Thin: compose components, no 
   (support)/             Authenticated routes; layout.tsx holds the AuthGuard + shell
     <feature>/page.tsx
 components/
-  ui/                    shadcn/ui primitives (generated — see below). Don't put app logic here.
+  ui/                    shadcn/ui primitives (generated - see below). Don't put app logic here.
   shell/                 Sidebar, topbar, page header
   <feature>/             Feature components (tickets/, riders/, drivers/ ...)
 lib/
@@ -40,12 +40,12 @@ Rules:
 - Config comes from env: `NEXT_PUBLIC_API_BASE_URL` in `.env.local` (keep a committed `.env.example`). Never hardcode
   URLs, keys or tokens.
 
-## API calls — `name.service.ts` naming (required)
+## API calls - `name.service.ts` naming (required)
 
-**Every backend call goes through a service file in `lib/services/` named `<resource>.service.ts`** — e.g.
+**Every backend call goes through a service file in `lib/services/` named `<resource>.service.ts`** - e.g.
 `tickets.service.ts`, `riders.service.ts`, `drivers.service.ts`, `rides.service.ts`, `auth.service.ts`.
 
-- Components, pages and hooks **never** call `fetch`/axios directly and never build URLs — they call a service function.
+- Components, pages and hooks **never** call `fetch`/axios directly and never build URLs - they call a service function.
 - Services use the shared client in `lib/api.ts` (auth header, token refresh, `TWO_FACTOR_REQUIRED`/401 →
   "sign in again", error normalising). Do not create a second HTTP client.
 - One service per backend resource; export plain, typed async functions (or one object) with verb-first names:
@@ -65,13 +65,13 @@ export const listTickets = (params: TicketListParams) =>
 export const getTicket = (id: string) => apiGet<Ticket>(`/support/tickets/${id}`);
 ```
 
-## UI — shadcn/ui
+## UI - shadcn/ui
 
 - Use shadcn/ui for all primitives (Button, Input, Dialog, Table, Select, Sheet, Toast/Sonner, ...). Don't hand-roll
   or install another component library.
 - Init once: `npx shadcn@latest init` (Tailwind 4 / CSS variables / `components/ui`, `lib/utils.ts`); add components
   with `npx shadcn@latest add <name>`. Components are copied into `components/ui/` and may be edited, but keep them
-  generic — product-specific variants go in feature components that wrap them.
+  generic - product-specific variants go in feature components that wrap them.
 - Style with Tailwind utilities and the theme CSS variables in `app/globals.css` (no hardcoded hex colours); merge
   classes with `cn()` from `lib/utils.ts`. Support light/dark via the variables.
 - Forms: `react-hook-form` + `zod` schemas (shadcn `Form`). Icons: `lucide-react`.
@@ -82,4 +82,4 @@ export const getTicket = (id: string) => apiGet<Ticket>(`/support/tickets/${id}`
 - TypeScript strict; no `any` (use `unknown` + narrowing). Validate untrusted/external data at the service boundary.
 - Handle loading, empty and error states on every data view.
 - Run `npm run lint` and `npm run build` before finishing a change.
-- Read `node_modules/next/dist/docs/` before using Next APIs (see AGENTS.md) — this Next version differs from older docs.
+- Read `node_modules/next/dist/docs/` before using Next APIs (see AGENTS.md) - this Next version differs from older docs.

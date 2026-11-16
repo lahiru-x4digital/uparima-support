@@ -185,7 +185,7 @@ export function MyTickets() {
                     <div className="max-w-xs truncate text-xs text-muted-foreground">{t.subject}</div>
                   </td>
                   <td className="p-3">
-                    <div>{t.submitterName ?? "—"}</div>
+                    <div>{t.submitterName ?? "-"}</div>
                     <div className="text-xs text-muted-foreground">{t.submitterPhone ?? t.reporterPhone ?? ""}</div>
                   </td>
                   <td className="p-3">{t.category}</td>

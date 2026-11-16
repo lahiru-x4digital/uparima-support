@@ -9,7 +9,7 @@ import { useDriverDetail, useUpdateDriver } from "@/lib/hooks/use-drivers";
 import type { Driver } from "@/types/driver";
 import { DriverLocationFields, type DriverLocation } from "./driver-location-fields";
 
-/** Changes only a driver's province, district and city — whatever their status. */
+/** Changes only a driver's province, district and city - whatever their status. */
 export function DriverLocationDialog({
   driverId,
   open,

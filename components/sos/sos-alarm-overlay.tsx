@@ -47,7 +47,7 @@ export function SosAlarmOverlay() {
           </span>
           <div>
             <h2 id="sos-alarm-title" className="text-2xl font-extrabold tracking-tight">
-              SOS — Emergency {ringing.length > 1 && `(${ringing.length})`}
+              SOS - Emergency {ringing.length > 1 && `(${ringing.length})`}
             </h2>
             <p className="text-sm text-red-100">
               A {ringing.length > 1 ? "few people" : sosRoleLabel(ringing[0]).toLowerCase()} on an active ride pressed
@@ -62,7 +62,7 @@ export function SosAlarmOverlay() {
             onClick={() => void enableSound()}
             className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-300"
           >
-            <VolumeX className="size-4" /> Sound is blocked by the browser — click to enable the alarm
+            <VolumeX className="size-4" /> Sound is blocked by the browser - click to enable the alarm
           </button>
         )}
 
@@ -124,11 +124,11 @@ function AlertCard({
         <div className="space-y-1.5 rounded-lg bg-neutral-50 p-3 text-sm sm:col-span-2">
           <div className="flex gap-2">
             <span className="w-16 shrink-0 text-xs font-semibold text-neutral-500 uppercase">From</span>
-            <span>{a.pickup_address ?? "—"}</span>
+            <span>{a.pickup_address ?? "-"}</span>
           </div>
           <div className="flex gap-2">
             <span className="w-16 shrink-0 text-xs font-semibold text-neutral-500 uppercase">To</span>
-            <span>{a.dropoff_address ?? "—"}</span>
+            <span>{a.dropoff_address ?? "-"}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-neutral-600">
             <span>
@@ -193,7 +193,7 @@ function Party({
       <div className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">
         {label} {highlight && <span className="text-red-600">· raised SOS</span>}
       </div>
-      <div className="mt-0.5 font-semibold">{name || "—"}</div>
+      <div className="mt-0.5 font-semibold">{name || "-"}</div>
       {phone ? (
         <a
           href={`tel:${phone}`}

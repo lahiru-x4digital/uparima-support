@@ -90,17 +90,17 @@ export function DriverDetail({ id }: { id: string }) {
   }
 
   const { driver } = data;
-  const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "—";
+  const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "-";
   const busy = approve.isPending || suspend.isPending || restore.isPending;
 
   // Also offered for a rejected driver (after a correction a pass approves them), an approved
   // driver still carrying a flagged review (a pass clears the flag so they can go online again), or
-  // an incomplete application (where it fills a blank license number from the license photo) — see
+  // an incomplete application (where it fills a blank license number from the license photo) - see
   // RidesAdminService.validateDriverWithAi. A signup staff have finished filling in counts as pending
   // (lib/driver-review).
   const showAiValidate = canAiValidate && canAiValidateDriver(driver);
-  // Support staff approve only what the AI review passed, or by hand when it couldn't run — the
-  // backend refuses the rest (SupportDeskDriverReviewService.approve). Admins aren't bound by it —
+  // Support staff approve only what the AI review passed, or by hand when it couldn't run - the
+  // backend refuses the rest (SupportDeskDriverReviewService.approve). Admins aren't bound by it -
   // except for the mandatory photos, which nobody can approve past.
   const approvalBlocker = approvalBlockerFor(driver, isAdmin);
 
@@ -167,7 +167,7 @@ export function DriverDetail({ id }: { id: string }) {
               Suspend
             </Button>
           )}
-          {/* Admins: the flagged documents were checked by hand — clear the flag (with a reason) so the
+          {/* Admins: the flagged documents were checked by hand - clear the flag (with a reason) so the
               driver can go online. Support staff approve only what the AI passed. */}
           {isAdmin && canApprove && driver.status === "approved" && hasDocumentFlags(driver) && (
             <Button size="sm" variant="outline" disabled={busy} onClick={() => void approve.clearFlags(driver)}>
@@ -184,7 +184,7 @@ export function DriverDetail({ id }: { id: string }) {
               size="sm"
               disabled={busy}
               onClick={() => restore.mutate(driver.id)}
-              title="Restores the account to Pending — review and Approve to reactivate"
+              title="Restores the account to Pending - review and Approve to reactivate"
             >
               Restore
             </Button>
@@ -241,7 +241,7 @@ export function DriverDetail({ id }: { id: string }) {
         </Card>
       )}
 
-      {/* Shown once the required details are in — until then the card above already lists what is missing. */}
+      {/* Shown once the required details are in - until then the card above already lists what is missing. */}
       {driver.missingDocuments.length > 0 && !(gaps && gaps.length > 0) && (
         <Card className="ring-amber-400/60">
           <CardHeader>
@@ -257,7 +257,7 @@ export function DriverDetail({ id }: { id: string }) {
         </Card>
       )}
 
-      {/* The live result of the "AI Validate" button takes priority over the stored verdict — both
+      {/* The live result of the "AI Validate" button takes priority over the stored verdict - both
           read the same reviewValid / reviewIssues columns once the page reloads, so showing both
           would only duplicate the information. */}
       {/* Why Approve is greyed out. */}
@@ -272,12 +272,12 @@ export function DriverDetail({ id }: { id: string }) {
       {(data.approvals ?? []).length > 0 && <ApprovalHistory approvals={data.approvals ?? []} />}
 
       {/* The latest AI check failed on a driver whose stored verdict it didn't change (an approved
-          driver re-checked) — kept so it survives a refresh. */}
+          driver re-checked) - kept so it survives a refresh. */}
       {!aiResult && driver.reviewValid !== false && driver.lastAiCheckValid === false && (
         <Card className="ring-amber-400/60">
           <CardHeader>
             <CardTitle className="text-amber-700 dark:text-amber-400">
-              Last AI Check Found Problems{driver.lastAiCheckAt ? ` — ${formatDateTime(driver.lastAiCheckAt)}` : ""}
+              Last AI Check Found Problems{driver.lastAiCheckAt ? ` - ${formatDateTime(driver.lastAiCheckAt)}` : ""}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -383,8 +383,8 @@ export function DriverDetail({ id }: { id: string }) {
           <div>
             <p className="font-medium">Kept</p>
             <ul className="mt-1 list-disc pl-5 text-muted-foreground">
-              <li>The user account (classifieds, support tickets) — they can re-register as a driver</li>
-              <li>Rides they drove, for riders&apos; history — shown without a driver</li>
+              <li>The user account (classifieds, support tickets) - they can re-register as a driver</li>
+              <li>Rides they drove, for riders&apos; history - shown without a driver</li>
             </ul>
           </div>
           <label className="block space-y-1">
@@ -430,7 +430,7 @@ const APPROVAL_SOURCE_LABEL: Record<string, string> = {
   override: "Document flags cleared",
 };
 
-/** Who approved this driver, how, and — past document issues — why (rides_driver_approvals). */
+/** Who approved this driver, how, and - past document issues - why (rides_driver_approvals). */
 function ApprovalHistory({ approvals }: { approvals: DriverApproval[] }) {
   return (
     <Card>
@@ -447,7 +447,7 @@ function ApprovalHistory({ approvals }: { approvals: DriverApproval[] }) {
                   by{" "}
                   {a.approvedBy
                     ? `${a.approvedBy.name || a.approvedBy.email || `user #${a.approvedBy.id}`}${a.approvedBy.role ? ` (${a.approvedBy.role.replace(/_/g, " ")})` : ""}`
-                    : a.source === "auto" ? "the automatic review" : "—"}
+                    : a.source === "auto" ? "the automatic review" : "-"}
                 </span>
                 <span className="text-muted-foreground">· {formatDateTime(a.approvedAt)}</span>
               </div>

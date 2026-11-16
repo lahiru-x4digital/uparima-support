@@ -24,6 +24,6 @@ export const updateAudioTemplate = (id: number, body: AudioTemplateInput) =>
   apiPut<AudioTemplate>(`${BASE}/${id}`, form(body), MULTIPART);
 export const deleteAudioTemplate = (id: number) => apiDelete(`${BASE}/${id}`);
 
-/** Sends to a ticket, or (no ticket yet) to the WhatsApp conversation by phone — which opens a ticket. */
+/** Sends to a ticket, or (no ticket yet) to the WhatsApp conversation by phone - which opens a ticket. */
 export const sendAudioTemplate = (id: number, to: { ticketId: string } | { phone: string }) =>
   apiPost<{ reply: TicketReply; ticketId: string; ticketNumber?: string }>(`${BASE}/${id}/send`, to);

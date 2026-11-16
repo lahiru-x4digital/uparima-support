@@ -19,7 +19,7 @@ function splitWords(fullName: string): string[] {
 
 /**
  * Builds a driver's preferred display name by toggling individual words out of the first and last
- * name (e.g. "NISHAN MADHUSHANKA RAJAPAKSHA" -> "NISHAN RAJAPAKSHA") — never free text, so the
+ * name (e.g. "NISHAN MADHUSHANKA RAJAPAKSHA" -> "NISHAN RAJAPAKSHA") - never free text, so the
  * result stays a verifiable subset of the name on file (the backend re-checks this regardless, see
  * DriversService.isNameWordSubset).
  */

@@ -1,6 +1,6 @@
 "use client";
 
-// Synthesised two-tone siren (Web Audio) for the SOS alarm — no audio asset
+// Synthesised two-tone siren (Web Audio) for the SOS alarm - no audio asset
 // to ship or license. Browsers keep an AudioContext suspended until a user
 // gesture, so `unlock()` must be called from one (SosProvider wires it to the
 // first pointerdown/keydown on the page and to the topbar "Enable sound").

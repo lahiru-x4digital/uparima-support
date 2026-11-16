@@ -14,8 +14,8 @@ interface AuthState {
   user: AuthUser | null;
   loading: boolean;
   /**
-   * Signs in with a password. Resolves to `null` once signed in, or — for an account with
-   * two-factor sign-in on — to the emailed-code challenge to finish with `verifyLoginCode`.
+   * Signs in with a password. Resolves to `null` once signed in, or - for an account with
+   * two-factor sign-in on - to the emailed-code challenge to finish with `verifyLoginCode`.
    */
   login: (email: string, password: string) => Promise<TwoFactorChallenge | null>;
   /** Second step: the emailed code. Signed in when it resolves. */

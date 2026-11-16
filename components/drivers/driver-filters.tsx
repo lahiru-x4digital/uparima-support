@@ -15,7 +15,7 @@ import type { Driver } from "@/types/driver";
 
 const ONLINE_OPTIONS = ["all", "online", "offline"] as const;
 type OnlineFilter = (typeof ONLINE_OPTIONS)[number];
-// A logged call, or an agent's reply on one of the driver's tickets — see Driver.contact.
+// A logged call, or an agent's reply on one of the driver's tickets - see Driver.contact.
 const CONTACT_OPTIONS = ["all", "contacted", "not contacted"] as const;
 type ContactFilter = (typeof CONTACT_OPTIONS)[number];
 const CONTACT_METHODS = [
@@ -71,7 +71,7 @@ export function useDriverFilters(drivers: Driver[]) {
     return [...cities.values()].sort((a, b) => a.localeCompare(b));
   }, [drivers, province, district]);
   // The divisions on offer come from the drivers loaded, so one picked under another list may not
-  // be among them. The dropdown then reads "All divisions" — don't keep filtering by a choice it
+  // be among them. The dropdown then reads "All divisions" - don't keep filtering by a choice it
   // no longer shows.
   const activeDivision = divisionOptions.find((c) => cityKey(c) === cityKey(division)) ?? "all";
 
@@ -120,7 +120,7 @@ export function useDriverFilters(drivers: Driver[]) {
     matches,
     active,
     clear,
-    /** Changes whenever a filter does — for resetting pagination. */
+    /** Changes whenever a filter does - for resetting pagination. */
     key: [online, contacted, contactMethod, vehicleTypeId, dateFrom, dateTo, province, district, activeDivision].join("|"),
     state: { online, contacted, contactMethod, vehicleTypeId, dateFrom, dateTo, province, district, activeDivision },
     set: { setOnline, setContacted, setContactMethod, setVehicleTypeId, setDateFrom, setDateTo, setProvince, setDistrict, setDivision },

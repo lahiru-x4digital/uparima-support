@@ -36,8 +36,8 @@ type SortValue = (typeof SORTS)[number]["value"];
 const KINDS = ["all", "pending", "incomplete"] as const;
 type Kind = (typeof KINDS)[number];
 
-const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "—");
-const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "—";
+const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "-");
+const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "-";
 
 const awaitingDecision = (d: Driver) => d.status === "pending" || signupReadyForReview(d);
 
@@ -50,7 +50,7 @@ const matchesSearch = (d: Driver, term: string) =>
 
 /**
  * The driver review queue: applications waiting for a decision (look at the documents, then
- * approve or reject) and signups that were started but never submitted (incomplete — nothing to
+ * approve or reject) and signups that were started but never submitted (incomplete - nothing to
  * decide yet, but worth chasing). A signup staff have since filled in is decided on like a pending one.
  * Support staff approve only what the AI review passed, or by hand when it couldn't run.
  */
@@ -216,7 +216,7 @@ export function PendingDriversList() {
                       <TableCell>
                         <StatusBadge value={d.status} />
                       </TableCell>
-                      <TableCell>{d.vehicleRegistrationNumber ?? "—"}</TableCell>
+                      <TableCell>{d.vehicleRegistrationNumber ?? "-"}</TableCell>
                       <TableCell className="text-muted-foreground">{formatDate(d.createdAt)}</TableCell>
                       <TableCell className="text-sm">
                         <DriverTicketCell driver={d} />

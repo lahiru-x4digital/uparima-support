@@ -11,7 +11,7 @@ export function sosRoleLabel(a: SosAlert): string {
 
 /** "45s ago", "12m ago", "2h 5m ago" */
 export function elapsedSince(iso?: string | null, now = Date.now()): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const secs = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000));
   if (secs < 60) return `${secs}s ago`;
   const mins = Math.floor(secs / 60);
@@ -21,7 +21,7 @@ export function elapsedSince(iso?: string | null, now = Date.now()): string {
 
 /** "45s", "3m 20s", "1h 5m" between two timestamps. */
 export function durationBetween(from?: string | null, to?: string | null): string {
-  if (!from || !to) return "—";
+  if (!from || !to) return "-";
   const secs = Math.max(0, Math.round((new Date(to).getTime() - new Date(from).getTime()) / 1000));
   if (secs < 60) return `${secs}s`;
   const mins = Math.floor(secs / 60);

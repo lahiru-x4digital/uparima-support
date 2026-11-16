@@ -19,7 +19,7 @@ function Party({ title, party }: { title: string; party: PartyDetails }) {
   return (
     <div className="rounded-xl border p-3">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</p>
-      <p className="mt-1 text-sm font-medium">{name || "—"}</p>
+      <p className="mt-1 text-sm font-medium">{name || "-"}</p>
       {party.vehicle && <VehicleTag type={party.vehicle.type} number={party.vehicle.number} className="mb-1" />}
       {party.phone ? (
         <a href={`tel:${party.phone}`} className="text-sm text-primary hover:underline">

@@ -12,7 +12,7 @@ import type {
 
 /** Where the customer reached us from (derived from the ticket, see lib/inbox/mappers.ts). */
 export type Channel = "rider_app" | "driver_app" | "whatsapp" | "phone" | "email";
-/** "bot_only" is a conversation with no ticket yet — every WhatsApp message
+/** "bot_only" is a conversation with no ticket yet - every WhatsApp message
  * the bot and customer exchanged, but nobody from support has replied. */
 export type ConversationStatus = TicketStatus | "bot_only";
 export type Priority = TicketPriority;
@@ -23,7 +23,7 @@ export type MessageDirection = "inbound" | "outbound";
 /**
  * "text"/"system" are ticket-thread messages. The rest mirror what the
  * WhatsApp bot actually sent or the customer actually did, so the portal
- * can render it the way WhatsApp itself does — a menu's option chips, a
+ * can render it the way WhatsApp itself does - a menu's option chips, a
  * tapped choice as its own small bubble, a location/media/link marker.
  */
 export type MessageKind = "text" | "system" | "tap" | "options" | "location" | "location_request" | "media" | "cta" | "template" | "divider";
@@ -70,7 +70,7 @@ export interface Conversation {
   /** The ticket id, or `bot:<phone>` for a WhatsApp conversation with no
    * ticket yet (see lib/inbox/mappers.ts botChatRowToConversation). */
   id: string;
-  /** "" for a bot-only conversation — it has no ticket. */
+  /** "" for a bot-only conversation - it has no ticket. */
   ticketNumber: string;
   customerName: string;
   role: CustomerRole;
@@ -82,9 +82,9 @@ export interface Conversation {
   product: Product | null;
   status: ConversationStatus;
   /** True when the submitter is a driver whose registration was never
-   * finished (DriverStatus "incomplete") — drives the "Incomplete" tab. */
+   * finished (DriverStatus "incomplete") - drives the "Incomplete" tab. */
   incompleteDriver: boolean;
-  /** A driver still onboarding, or a number we have no record of — the "To onboard" view. */
+  /** A driver still onboarding, or a number we have no record of - the "To onboard" view. */
   toOnboard: boolean;
   /** null for a bot-only conversation, which has no ticket to prioritise. */
   priority: Priority | null;
@@ -119,7 +119,7 @@ export interface Conversation {
   /** WhatsApp: when the customer last wrote; null when unknown. */
   lastCustomerMessageAt?: string | null;
   /** For a bot-only conversation: whether this is the phone's *current*
-   * session — a reply always reaches the person now, so it is only offered
+   * session - a reply always reaches the person now, so it is only offered
    * from the current session, never from one that already ended. Always
    * true for a ticket (there is no "session" concept there). */
   isCurrentSession: boolean;

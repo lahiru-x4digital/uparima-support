@@ -42,7 +42,7 @@ const when = (iso: string) =>
 /** Who has it: the agent, or why nobody does yet. */
 function assignee(c: IncomingChat) {
   const t = c.ticket;
-  if (!t) return <span className="text-muted-foreground">—</span>;
+  if (!t) return <span className="text-muted-foreground">-</span>;
   if (t.assignedToName) return t.assignedToName;
   if (t.assignedToUserId != null) return `Staff #${t.assignedToUserId}`;
   const why = t.queuedReason ? QUEUED_SHORT[t.queuedReason] : null;
@@ -265,7 +265,7 @@ export function WhatsappChats() {
                           />
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{c.name || "—"}</div>
+                          <div className="font-medium">{c.name || "-"}</div>
                           <div className="font-mono text-xs text-muted-foreground">{c.phone}</div>
                         </TableCell>
                         <TableCell className="max-w-xs">

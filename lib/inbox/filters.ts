@@ -19,7 +19,7 @@ export function toListParams(filters: ConversationFilters, meId: number | null =
   if (filters.status === "needs_contact") {
     params.needsContact = true;
     // "bot_only" is a synthetic, client-only status for ticketless WhatsApp
-    // conversations — the ticket list endpoint knows nothing about it.
+    // conversations - the ticket list endpoint knows nothing about it.
   } else if (filters.status === "to_onboard") {
     params.toOnboard = true;
   } else if (filters.status === "incomplete_driver") {
@@ -168,11 +168,11 @@ export function reconcileFilters(current: ConversationFilters, patch: Partial<Co
 
 /** Search, non-WhatsApp channels and assignee, over what is already loaded.
  * A bot-only (ticketless) row has no ticket status, so the Pending/In
- * review/Done status tabs never apply to it — it shows on every status tab,
+ * review/Done status tabs never apply to it - it shows on every status tab,
  * same as it does on "All". "Needs contact" is the one exception: ticket rows
  * are already server-filtered to needsContact=true for that tab (see
  * toListParams), but bot rows bypass that server filter entirely, so the
- * same rule is applied here — only a bot row mid-hand-off (needsContact
+ * same rule is applied here - only a bot row mid-hand-off (needsContact
  * true, see botNeedsContact) shows under that tab. */
 export function applyClientFilters(
   conversations: Conversation[],
@@ -191,7 +191,7 @@ export function applyClientFilters(
     if (filters.status === "needs_contact" && c.status === "bot_only" && !c.needsContact) return false;
     // Ticket rows are already server-filtered to incompleteDriver=true for
     // this tab (see toListParams), but bot rows bypass that server filter
-    // entirely (list() only applies it when wired in — see useBotChatList),
+    // entirely (list() only applies it when wired in - see useBotChatList),
     // so re-check it here against what the row itself carries.
     if (filters.status === "incomplete_driver" && c.status === "bot_only" && !c.incompleteDriver) return false;
     // Same for "To onboard": the bot list is only server-filtered on its own tab.

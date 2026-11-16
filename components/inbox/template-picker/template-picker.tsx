@@ -51,7 +51,7 @@ export function TemplatePicker({ conversation: c, onSendEmailTemplate, onInsertT
     k === "audio" || (k === "email" && c.channel === "email") || (k === "whatsapp" && c.channel === "whatsapp") ? "send" : "insert";
   // Only the conversation's product (plus "any product" templates); everything when it has none.
   const product = c.product && PICKER_PRODUCTS.includes(c.product) ? c.product : undefined;
-  const phone = c.phone && c.phone !== "—" ? c.phone : null;
+  const phone = c.phone && c.phone !== "-" ? c.phone : null;
   const vars = { customer_name: c.customerName, ticket_number: c.ticketNumber || undefined, agent_name: me?.name ?? undefined };
 
   function insert(text: string) {

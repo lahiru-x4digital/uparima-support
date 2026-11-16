@@ -49,7 +49,7 @@ function Attachments({ items, out }: { items: Attachment[]; out: boolean }) {
   );
 }
 
-/** What a kind-specific message shows instead of (or alongside) its plain body — an icon-led
+/** What a kind-specific message shows instead of (or alongside) its plain body - an icon-led
  * line for a one-off event (location, media, link), matching how WhatsApp itself renders them. */
 function KindLine({ m }: { m: Message }) {
   switch (m.kind) {
@@ -92,7 +92,7 @@ function KindLine({ m }: { m: Message }) {
   }
 }
 
-/** The menu's option titles, shown as their own full-width rows under the bubble — the way
+/** The menu's option titles, shown as their own full-width rows under the bubble - the way
  * WhatsApp renders a list or quick-reply buttons message (not as plain text in the bubble). */
 function OptionRows({ options }: { options: string[] }) {
   if (options.length === 0) return null;
@@ -121,7 +121,7 @@ export function MessageBubble({ message: m }: { message: Message }) {
   const out = m.direction === "outbound";
 
   // What the customer tapped: WhatsApp shows this as the customer's own
-  // small reply bubble, not a full message — same side, same style, just
+  // small reply bubble, not a full message - same side, same style, just
   // the chosen option's title as its body.
   if (m.kind === "tap") {
     return (

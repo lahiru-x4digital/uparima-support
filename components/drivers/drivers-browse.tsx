@@ -25,8 +25,8 @@ import { DriverCallsCell, DriverContactLine, DriverTicketCell } from "./driver-t
 const STATUSES = ["all", "approved", "pending", "incomplete", "rejected", "suspended", "deleted"];
 const PAGE_SIZE = 20;
 
-const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "—");
-const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "—";
+const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "-");
+const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "-";
 
 // The list endpoint returns every driver matching the status in one response, so search filters
 // that full list rather than a page's worth of rows.
@@ -40,7 +40,7 @@ function matchesSearch(d: Driver, term: string) {
   );
 }
 
-/** Every driver, filtered — for roles with `driver.browse`; with permission, add / approve / suspend / restore from the row. */
+/** Every driver, filtered - for roles with `driver.browse`; with permission, add / approve / suspend / restore from the row. */
 export function DriversBrowse() {
   const canRegister = useCan("driver.manual-register");
   const canApprove = useCan("driver.approve");
@@ -151,9 +151,9 @@ export function DriversBrowse() {
                       <TableCell>
                         <StatusBadge value={d.status} />
                       </TableCell>
-                      <TableCell>{d.vehicleRegistrationNumber ?? "—"}</TableCell>
+                      <TableCell>{d.vehicleRegistrationNumber ?? "-"}</TableCell>
                       <TableCell className="font-medium">{d.creditBalance}</TableCell>
-                      <TableCell>{d.averageRating != null ? Number(d.averageRating).toFixed(1) : "—"}</TableCell>
+                      <TableCell>{d.averageRating != null ? Number(d.averageRating).toFixed(1) : "-"}</TableCell>
                       <TableCell>{d.totalRides}</TableCell>
                       <TableCell>
                         <TonePill tone={d.isOnline ? "green" : "neutral"}>{d.isOnline ? "Online" : "Offline"}</TonePill>
@@ -192,7 +192,7 @@ export function DriversBrowse() {
                               size="sm"
                               disabled={busy}
                               onClick={() => restore.mutate(d.id)}
-                              title="Restores the account to Pending — review and Approve to reactivate"
+                              title="Restores the account to Pending - review and Approve to reactivate"
                             >
                               Restore
                             </Button>

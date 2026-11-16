@@ -53,14 +53,14 @@ const STATUS_VIEW: Record<string, { value: string; label: string }> = {
 // The statuses that actually stop a driver receiving work, and what to tell them. This line is
 // the point of the card.
 const SYMPTOMS: { key: string; bad: string[]; message: string }[] = [
-  { key: "location", bad: ["denied", "deniedForever"], message: "Location denied — this driver will not receive ride offers." },
-  { key: "locationServices", bad: ["disabled"], message: "Device GPS is switched off — dispatch cannot locate this driver." },
-  { key: "notifications", bad: ["denied"], message: "Notifications denied — ride alerts will not appear or make a sound." },
-  { key: "overlay", bad: ["denied"], message: "Draw over other apps denied — the full-screen ride offer will not pop up." },
+  { key: "location", bad: ["denied", "deniedForever"], message: "Location denied - this driver will not receive ride offers." },
+  { key: "locationServices", bad: ["disabled"], message: "Device GPS is switched off - dispatch cannot locate this driver." },
+  { key: "notifications", bad: ["denied"], message: "Notifications denied - ride alerts will not appear or make a sound." },
+  { key: "overlay", bad: ["denied"], message: "Draw over other apps denied - the full-screen ride offer will not pop up." },
   {
     key: "batteryOptimization",
     bad: ["optimized"],
-    message: "Not exempt from battery optimization — the app may be killed in the background, missing alerts.",
+    message: "Not exempt from battery optimization - the app may be killed in the background, missing alerts.",
   },
 ];
 

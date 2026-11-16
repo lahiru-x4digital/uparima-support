@@ -88,7 +88,7 @@ export function PresenceSwitcher({ collapsed }: { collapsed: boolean }) {
         {(data.languages.length > 0 || data.skills.length > 0) && (
           <p className="truncate" title={[...data.languages.map((l) => l.toUpperCase()), ...data.skills.map(skillLabel)].join(", ")}>
             {data.languages.map((l) => l.toUpperCase()).join(" · ")}
-            {data.languages.length > 0 && data.skills.length > 0 && " — "}
+            {data.languages.length > 0 && data.skills.length > 0 && " - "}
             {data.skills.map(skillLabel).join(", ")}
           </p>
         )}

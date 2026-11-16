@@ -90,12 +90,12 @@ export function DriverLocationFields({
           filterLocally={false}
           loading={searching && (found.isFetching || settled !== typed)}
           placeholder={
-            cityList.isLoading ? "Loading cities…" : noCities ? "No cities are listed — search a town" : "Select city…"
+            cityList.isLoading ? "Loading cities…" : noCities ? "No cities are listed - search a town" : "Select city…"
           }
           searchPlaceholder="Search any town to fill the district and province…"
           emptyText={searching ? "No town found by that name" : value.district ? "No cities listed" : "Pick a district, or search a town"}
         />
-        {found.isError && <p className="text-xs text-destructive">The search failed — try again.</p>}
+        {found.isError && <p className="text-xs text-destructive">The search failed - try again.</p>}
         {cityList.isError && (
           <p className="text-xs text-destructive">
             The cities for this district couldn&apos;t be loaded.{" "}

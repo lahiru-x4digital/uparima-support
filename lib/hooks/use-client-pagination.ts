@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-// Client-side counterpart to usePaginatedResource — for lists the backend
+// Client-side counterpart to usePaginatedResource - for lists the backend
 // already returns in full (no server-side paging), this slices them into
 // pages so large tables don't render every row at once.
 //

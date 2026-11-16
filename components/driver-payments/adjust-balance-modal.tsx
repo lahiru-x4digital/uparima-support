@@ -24,7 +24,7 @@ type DirectionText = {
 };
 
 /**
- * A manual change to one driver's balance — shared by the platform fee and promotion balance
+ * A manual change to one driver's balance - shared by the platform fee and promotion balance
  * screens, which differ only in wording and in which direction is the "good" one for the driver.
  * The change is saved to the driver's history with who made it and why. Mounted only while open
  * (the parent keys it per driver), so state starts fresh.
@@ -154,7 +154,7 @@ export function AdjustBalanceModal({
           <div className="flex justify-between">
             <span className="text-muted-foreground">{text.preview}</span>
             <span className={good ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}>
-              {amountValid ? `${signed > 0 ? "+" : "−"} ${formatLkr(Math.abs(signed))}` : "—"}
+              {amountValid ? `${signed > 0 ? "+" : "−"} ${formatLkr(Math.abs(signed))}` : "-"}
             </span>
           </div>
           <div className="mt-1 flex justify-between border-t pt-1 font-semibold">

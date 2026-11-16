@@ -69,7 +69,7 @@ function FillAndSend({ t, mode, phone, ticketId, customerName, onSent, onInsert 
 }) {
   const vars = templateVars(t.body);
   const headerVar = t.headerType === "text" && templateVars(t.headerText ?? "").length > 0;
-  // {{1}} is almost always the customer's name — start with it, the agent can change it.
+  // {{1}} is almost always the customer's name - start with it, the agent can change it.
   const [values, setValues] = useState<string[]>(() => vars.map((_, i) => (i === 0 ? customerName : "")));
   const [header, setHeader] = useState("");
   const send = useSendWhatsappTemplate();

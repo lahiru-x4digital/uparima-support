@@ -132,7 +132,7 @@ export function PlatformFeesView() {
                     </p>
                   </TableCell>
                   <TableCell className="text-right">
-                    {d.totalPaidLkr > 0 ? formatLkr(d.totalPaidLkr) : <span className="text-muted-foreground">—</span>}
+                    {d.totalPaidLkr > 0 ? formatLkr(d.totalPaidLkr) : <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell
                     className={`text-right font-semibold ${
@@ -142,7 +142,7 @@ export function PlatformFeesView() {
                     {d.owedLkr < 0 ? (
                       <span
                         className="text-emerald-700 dark:text-emerald-400"
-                        title="Paid more than owed — used up by their next fees"
+                        title="Paid more than owed - used up by their next fees"
                       >
                         {formatLkr(-d.owedLkr)} credit
                       </span>
@@ -176,7 +176,7 @@ export function PlatformFeesView() {
       {canAdjust && adjusting && (
         <AdjustBalanceModal
           key={adjusting.driverId}
-          title="Platform fees — record a change"
+          title="Platform fees - record a change"
           driverName={driverLabel(adjusting.driverName, adjusting.driverId)}
           driverPhone={adjusting.driverPhone}
           currentLabel="Owes now"

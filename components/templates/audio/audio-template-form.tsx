@@ -155,7 +155,7 @@ function Form({ id, template }: { id: number | null; template: AudioTemplate | n
               <>
                 {voice.error && <p className="text-xs text-destructive">{voice.error}</p>}
                 {!voice.supported ? (
-                  <p className="text-sm text-muted-foreground">This browser can&apos;t record audio — upload a file instead.</p>
+                  <p className="text-sm text-muted-foreground">This browser can&apos;t record audio - upload a file instead.</p>
                 ) : voice.state.status === "recording" ? (
                   <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
                     <span className="size-2.5 animate-pulse rounded-full bg-destructive" aria-hidden />
@@ -192,7 +192,7 @@ function Form({ id, template }: { id: number | null; template: AudioTemplate | n
               </>
             )}
             <p className="text-xs text-muted-foreground">
-              Keep it under about 4 minutes — longer audio can&apos;t play inline as a WhatsApp voice note. Saved as OGG/Opus.
+              Keep it under about 4 minutes - longer audio can&apos;t play inline as a WhatsApp voice note. Saved as OGG/Opus.
             </p>
           </section>
         </fieldset>

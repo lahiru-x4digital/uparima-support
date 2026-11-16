@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Label on the left, value on the right, one row per entry — the body of the detail-page cards. */
+/** Label on the left, value on the right, one row per entry - the body of the detail-page cards. */
 export function DetailList({ rows }: { rows: Array<[label: string, value: ReactNode]> }) {
   return (
     <dl className="space-y-2 text-sm">

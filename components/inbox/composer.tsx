@@ -11,7 +11,7 @@ import { formatSeconds, useVoiceRecorder, VOICE_MAX_SECONDS } from "@/lib/hooks/
 
 // TODO(api): quick replies are hard-coded; the backend has no canned-response endpoint yet.
 const QUICK_REPLIES = [
-  "Thanks for reaching out — I'm looking into this now.",
+  "Thanks for reaching out - I'm looking into this now.",
   "Could you share the ride ID so I can check?",
   "This has been escalated to our finance team.",
 ];
@@ -100,7 +100,7 @@ export function Composer({ disabled, onSend, renderTemplates, onInternalNote, on
             <TooltipTrigger render={<span />}>
               <Button size="xs" variant="ghost" disabled><StickyNote /> Internal note</Button>
             </TooltipTrigger>
-            <TooltipContent>Internal notes are kept on drivers — this customer isn&apos;t one</TooltipContent>
+            <TooltipContent>Internal notes are kept on drivers - this customer isn&apos;t one</TooltipContent>
           </Tooltip>
         )}
         {renderTemplates && !disabled && (

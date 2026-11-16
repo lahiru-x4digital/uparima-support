@@ -2,7 +2,7 @@
 
 import type { PageMeta } from "@/types/ticket";
 
-/** One row of a ride list — a ride with its rider, driver, vehicle and fare. */
+/** One row of a ride list - a ride with its rider, driver, vehicle and fare. */
 export interface Ride {
   id: string;
   status: string;
@@ -119,7 +119,7 @@ export interface RidePath {
   actualDistanceKm: number | null;
   pickupLeg: JourneyPoint[];
   tripLeg: JourneyPoint[];
-  /** The rider's own phone GPS — empty for older rides / rider app builds. */
+  /** The rider's own phone GPS - empty for older rides / rider app builds. */
   riderSearchLeg: JourneyPoint[];
   riderPickupLeg: JourneyPoint[];
   riderTripLeg: JourneyPoint[];

@@ -149,7 +149,7 @@ function Form({ id, template }: { id: number | null; template: WhatsappTemplate 
           )}
           {!editable && id !== null && (
             <p className="rounded-xl border bg-card p-3 text-sm text-muted-foreground">
-              {WA_STATUS[status].hint} {status !== "draft" && "Approved and in-review templates can't be edited — create a new one to change the wording."}
+              {WA_STATUS[status].hint} {status !== "draft" && "Approved and in-review templates can't be edited - create a new one to change the wording."}
             </p>
           )}
           {meta.data && !meta.data.configured && (

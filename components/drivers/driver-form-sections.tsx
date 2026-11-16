@@ -41,7 +41,7 @@ export type SectionProps = {
   withDocuments: boolean;
 };
 
-/** A field's own error, right under it — never somewhere the agent has to scroll to. */
+/** A field's own error, right under it - never somewhere the agent has to scroll to. */
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
@@ -148,7 +148,7 @@ export function TemporaryLicenceSwitch(p: SectionProps) {
       checked={p.values.isTemporaryLicense}
       onChange={(v) => p.set("isTemporaryLicense", v)}
       label="Temporary Driving Licence (Section 126(4))"
-      description="Only the DMT's temporary permit so far — the printed card is still being processed."
+      description="Only the DMT's temporary permit so far - the printed card is still being processed."
     />
   );
 }
@@ -184,7 +184,7 @@ export function PersonalSection(p: SectionProps) {
         required={!edit}
         placeholder="+94771234567"
         disabled={edit}
-        hint={edit ? "Linked to the driver's account — can't be changed here." : undefined}
+        hint={edit ? "Linked to the driver's account - can't be changed here." : undefined}
       />
       <TextField p={p} field="secondaryMobile" label="Secondary mobile" />
       <TextField p={p} field="email" label="Email" type="email" />
@@ -218,7 +218,7 @@ export function AddressSection(p: SectionProps) {
 
 export function VehicleSection(p: SectionProps & { withOwnership: boolean }) {
   const { values } = p;
-  // Makes are scoped to the chosen vehicle type (many-to-many); models to the (type, make) pair —
+  // Makes are scoped to the chosen vehicle type (many-to-many); models to the (type, make) pair -
   // a make like Honda offers different models under Car vs. Bike.
   const vehicleTypes = useVehicleTypes().data ?? [];
   const vehicleMakes = useVehicleMakes(values.vehicleTypeId).data ?? [];
@@ -273,7 +273,7 @@ export function VehicleSection(p: SectionProps & { withOwnership: boolean }) {
         (v) => p.patch({ vehicleMakeId: v, vehicleModelId: "" }),
         !values.vehicleTypeId,
       )}
-      {/* Pick a listed model or type a new one — saved under this type + make (see NEW_VEHICLE_MODEL_PREFIX). */}
+      {/* Pick a listed model or type a new one - saved under this type + make (see NEW_VEHICLE_MODEL_PREFIX). */}
       <Field label={<Req>Model</Req>}>
         <CreatableCombobox
           name="vehicleModelId"
@@ -363,7 +363,7 @@ export function BankSection(p: SectionProps & { hadBankAccount: boolean }) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        Optional payout account — bank, holder and number go together.
+        Optional payout account - bank, holder and number go together.
         {p.hadBankAccount && !started && " Leaving these empty keeps the account on file."}
       </p>
       <div className={grid}>

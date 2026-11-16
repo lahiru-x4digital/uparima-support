@@ -4,7 +4,7 @@ import type { Conversation } from "@/types/inbox";
 import { timeAgo } from "@/lib/inbox/mappers";
 import { ChatHeader } from "./chat-header";
 import { Composer } from "./composer";
-// Hidden for now — see the commented-out usage below.
+// Hidden for now - see the commented-out usage below.
 // import { HandoffBanner } from "./handoff-banner";
 import { MessageList } from "./message-list";
 import { TemplatePicker } from "./template-picker/template-picker";
@@ -56,7 +56,7 @@ export function ChatPane({
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatHeader conversation={conversation} contextOpen={contextOpen} canUpdate={canUpdate} converting={convertingToTicket}
         onBack={onBack} onToggleContext={onToggleContext} closing={closingTicket} onCloseTicket={onCloseTicket} onConvertToTicket={onConvertToTicket} />
-      {/* Hidden for now — see HandoffBanner.
+      {/* Hidden for now - see HandoffBanner.
       {conversation.channel === "whatsapp" && (
         <HandoffBanner conversation={conversation} canUpdate={canUpdate} marking={markingContacted} onMarkContacted={onMarkContacted} />
       )}
@@ -87,10 +87,10 @@ export function ChatPane({
       ) : canReply ? (
         conversation.channel === "whatsapp" && !conversation.isCurrentSession ? (
           // A reply always reaches the customer now, in their current
-          // session — no template or free text here helps a session that
+          // session - no template or free text here helps a session that
           // has already ended; open the current one to reply instead.
           <p className="border-t p-3 text-center text-xs text-muted-foreground">
-            This conversation has ended. A reply would reach the customer now, in their current conversation — open that one to reply.
+            This conversation has ended. A reply would reach the customer now, in their current conversation - open that one to reply.
           </p>
         ) : conversation.channel === "whatsapp" && !conversation.canReply ? (
           // Outside the 24-hour window only an approved template can reach the customer.
@@ -99,7 +99,7 @@ export function ChatPane({
               {conversation.lastCustomerMessageAt
                 ? `The customer's last WhatsApp message was ${timeAgo(conversation.lastCustomerMessageAt)}`
                 : "The customer's last WhatsApp message was over 23 hours 58 minutes ago"}
-              {" "}— free text can&apos;t be sent, but an approved template can.
+              {" "}- free text can&apos;t be sent, but an approved template can.
             </span>
             <TemplatePicker conversation={conversation} onSendEmailTemplate={onSendEmailTemplate} sendOnly label="Send a template" />
           </div>

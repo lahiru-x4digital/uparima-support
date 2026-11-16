@@ -106,7 +106,7 @@ function Editor({ id, template }: { id: number | null; template: EmailTemplate |
             </div>
             <div>
               <Label className="mb-1 text-xs font-semibold">Subject</Label>
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. We received your request — {{ticket_number}}" />
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. We received your request - {{ticket_number}}" />
             </div>
             <div>
               <Label className="mb-1 text-xs font-semibold">Preview line (shown next to the subject in the inbox)</Label>

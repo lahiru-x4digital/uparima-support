@@ -3,7 +3,7 @@
 import { HeaderCalls, LogCallButton } from "@/components/shared/ticket-calls";
 import type { Driver } from "@/types/driver";
 
-const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "—");
+const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "-");
 
 /** "Contacted via call, whatsapp by Azmi · 21/10/2026" under a driver's name; nothing if not contacted. */
 export function DriverContactLine({ driver }: { driver: Driver }) {
@@ -31,10 +31,10 @@ export function DriverTicketCell({ driver }: { driver: Driver }) {
   );
 }
 
-/** The calls logged on the driver's ticket, and — with `canLog` — a button to log the next one. */
+/** The calls logged on the driver's ticket, and - with `canLog` - a button to log the next one. */
 export function DriverCallsCell({ driver, canLog }: { driver: Driver; canLog: boolean }) {
   const ticket = driver.supportTicket;
-  if (!ticket) return <span className="text-muted-foreground">—</span>;
+  if (!ticket) return <span className="text-muted-foreground">-</span>;
   return (
     <div className="flex items-center gap-1.5">
       <HeaderCalls ticketId={ticket.id} />

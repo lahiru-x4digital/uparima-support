@@ -8,9 +8,9 @@ import type {
   ResolveRatingBody,
 } from "@/types/rating";
 
-// Ratings/reviews moderation — the backend's `/support-desk/ratings/*` (needs rating.view /
-// rating.moderate). Flag, resolve and hide never touch stars/comment — only visibility and
-// dispute metadata — see RidesAdminService's rating moderation methods.
+// Ratings/reviews moderation - the backend's `/support-desk/ratings/*` (needs rating.view /
+// rating.moderate). Flag, resolve and hide never touch stars/comment - only visibility and
+// dispute metadata - see RidesAdminService's rating moderation methods.
 
 const BASE = "/support-desk/ratings";
 

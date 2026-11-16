@@ -89,7 +89,7 @@ export function useSyncEmailAccount() {
       void qc.invalidateQueries({ queryKey: emailAccountKeys.all });
       toast.success(
         r.baseline
-          ? "Mailbox is ready — new emails from now on will become tickets"
+          ? "Mailbox is ready - new emails from now on will become tickets"
           : `${r.imported} new ticket(s), ${r.replies} repl${r.replies === 1 ? "y" : "ies"} added`,
       );
     },
@@ -132,7 +132,7 @@ export function useImportEmails() {
       toast.success(
         imported + replies
           ? `${imported} ticket(s) created, ${replies} repl${replies === 1 ? "y" : "ies"} added`
-          : "Nothing new to import — every email is already a ticket",
+          : "Nothing new to import - every email is already a ticket",
       );
     },
     onError: (error) => toast.error(getErrorMessage(error)),

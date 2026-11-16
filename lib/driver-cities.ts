@@ -18,7 +18,7 @@ export const findPlace = <T extends { name: string }>(places: T[], name: string)
   name.trim() === "" ? undefined : places.find((p) => placeKey(p.name) === placeKey(name));
 
 /**
- * A stored province or district under the name the location list holds it by — the name the driver
+ * A stored province or district under the name the location list holds it by - the name the driver
  * app saves ("Western Province", "Colombo District"). A short or older name ("Western") resolves to
  * it, so the dropdown shows it picked. A name the list doesn't hold (free text, Sinhala) shows as
  * nothing picked: only listed places can be chosen, never typed.
@@ -68,6 +68,6 @@ export async function loadDistrictCities(
 /** A town found by name, with the district and province it sits in. */
 export type AreaMatch = { id: number; name: string; district: string; province: string };
 
-/** Towns matching the text anywhere in the country — picking one fills province and district too. */
+/** Towns matching the text anywhere in the country - picking one fills province and district too. */
 export const searchAreas = (get: Get, text: string): Promise<AreaMatch[]> =>
   get<AreaMatch[]>(`/geo/areas/search?q=${encodeURIComponent(text.trim())}`);

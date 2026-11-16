@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 
 /**
- * A dialog with a title and a body that scrolls inside the screen — never taller than the window,
+ * A dialog with a title and a body that scrolls inside the screen - never taller than the window,
  * so a long form or table stays reachable on a small laptop. Controlled: `onClose` is called for
  * Escape, the backdrop and the close button.
  */
@@ -22,7 +22,7 @@ export function Modal({
   title?: string;
   children: ReactNode;
   className?: string;
-  /** Backdrop classes — use a stronger dim when this modal opens on top of another dialog. */
+  /** Backdrop classes - use a stronger dim when this modal opens on top of another dialog. */
   overlayClassName?: string;
 }) {
   return (

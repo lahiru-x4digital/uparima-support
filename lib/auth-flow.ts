@@ -1,5 +1,5 @@
 // Pure pieces of the sign-in flow: input rules, where to go after signing in, and turning a
-// backend refusal into something a person can act on. No React, no storage — see auth-context.tsx.
+// backend refusal into something a person can act on. No React, no storage - see auth-context.tsx.
 
 import axios from "axios";
 import { z } from "zod";
@@ -42,7 +42,7 @@ export const sanitizeCode = (raw: string): string => raw.replace(/\D/g, "").slic
 
 /**
  * The page to open after signing in. `next` comes from the address bar, so only a path inside
- * this site is accepted — never another site ("//evil.example", "https://…") or the sign-in page.
+ * this site is accepted - never another site ("//evil.example", "https://…") or the sign-in page.
  */
 export function safeNextPath(next: unknown, fallback: string = DEFAULT_LANDING): string {
   if (typeof next !== "string" || !next.startsWith("/")) return fallback;
@@ -55,7 +55,7 @@ export function safeNextPath(next: unknown, fallback: string = DEFAULT_LANDING):
 export const SIGN_IN_REASONS = {
   expired: "Your session ended. Sign in again to continue.",
   verify: "Sign in again with your email and password to continue.",
-  "two-factor-on": "Two-factor sign-in is on. Sign in again — we'll send you a code.",
+  "two-factor-on": "Two-factor sign-in is on. Sign in again - we'll send you a code.",
 } as const;
 
 export type SignInReason = keyof typeof SIGN_IN_REASONS;
@@ -78,8 +78,8 @@ export function loginPath(reason?: SignInReason, next?: string | null): string {
 export interface AuthFailure {
   message: string;
   /**
-   * `restart` — the emailed code can no longer be used (expired, used up, too many wrong tries):
-   * the only way forward is to start over. `retry` — fix the input and try again.
+   * `restart` - the emailed code can no longer be used (expired, used up, too many wrong tries):
+   * the only way forward is to start over. `retry` - fix the input and try again.
    */
   action: "retry" | "restart";
 }
@@ -108,7 +108,7 @@ export function describeAuthFailure(error: unknown): AuthFailure {
       return { message: "That email and password don't match. Check them and try again.", action: "retry" };
     case "ACCOUNT_LOCKED":
       return {
-        message: "Too many wrong passwords — this account is locked for a while. Try again later or ask an administrator.",
+        message: "Too many wrong passwords - this account is locked for a while. Try again later or ask an administrator.",
         action: "retry",
       };
     case "ACCOUNT_INACTIVE":

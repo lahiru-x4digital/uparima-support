@@ -10,7 +10,7 @@ export type DocumentPreview = { label: string; url: string };
 
 /**
  * Full-size document photo viewer, shared by the driver page and the driver form. Drivers often
- * photograph cards sideways, so the image can be rotated in 90° steps — view-only, the stored
+ * photograph cards sideways, so the image can be rotated in 90° steps - view-only, the stored
  * file is untouched.
  */
 export function DocumentPreviewModal({

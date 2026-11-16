@@ -32,7 +32,7 @@ export function DriverEdit({ id, section }: { id: string; section?: DriverSectio
 
   async function handleSubmit(values: DriverFormValues, files: DriverFormFiles) {
     if (!data) return;
-    // Only what this edit changed — see changedDriverFields.
+    // Only what this edit changed - see changedDriverFields.
     const initial = driverToFormValues(data.driver, data.bankAccount);
     await update.mutateAsync({ id, values: changedDriverFields(initial, values), files });
     setDirty(false);

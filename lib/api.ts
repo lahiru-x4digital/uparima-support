@@ -29,7 +29,7 @@ const redirectToLogin = (reason: SignInReason) => {
 
 /**
  * The sign-in endpoints answer 401 for a wrong password or a wrong emailed code. That is the
- * answer to show, not an expired session — refreshing and reloading would wipe the form and its
+ * answer to show, not an expired session - refreshing and reloading would wipe the form and its
  * error (and replay a wrong code, using up one of its few attempts).
  */
 const isSignInCall = (url?: string) => !!url && /^\/auth\/(login|refresh)(\/|$)/.test(url);
@@ -47,7 +47,7 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as (typeof error.config & { _retried?: boolean }) | undefined;
 
-    // A staff token that didn't come from a full password sign-in is refused by the backend — sign in again.
+    // A staff token that didn't come from a full password sign-in is refused by the backend - sign in again.
     const code = (error.response?.data as { error?: { code?: string } } | undefined)?.error?.code;
     if (error.response?.status === 403 && code === "TWO_FACTOR_REQUIRED") {
       redirectToLogin("verify");
@@ -87,7 +87,7 @@ api.interceptors.response.use(
       return api(original);
     } catch {
       // Another tab (tokens are shared through localStorage) may have rotated this refresh token
-      // a moment earlier — the backend then refuses ours, but the session is fine. Use the pair
+      // a moment earlier - the backend then refuses ours, but the session is fine. Use the pair
       // that tab saved instead of signing out, which would also wipe it for every other tab.
       const rotated = getToken();
       if (rotated && getRefreshToken() && getRefreshToken() !== refreshToken) {
@@ -109,7 +109,7 @@ export function getErrorMessage(error: unknown): string {
     const data = error.response?.data as
       | { error?: { message?: string; errors?: unknown }; message?: string }
       | undefined;
-    // A refused form comes back as "Validation failed" plus the actual reasons in `errors` —
+    // A refused form comes back as "Validation failed" plus the actual reasons in `errors` -
     // show the reasons, they say what to fix.
     const reasons = Array.isArray(data?.error?.errors)
       ? data.error.errors.filter((r): r is string => typeof r === "string")
