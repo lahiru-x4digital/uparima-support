@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, MessageCircle, XCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,11 @@ type Kind = (typeof KINDS)[number];
 const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "-");
 const fullName = (d: Driver) => [d.firstName, d.lastName].filter(Boolean).join(" ") || "-";
 
-const awaitingDecision = (d: Driver) => d.status === "pending" || signupReadyForReview(d);
+/** Inbox id of the driver's chat: their open ticket, else their bot chat; null when they have none. */
+const chatTicketId = (d: Driver): string | null =>
+  d.supportTicket?.id ?? (d.whatsappChat ? `bot:${d.whatsappChat.phone}:${d.whatsappChat.sessionId ?? "legacy"}` : null);
+
+const awaitingDecision =(d: Driver) => d.status === "pending" || signupReadyForReview(d);
 
 const matchesSearch = (d: Driver, term: string) =>
   [String(d.id), d.firstName, d.lastName, d.phone, d.vehicleRegistrationNumber]
@@ -231,6 +235,16 @@ export function PendingDriversList() {
                           <Link href={`/drivers/${d.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
                             {awaitingDecision(d) ? "View docs" : "View"}
                           </Link>
+                          {canSeeCalls && chatTicketId(d) && (
+                            <a
+                              href={`/inbox?ticket=${encodeURIComponent(chatTicketId(d)!)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={buttonVariants({ size: "sm", variant: "outline" })}
+                            >
+                              <MessageCircle /> View chat
+                            </a>
+                          )}
                           {canApprove && awaitingDecision(d) && (
                             <>
                               <Button

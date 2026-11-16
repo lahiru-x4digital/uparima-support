@@ -104,6 +104,8 @@ export type Driver = {
   // The driver's open support ticket (list endpoint only): null = no open ticket; assignedAgent
   // null = open but nobody has it yet.
   supportTicket?: DriverSupportTicket | null;
+  // The driver's WhatsApp chat, when they have ever messaged (list endpoint only); null = none.
+  whatsappChat?: { phone: string; sessionId: string | null } | null;
 
   status: DriverStatus;
   creditBalance: number;
