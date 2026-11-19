@@ -7,8 +7,6 @@ import { toast } from "sonner";
 import { History, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/shared/modal";
 import { NoAccess, PageShell } from "@/components/shared/page-shell";
 import { StatusBadge, TonePill } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
@@ -23,7 +21,6 @@ import {
 import type { DriverApproval } from "@/types/driver";
 import { useCan, useCanViewDrivers, useIsAdmin } from "@/lib/hooks/use-desk";
 import {
-  useDeleteDriverPermanently,
   useDriverDetail,
   useRemoveDriverDocument,
   useRestoreDriver,
@@ -33,6 +30,7 @@ import {
 import { useApproveWithReason } from "./approval-reason";
 import type { AiValidationResult } from "@/types/driver";
 import { DriverDetailBody } from "./driver-detail-body";
+import { DeleteIncompleteDriverDialog } from "@/components/inbox/delete-incomplete-driver-dialog";
 import { DriverDuplicateDocuments } from "./driver-duplicate-documents";
 import { DriverFlags } from "./driver-flags";
 
@@ -57,11 +55,9 @@ export function DriverDetail({ id }: { id: string }) {
   const restore = useRestoreDriver();
   const validate = useValidateDriverWithAi();
   const removeDocument = useRemoveDriverDocument();
-  const deleteDriver = useDeleteDriverPermanently();
 
   const [aiResult, setAiResult] = useState<AiValidationResult | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleteText, setDeleteText] = useState("");
 
   const canView = viewDrivers.any || viewDrivers.pendingOnly || canRegister;
   // Pending-only staff (driver.view-pending) come from, and go back to, the review queue.
@@ -189,17 +185,10 @@ export function DriverDetail({ id }: { id: string }) {
               Restore
             </Button>
           )}
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              disabled={busy || deleteDriver.isPending}
-              onClick={() => {
-                setDeleteText("");
-                setConfirmDelete(true);
-              }}
-            >
-              <Trash2 /> Delete driver
+          {/* Permanent delete is for unfinished signups only; a registered driver is suspended, never deleted here. */}
+          {(canUpdate || canDelete) && driver.status === "incomplete" && (
+            <Button size="sm" variant="destructive" disabled={busy} onClick={() => setConfirmDelete(true)}>
+              <Trash2 /> Delete incomplete driver
             </Button>
           )}
         </>
@@ -360,63 +349,12 @@ export function DriverDetail({ id }: { id: string }) {
         onEditSection={canUpdate ? (section) => router.push(`/drivers/${id}/edit?section=${section}`) : undefined}
       />
 
-      <Modal
+      <DeleteIncompleteDriverDialog
         open={confirmDelete}
-        onClose={() => !deleteDriver.isPending && setConfirmDelete(false)}
-        title="Permanently delete driver?"
-      >
-        <div className="space-y-4 text-sm">
-          <p className="text-muted-foreground">
-            This permanently deletes <span className="font-medium text-foreground">{name}</span> (driver #{driver.id})
-            and cannot be undone.
-          </p>
-          <div>
-            <p className="font-medium">Deleted</p>
-            <ul className="mt-1 list-disc pl-5 text-muted-foreground">
-              <li>Driver profile, documents and photos, bank account</li>
-              <li>
-                Fee invoices, OnePay payments and saved cards, credit, discount and referral cash, cash-out requests
-              </li>
-              <li>Registration drafts, flags, their own referral and milestone records</li>
-            </ul>
-          </div>
-          <div>
-            <p className="font-medium">Kept</p>
-            <ul className="mt-1 list-disc pl-5 text-muted-foreground">
-              <li>The user account (classifieds, support tickets) - they can re-register as a driver</li>
-              <li>Rides they drove, for riders&apos; history - shown without a driver</li>
-            </ul>
-          </div>
-          <label className="block space-y-1">
-            <span>
-              Type <span className="font-mono font-semibold">DELETE</span> to confirm
-            </span>
-            <Input
-              value={deleteText}
-              onChange={(e) => setDeleteText(e.target.value)}
-              disabled={deleteDriver.isPending}
-              autoFocus
-            />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" disabled={deleteDriver.isPending} onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteText !== "DELETE" || deleteDriver.isPending}
-              onClick={() =>
-                deleteDriver.mutate(id, {
-                  onSuccess: () => router.push("/drivers"),
-                  onError: () => setConfirmDelete(false),
-                })
-              }
-            >
-              {deleteDriver.isPending ? "Deleting…" : "Delete permanently"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onOpenChange={setConfirmDelete}
+        driverId={driver.id}
+        onDeleted={() => router.push("/drivers")}
+      />
       {approve.modal}
     </PageShell>
   );

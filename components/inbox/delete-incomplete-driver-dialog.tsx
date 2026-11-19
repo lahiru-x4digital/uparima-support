@@ -14,7 +14,7 @@ import {
 } from "@/types/driver";
 
 /**
- * Removes an unfinished driver signup (the contact reached out by mistake) and closes their ticket.
+ * Permanently deletes an unfinished driver signup (the contact reached out by mistake) and closes their ticket.
  * A reason is mandatory: pick a preset, or "Other" and type one. It is kept as an internal driver note.
  */
 export function DeleteIncompleteDriverDialog({
@@ -65,7 +65,7 @@ export function DeleteIncompleteDriverDialog({
         <DialogHeader>
           <DialogTitle>Delete incomplete driver</DialogTitle>
           <DialogDescription>
-            This removes the unfinished driver profile and closes this ticket. The reason is saved for the team.
+            This permanently deletes the unfinished driver profile and its uploaded files, and closes this ticket. It cannot be undone. Only unfinished signups can be deleted, and the person can register again later with the same number. The reason is saved for the team.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
