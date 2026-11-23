@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { listTicketCalls, logTicketCall, updateTicketCall } from "@/lib/services/ticket-calls.service";
+import { listTicketCalls, logDriverCall, logTicketCall, updateTicketCall } from "@/lib/services/ticket-calls.service";
 import type { Driver } from "@/types/driver";
 import type { TicketCall, TicketCallInput, TicketCallUpdate } from "@/types/ticket-call";
 import { driverKeys, ticketCallKeys } from "./query-keys";
@@ -66,6 +66,18 @@ export function useLogTicketCall(ticketId: string) {
       // contact status is re-read from the backend wherever the driver shows.
       void qc.invalidateQueries({ queryKey: driverKeys.all });
     },
+  });
+}
+
+/** Log a call on a driver with no open ticket: the backend opens one for me and logs the call on it. */
+export function useLogDriverCall(driverId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TicketCallInput) => logDriverCall(driverId, input),
+    onSuccess: (result) =>
+      toast.success("Call logged", { description: result.ticketCreated ? `Ticket ${result.ticketNumber} opened for you` : undefined }),
+    onError: (error) => toast.error("Couldn't log the call", { description: getErrorMessage(error) }),
+    onSettled: () => qc.invalidateQueries({ queryKey: driverKeys.all }),
   });
 }
 

@@ -9,9 +9,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/format";
 import { useMe } from "@/lib/hooks/use-desk";
-import { useLogTicketCall, useTicketCalls, useUpdateTicketCall } from "@/lib/hooks/use-ticket-calls";
+import { useLogDriverCall, useLogTicketCall, useTicketCalls, useUpdateTicketCall } from "@/lib/hooks/use-ticket-calls";
 import { cn } from "@/lib/utils";
-import { TICKET_CALL_NOTE_MAX_LENGTH, type TicketCall, type TicketCallStatus } from "@/types/ticket-call";
+import {
+  TICKET_CALL_NOTE_MAX_LENGTH,
+  type TicketCall,
+  type TicketCallInput,
+  type TicketCallStatus,
+} from "@/types/ticket-call";
 
 /** The first calls get a chip each beside the name; the rest are only in the history popover. */
 const SHOWN = 3;
@@ -222,11 +227,30 @@ function EditCallDialog({ ticketId, call, onClose }: { ticketId: string; call: T
 /** "Log call" button with its small form - sits in the chat header, next to the status. */
 export function LogCallButton({ ticketId }: { ticketId: string }) {
   const nextNumber = (useTicketCalls(ticketId).data?.length ?? 0) + 1;
+  const log = useLogTicketCall(ticketId);
+  return <CallLogPopover nextNumber={nextNumber} isPending={log.isPending} onSave={(input, done) => log.mutate(input, { onSuccess: done })} />;
+}
+
+/** "Log call" for a driver with no open ticket: saving opens one (assigned to me) and logs the call on it. */
+export function LogDriverCallButton({ driverId }: { driverId: number }) {
+  const log = useLogDriverCall(driverId);
+  return <CallLogPopover nextNumber={1} isPending={log.isPending} onSave={(input, done) => log.mutate(input, { onSuccess: done })} />;
+}
+
+/** The button and its small form; what saving does is the caller's `onSave`. */
+function CallLogPopover({
+  nextNumber,
+  isPending,
+  onSave,
+}: {
+  nextNumber: number;
+  isPending: boolean;
+  onSave: (input: TicketCallInput, done: () => void) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<TicketCallStatus>("answered");
   const [note, setNote] = useState("");
   const [calledAt, setCalledAt] = useState(() => toLocalInput(new Date()));
-  const log = useLogTicketCall(ticketId);
 
   // Every time the form opens it starts from "now" and an empty note.
   function onOpenChange(next: boolean) {
@@ -240,13 +264,13 @@ export function LogCallButton({ ticketId }: { ticketId: string }) {
 
   function submit() {
     const when = new Date(calledAt);
-    log.mutate(
+    onSave(
       {
         status,
         note: note.trim(),
         calledAt: Number.isNaN(when.getTime()) ? undefined : when.toISOString(),
       },
-      { onSuccess: () => setOpen(false) },
+      () => setOpen(false),
     );
   }
 
@@ -291,11 +315,11 @@ export function LogCallButton({ ticketId }: { ticketId: string }) {
           </label>
 
           <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={log.isPending}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={log.isPending || !calledAt || !note.trim()}>
-              {log.isPending && <Loader2 className="animate-spin" />} Save call
+            <Button type="submit" size="sm" disabled={isPending || !calledAt || !note.trim()}>
+              {isPending && <Loader2 className="animate-spin" />} Save call
             </Button>
           </div>
         </form>

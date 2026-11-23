@@ -20,6 +20,14 @@ export interface TicketCallInput {
   calledAt?: string;
 }
 
+/** Result of logging a call on a driver: the ticket it went on, and whether this call opened it. */
+export interface DriverCallResult {
+  ticketId: string;
+  ticketNumber: string;
+  ticketCreated: boolean;
+  call: TicketCall;
+}
+
 export const TICKET_CALL_NOTE_MAX_LENGTH = 1000;
 
 /** `PATCH /support-desk/tickets/:id/calls/:callId` - only the agent who logged the call. The note can't be emptied. */
