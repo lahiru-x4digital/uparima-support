@@ -232,7 +232,12 @@ export function PendingDriversList() {
                       )}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1.5">
-                          <Link href={`/drivers/${d.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                          <Link
+                            href={`/drivers/${d.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={buttonVariants({ size: "sm", variant: "outline" })}
+                          >
                             {awaitingDecision(d) ? "View docs" : "View"}
                           </Link>
                           {canSeeCalls && chatTicketId(d) && (
