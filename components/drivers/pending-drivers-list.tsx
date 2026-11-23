@@ -33,7 +33,7 @@ const SORTS = [
   { value: "name", label: "Name (A–Z)" },
 ] as const;
 type SortValue = (typeof SORTS)[number]["value"];
-const KINDS = ["all", "pending", "incomplete"] as const;
+const KINDS = ["all", "pending", "incomplete", "rejected"] as const;
 type Kind = (typeof KINDS)[number];
 
 const formatDate = (s: string) => (s ? new Date(s).toLocaleDateString() : "-");
@@ -108,7 +108,7 @@ export function PendingDriversList() {
   return (
     <PageShell
       title="Pending Drivers"
-      description="Applications waiting for review, and signups that were started but not finished."
+      description="Applications waiting for review, signups that were started but not finished, and rejected applications."
       actions={<SearchBox placeholder="Search name, phone, ID or reg. no." onSearch={setTerm} />}
     >
       <div className="space-y-3 rounded-2xl border bg-card p-3">
