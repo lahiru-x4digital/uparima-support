@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
@@ -35,12 +36,28 @@ export function DriverDuplicateDocuments({ driverId }: { driverId: string }) {
     );
   }
 
+  const otherDrivers = [...new Map(matches.map((m) => [m.otherDriver.id, m.otherDriver])).values()];
+
   return (
     <Card className="ring-amber-400/60">
       <CardHeader>
         <CardTitle className="text-amber-700 dark:text-amber-400">Matching documents on other drivers</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="flex flex-wrap gap-3">
+          {otherDrivers.map((d) => (
+            <a
+              key={d.id}
+              href={`/drivers/${d.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-primary hover:bg-muted"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {d.name ?? `Driver #${d.id}`} (#{d.id})
+            </a>
+          ))}
+        </div>
         {matches.map((m, i) => {
           const otherName = m.otherDriver.name || `Driver #${m.otherDriver.id}`;
           return (
