@@ -65,7 +65,7 @@ export function DeleteIncompleteDriverDialog({
         <DialogHeader>
           <DialogTitle>Delete incomplete driver</DialogTitle>
           <DialogDescription>
-            This permanently deletes the unfinished driver profile and its uploaded files, and closes this ticket. It cannot be undone. Only unfinished signups can be deleted, and the person can register again later with the same number. The reason is saved for the team.
+            This permanently deletes the driver profile and its uploaded files, and closes their open tickets. It cannot be undone. The person can register again later with the same number. The reason is saved for the team.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
