@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { getErrorMessage } from "@/lib/api";
 import { useDriverDuplicateDocuments } from "@/lib/hooks/use-drivers";
-import { useCanViewDrivers } from "@/lib/hooks/use-desk";
 import { DocumentPreviewModal, type DocumentPreview } from "./document-preview-modal";
 
 /**
@@ -16,8 +15,6 @@ import { DocumentPreviewModal, type DocumentPreview } from "./document-preview-m
  */
 export function DriverDuplicateDocuments({ driverId }: { driverId: string }) {
   const { data: matches, isLoading, error } = useDriverDuplicateDocuments(driverId);
-  const viewDrivers = useCanViewDrivers();
-  const canOpenOtherDriver = viewDrivers.any; // pendingOnly staff can't open approved/active drivers
   const [preview, setPreview] = useState<DocumentPreview | null>(null);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Looking for matching documents…</p>;
@@ -47,22 +44,20 @@ export function DriverDuplicateDocuments({ driverId }: { driverId: string }) {
         <CardTitle className="text-amber-700 dark:text-amber-400">Matching documents on other drivers</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        {canOpenOtherDriver && (
-          <div className="flex flex-wrap gap-3">
-            {otherDrivers.map((d) => (
-              <a
-                key={d.id}
-                href={`/drivers/${d.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-primary hover:bg-muted"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                {d.name ?? `Driver #${d.id}`} (#{d.id})
-              </a>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {otherDrivers.map((d) => (
+            <a
+              key={d.id}
+              href={`/drivers/${d.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-primary hover:bg-muted"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {d.name ?? `Driver #${d.id}`} (#{d.id})
+            </a>
+          ))}
+        </div>
         {matches.map((m, i) => {
           const otherName = m.otherDriver.name || `Driver #${m.otherDriver.id}`;
           return (
@@ -70,13 +65,9 @@ export function DriverDuplicateDocuments({ driverId }: { driverId: string }) {
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-semibold first-letter:uppercase">{m.label}</span>
                 <span className="text-muted-foreground">matches a document of</span>
-                {canOpenOtherDriver ? (
-                  <Link href={`/drivers/${m.otherDriver.id}`} className="font-semibold text-primary hover:underline">
-                    {otherName} (#{m.otherDriver.id})
-                  </Link>
-                ) : (
-                  <span className="font-semibold">{otherName} (#{m.otherDriver.id})</span>
-                )}
+                <Link href={`/drivers/${m.otherDriver.id}`} className="font-semibold text-primary hover:underline">
+                  {otherName} (#{m.otherDriver.id})
+                </Link>
                 <StatusBadge value={m.otherDriver.status} />
               </div>
               <p className="text-xs text-muted-foreground">
