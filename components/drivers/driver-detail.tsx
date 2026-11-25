@@ -88,6 +88,9 @@ export function DriverDetail({ id }: { id: string }) {
   const { driver } = data;
   const name = [driver.firstName, driver.lastName].filter(Boolean).join(" ") || "-";
   const busy = approve.isPending || suspend.isPending || restore.isPending;
+  const hasDuplicateIssues = [...(aiResult?.issues ?? []), ...(driver.reviewIssues ?? [])].some((issue) =>
+    issue.includes("different driver account"),
+  );
 
   // Also offered for a rejected driver (after a correction a pass approves them), an approved
   // driver still carrying a flagged review (a pass clears the flag so they can go online again), or
@@ -185,8 +188,8 @@ export function DriverDetail({ id }: { id: string }) {
               Restore
             </Button>
           )}
-          {/* Permanent delete is for unfinished signups only; a registered driver is suspended, never deleted here. */}
-          {(canUpdate || canDelete) && driver.status === "incomplete" && (
+          {/* Permanent delete: for unfinished signups, or drivers flagged for duplicate/shared documents. */}
+          {(canUpdate || canDelete) && (driver.status === "incomplete" || hasDuplicateIssues) && (
             <Button size="sm" variant="destructive" disabled={busy} onClick={() => setConfirmDelete(true)}>
               <Trash2 /> Delete incomplete driver
             </Button>
